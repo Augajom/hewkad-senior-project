@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Cal+Sans&family=Comic+Relief:wght@400;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import "tailwindcss";
+@tailwind components;
+
+@layer components{
+    .set-center{
+        @apply flex items-center justify-center
+    }
+}
+
+.swal2-container.backdrop-blur {
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.3); /* ขาวโปร่งนิดๆ */
+  }
+
+/* ซ่อน scroll bar แต่ยังให้เลื่อนเนื้อหาได้ */
+body {
+    overflow: scroll; /* ให้เนื้อหาสามารถเลื่อนได้ */
+    font-family: Inter;
+  }
+  
+  body::-webkit-scrollbar {
+    display: none; /* ซ่อน scroll bar สำหรับเบราว์เซอร์ที่ใช้ Webkit เช่น Chrome, Safari */
+  }
+  
+  html {
+    -ms-overflow-style: none; /* สำหรับ Internet Explorer */
+    scrollbar-width: none; /* สำหรับ Firefox */
+  }
+
+  .no-blink-cursor {
+    caret-color: transparent; /* ซ่อนการกระพริบของ cursor */
+  }
