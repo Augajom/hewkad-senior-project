@@ -9,6 +9,7 @@ const authRoute = require('./routes/auth.js');
 const adminRoute = require('./api/admin.js');
 const customerRoute = require('./api/customer.js');
 const serviceRoute = require('./api/service.js');
+const historyRoute = require('./api/customer.js');
 
 // middleware สำหรับ auth (JWT + role)
 const verifyToken = require('./utils/verifyToken.js');
@@ -20,7 +21,10 @@ const app = express();
 // middleware พื้นฐาน
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL, // URL ของ React app
+  credentials: true // ต้องมีเพื่อส่ง cookie
+}));
 
 // test route หลังจาก login
 app.get('/profile', (req, res) => {
@@ -33,6 +37,10 @@ app.use('/auth', authRoute);
 app.use('/admin', verifyToken, requireRole('admin'), adminRoute);
 app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
+
+
+//history
+app.use('/history', historyRoute);
 
 // start server
 const PORT = process.env.PORT || 5000;
