@@ -1,9 +1,7 @@
-
 const express = require('express');
 const cors = require('cors');
 const passport = require('passport');
 require('dotenv').config();
-const path = require('path');
 require('./config/passport');
 
 // import routes
@@ -12,7 +10,7 @@ const adminRoute = require('./api/admin.js');
 const customerRoute = require('./api/customer.js');
 const serviceRoute = require('./api/service.js');
 const historyRoute = require('./api/customer.js');
-
+const homeRoute = require('./api/customer.js');
 
 // middleware สำหรับ auth (JWT + role)
 const verifyToken = require('./utils/verifyToken.js');
@@ -24,17 +22,15 @@ const app = express();
 // middleware พื้นฐาน
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(cors({
+  origin: process.env.FRONTEND_URL, // URL ของ React app
+  credentials: true // ต้องมีเพื่อส่ง cookie
+}));
 
 // test route หลังจาก login
 app.get('/profile', (req, res) => {
   console.log('req.user:', req.user);
   res.json(req.user);
-});
-// ✅ route หลัก
-app.get('/', (req, res) => {
-  res.send('Server is running ✅');
 });
 
 // route
@@ -46,7 +42,7 @@ app.use('/service', verifyToken, requireRole('service'), serviceRoute);
 
 //history
 app.use('/history', historyRoute);
-
+app.use('/home', homeRoute);
 
 // start server
 const PORT = process.env.PORT || 5000;

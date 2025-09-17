@@ -3,6 +3,7 @@ const passport = require('passport');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
+const verifyToken = require('../utils/verifyToken');
 require('dotenv').config();
 
 // เริ่ม login
@@ -31,6 +32,18 @@ router.get('/google/callback',
     res.redirect(`${process.env.FRONTEND_URL}/home`);
   }
 );
+
+router.get('/me', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.getById(userId); // ต้องมี method getById
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to get user' });
+  }
+});
 
 
 module.exports = router;
