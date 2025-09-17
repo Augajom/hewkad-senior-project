@@ -5,8 +5,6 @@ const bcrypt = require('bcrypt');
 const Post = require('../models/customer/Posts');
 const Kad = require('../models/customer/Kad');
 const History = require('../models/customer/History');
-
-// ✅ เพิ่มบรรทัดนี้
 const verifyToken = require('../utils/verifyToken');
 const requireRole = require('../utils/requireRole');
 // GET kad options
@@ -32,53 +30,85 @@ router.get('/posts', async (req, res) => {
   }
 });
 
-
-
-// CREATE post
-router.post('/create', async (req, res) => {
+// routes/home.js
+router.post('/create', verifyToken, async (req, res) => {
   try {
-    const post = await Post.create(
-      req.body.kad_id,
-      req.body.store_name,
-      req.body.product,
-      req.body.service_fee,
-      req.body.price,
-      req.body.user_id,
-      req.body.profile_id,
-      req.body.status_id,
-      req.body.delivery,
-      req.body.delivery_at
+    const {
+      kad_id, store_name, product,
+      service_fee, price, status_id,
+      delivery, delivery_at
+    } = req.body;
+
+    // ดึง user_id และ profile_id จาก JWT
+    const user_id = req.user.id;
+    const profile_id = req.user.profile_id;
+
+    if (!user_id || !profile_id) {
+      return res.status(400).json({ message: 'User not authenticated properly' });
+    }
+
+    db.query(
+      `INSERT INTO posts 
+        (kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at],
+      (err, result) => {
+        if (err) return res.status(500).json({ message: err.message });
+        res.json({
+          id: result.insertId,
+          kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at
+        });
+      }
     );
-    res.status(201).json(post);
   } catch (err) {
-    console.error('Create post failed:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
-// UPDATE post
-router.put('/edit/:id', async (req, res) => {
+// แก้ไขโพสต์
+router.put('/edit/:postId', verifyToken, async (req, res) => {
   try {
-    const success = await Post.update(req.params.id, req.body);
-    if (!success) return res.status(404).json({ message: 'Post not found' });
-    res.json({ message: 'Post updated successfully' });
+    const postId = req.params.postId;
+    const userId = req.user.id;
+
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    if (post.user_id !== userId) {
+      return res.status(403).json({ message: 'You can only edit your own post' });
+    }
+
+    const updatedPost = await Post.update(postId, req.body);
+    res.json(updatedPost);
+
   } catch (err) {
-    console.error('Update post failed:', err);
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update post' });
   }
 });
 
-// DELETE post
-router.delete('/delete/:id', async (req, res) => {
+// ลบโพสต์
+router.delete('/delete/:postId', verifyToken, async (req, res) => {
   try {
-    const success = await Post.delete(req.params.id);
-    if (!success) return res.status(404).json({ message: 'Post not found' });
-    res.json({ message: 'Post deleted successfully' });
+    const postId = req.params.postId;
+    const userId = req.user.id;
+
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    if (post.user_id !== userId) {
+      return res.status(403).json({ message: 'You can only delete your own post' });
+    }
+
+    await Post.delete(postId);
+    res.json({ message: 'Post deleted' });
+
   } catch (err) {
-    console.error('Delete post failed:', err);
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to delete post' });
   }
 });
+
 router.get('/:status', async (req, res) => {
   const status = req.params.status;
   const userId = req.query.userId || null;  // ส่ง userId ผ่าน query string เช่น ?userId=1

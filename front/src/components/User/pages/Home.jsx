@@ -129,59 +129,49 @@ const createPost = async () => {
 
   // --- UPDATE POST ---
   const confirmUpdate = async () => {
-    if (!editingPostId) return;
+  if (!editingPostId) return;
 
-    try {
-      const updatePayload = {};
-      Object.keys(formData).forEach((key) => {
-        if (formData[key] !== '') {
-          // แปลงชื่อฟิลด์เป็น snake_case ตามฐานข้อมูล
-          let backendKey;
-          if (key === 'kadId') backendKey = 'kad_id';
-          else if (key === 'storeName') backendKey = 'store_name';
-          else if (key === 'serviceFee') backendKey = 'service_fee';
-          else backendKey = key;
+  try {
+    const updatePayload = { ...formData }; // แปลงชื่อ field เป็น backend keys ตามเดิม
 
-          updatePayload[backendKey] = (key === 'serviceFee' || key === 'price')
-            ? Number(formData[key])
-            : formData[key];
-        }
-      });
+    const res = await fetch(`http://localhost:5000/home/edit/${editingPostId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // ต้องมี เพื่อส่ง cookie token
+      body: JSON.stringify(updatePayload),
+    });
 
-      const res = await fetch(`http://localhost:5000/home/edit/${editingPostId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(updatePayload),
-      });
-
-      if (res.ok) {
-        await fetchPosts();
-        resetForm();
-        setShowConfirmUpdateModal(false);
-      } else {
-        const errData = await res.json();
-        console.error('Update post error:', errData);
-      }
-    } catch (err) {
-      console.error('Update post failed:', err);
+    if (res.ok) {
+      await fetchPosts();
+      resetForm();
+      setShowConfirmUpdateModal(false);
+    } else {
+      const errData = await res.json();
+      console.error('Update post error:', errData);
+      alert(errData.message || 'Update failed');
     }
-  };
-
+  } catch (err) {
+    console.error('Update post failed:', err);
+  }
+};
   const cancelUpdate = () => setShowConfirmUpdateModal(false);
 
-  // --- DELETE POST ---
-  const handleDelete = async (postId) => {
-    try {
-      const res = await fetch(`http://localhost:5000/home/delete/${postId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (res.ok) await fetchPosts();
-    } catch (err) {
-      console.error('Delete post failed:', err);
+  // ลบโพสต์
+const handleDelete = async (postId) => {
+  try {
+    const res = await fetch(`http://localhost:5000/home/delete/${postId}`, {
+      method: 'DELETE',
+      credentials: 'include', // ต้องส่ง cookie JWT
+    });
+    if (res.ok) await fetchPosts();
+    else {
+      const errData = await res.json();
+      alert(errData.message || 'Delete failed');
     }
-  };
+  } catch (err) {
+    console.error('Delete post failed:', err);
+  }
+};
 
   const handleEdit = (post) => {
     setFormData({
