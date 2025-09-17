@@ -4,32 +4,41 @@ import HistoryPostCard from '../components/HistoryPostCard';
 import { SlArrowDown } from "react-icons/sl";
 import '../DaisyUI.css';
 
-export default function History({ currentUser }) {
+export default function History() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     // ฟังก์ชันดึงข้อมูลจาก API
     const fetchPosts = async (status = "Complete") => {
-        setLoading(true);
-        setError(null);
-        try {
-            const userIdParam = currentUser?.id ? `?userId=${currentUser.id}` : '';
-            const res = await fetch(`http://localhost:5000/history/${status}${userIdParam}`);
-            if (!res.ok) throw new Error("Failed to fetch posts");
-            const data = await res.json();
-            setPosts(data);
-        } catch (err) {
-            console.error(err);
-            setError(err.message || "Something went wrong");
-        } finally {
-            setLoading(false);
-        }
-    };
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await fetch(`http://localhost:5000/history/${status}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        // 🔑 Add your JWT here
+        Authorization: `Bearer ${localStorage.getItem("token")}`, 
+      },
+      credentials: "include", // keep if you also need cookies
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch posts");
+    const data = await res.json();
+    setPosts(data);
+  } catch (err) {
+    console.error(err);
+    setError(err.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     useEffect(() => {
         fetchPosts();
-    }, [currentUser?.id]);
+    }, []);
 
     return (
         <div className="min-h-screen bg-white">

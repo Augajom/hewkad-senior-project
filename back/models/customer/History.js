@@ -15,18 +15,19 @@ const History = {
           p.delivery AS deliveryLocation,
           p.delivery_at AS receivingTime,
           k.kad_name AS kadName,
-          s.status_name AS status,   -- แก้จาก s.status_id
+          s.status_name AS status,
           pr.picture AS avatar
         FROM posts p
         JOIN profile pr ON p.profile_id = pr.id
         JOIN users u ON p.user_id = u.id
         LEFT JOIN kad k ON p.kad_id = k.id
         LEFT JOIN status s ON p.status_id = s.id
-        WHERE s.status_name = ?        -- แก้จาก s.status_id
+        WHERE s.status_name = ?
       `;
 
       const params = [status];
 
+      // ถ้ามี userId จะ query เฉพาะ user นั้น
       if (userId !== null) {
         sql += ' AND p.user_id = ?';
         params.push(userId);

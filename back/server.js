@@ -9,7 +9,6 @@ const authRoute = require('./routes/auth.js');
 const adminRoute = require('./api/admin.js');
 const customerRoute = require('./api/customer.js');
 const serviceRoute = require('./api/service.js');
-const historyRoute = require('./api/customer.js');
 
 // middleware สำหรับ auth (JWT + role)
 const verifyToken = require('./utils/verifyToken.js');
@@ -18,13 +17,18 @@ const requireRole = require('./utils/requireRole.js');
 // init express
 const app = express();
 
+// CORS + cookie-parser ต้องมาก่อน route ทุกตัว!!
+app.use(cors({
+  origin: 'http://localhost:5173',  // <<< ให้ตรงกับ frontend
+  credentials: true
+}));
+
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 // middleware พื้นฐาน
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin: process.env.FRONTEND_URL, // URL ของ React app
-  credentials: true // ต้องมีเพื่อส่ง cookie
-}));
 
 // test route หลังจาก login
 app.get('/profile', (req, res) => {
@@ -38,9 +42,9 @@ app.use('/admin', verifyToken, requireRole('admin'), adminRoute);
 app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
 
+const historyRoutes = require('./api/customer'); // 👈 path must be correct
+app.use('/history', historyRoutes);
 
-//history
-app.use('/history', historyRoute);
 
 // start server
 const PORT = process.env.PORT || 5000;

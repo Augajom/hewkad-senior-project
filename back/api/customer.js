@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const History = require('../models/customer/History');
+const History = require('../models/customer/History.js');
+const verifyToken = require('../utils/verifyToken.js');
 
-router.get('/:status', async (req, res) => {
+router.get('/:status', verifyToken, async (req, res) => {
   const status = req.params.status;
-  const userId = req.query.userId || null;  // ส่ง userId ผ่าน query string เช่น ?userId=1
+  const userId = req.user.id;
 
   try {
     const posts = await History.getByStatus(status, userId);
@@ -15,6 +16,4 @@ router.get('/:status', async (req, res) => {
   }
 });
 
-
-
-module.exports = router;
+module.exports = router; // 👈 this is required!
