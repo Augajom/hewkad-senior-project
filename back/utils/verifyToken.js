@@ -1,20 +1,33 @@
 const jwt = require('jsonwebtoken');
 
-function verifyToken(req, res, next) {
-  // ดึง token จาก header หรือ cookie
-  const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
+function authenticateJWT(req, res, next) {
+  // เพิ่มบรรทัดนี้!
+  console.log('=== Incoming Cookies:', req.cookies);
+
+  const token = req.cookies?.token;
+
   if (!token) {
-    return res.status(401).json({ message: 'Token not found' });
+    // เพิ่ม log เมื่อไม่มี token
+    console.log('Cookies:', req.cookies);
+    return res.status(401).json({ message: 'Unauthorized: No token provided' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    req.user = decoded; // จะมี { id, roles } อยู่ในนี้
+    // เพิ่ม log เมื่อ verify สำเร็จ
+    console.log('=== JWT decoded:', decoded);
+
+    req.user = decoded;
     next();
   } catch (err) {
-    console.error('JWT verify error:', err.message); // debug log
-    return res.status(401).json({ message: 'Invalid token' });
+    // เพิ่ม log เมื่อ JWT verify ไม่สำเร็จ
+    console.log('=== JWT verify error:', err.message);
+    return res.status(401).json({ message: 'Unauthorized: Invalid token' });
   }
 }
 
+<<<<<<< HEAD
 module.exports = verifyToken;
+=======
+module.exports = authenticateJWT;
+>>>>>>> f77f3c08b42ef9cdacd17435dcedb84c2cdd25d7

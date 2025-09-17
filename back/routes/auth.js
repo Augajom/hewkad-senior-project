@@ -6,13 +6,14 @@ const User = require('../models/userModel');
 const verifyToken = require('../utils/verifyToken');
 require('dotenv').config();
 
+
 // เริ่ม login
 router.get('/google',
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 );
 
 // callback หลังจาก login success
-router.get('/google/callback', 
+router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL}`, session: false }),
   async (req, res) => {   // <- ใส่ async ตรงนี้
     const user = req.user;
@@ -22,13 +23,19 @@ router.get('/google/callback',
 
     // สร้าง JWT
     const token = jwt.sign(
-      { id: user.id, roles }, 
-      process.env.JWT_ACCESS_SECRET, 
+      { id: user.id, roles },
+      process.env.JWT_ACCESS_SECRET,
       { expiresIn: '1d' }
     );
 
     // เก็บ cookie แล้ว redirect
-    res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000 });
+    res.cookie('token', token, {
+      domain: 'localhost',      // *** ต้องเป็น 'localhost' ***
+      httpOnly: true,
+      sameSite: 'lax',          // หรือ 'none' ถ้าใช้ https
+      maxAge: 86400000,         // อายุ 1 วัน
+      path: '/',                // path root
+    });
     res.redirect(`${process.env.FRONTEND_URL}/home`);
   }
 );

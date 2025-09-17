@@ -4,7 +4,7 @@ import '../DaisyUI.css'
 
 const HistoryPostCard = ({ post }) => {
     const [showProofModal, setShowProofModal] = useState(false);
-    const total = (post.price || 0) + (post.serviceFee || 0);
+    const total = (post.price || 0) + (post.service_fee || 0);
 
     // ตัวอย่างลิงก์ภาพหลักฐาน (แก้เป็นจริงตามของคุณ)
     const proofImageUrl = post.proofImageUrl || "/mnt/data/79ba7201-e945-40c2-a787-64cb098fdb86.png";
@@ -36,7 +36,7 @@ const HistoryPostCard = ({ post }) => {
                     </div>
 
                     <div className="text-red-600 font-bold text-xl mt-1">
-                        {post.serviceFee ? `${post.serviceFee} ฿` : '0 ฿'}
+                        {post.service_fee ? `${post.service_fee} ฿` : '0 ฿'}
                     </div>
                 </div>
             </div>

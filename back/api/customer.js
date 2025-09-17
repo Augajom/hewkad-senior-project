@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+<<<<<<< HEAD
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const Post = require('../models/customer/Posts');
@@ -108,10 +109,14 @@ router.delete('/delete/:postId', verifyToken, async (req, res) => {
     res.status(500).json({ message: 'Failed to delete post' });
   }
 });
+=======
+const History = require('../models/customer/History.js');
+const verifyToken = require('../utils/verifyToken.js');
+>>>>>>> f77f3c08b42ef9cdacd17435dcedb84c2cdd25d7
 
-router.get('/:status', async (req, res) => {
+router.get('/:status', verifyToken, async (req, res) => {
   const status = req.params.status;
-  const userId = req.query.userId || null;  // ส่ง userId ผ่าน query string เช่น ?userId=1
+  const userId = req.user.id;
 
   try {
     const posts = await History.getByStatus(status, userId);
@@ -122,5 +127,9 @@ router.get('/:status', async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 
 module.exports = router;
+=======
+module.exports = router; // 👈 this is required!
+>>>>>>> f77f3c08b42ef9cdacd17435dcedb84c2cdd25d7
