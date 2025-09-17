@@ -16,11 +16,11 @@ function Navbar({ currentPage, onNavigate, orderingCount }) {
         </div>
 
         <div className="flex-1 mx-4 flex justify-center ">
-          <div className="relative w-full max-w-md">
+          <div className="relative w-full max-w-md ">
             <input
               type="text"
               placeholder="Search here..."
-              className="w-full bg-gray-200 rounded-full px-5 py-2 pr-12 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              className="input input-bordered w-full max-w-md text-black placeholder-gray-500 "
             />
             <Search className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2 text-black" />
           </div>
@@ -34,7 +34,7 @@ function Navbar({ currentPage, onNavigate, orderingCount }) {
               <div className="badge badge-info badge-sm absolute top-0 right-0">{orderingCount}</div>
             )}
           </button>
-          
+
           <button className="btn btn-ghost">
             <CreditCard className="w-5 h-5 mr-1 text-black" />
             <span className="text-black">Payment</span>

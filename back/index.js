@@ -1,8 +1,10 @@
+
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const MemoryStore = require('memorystore')(session);
 require('dotenv').config();
+const path = require('path');
 
 // import routes
 const indexRoute = require('./api/index.js');
@@ -11,8 +13,8 @@ const customerRoute = require('./api/customer.js');
 const serviceRoute = require('./api/service.js');
 
 // middleware สำหรับ auth (JWT + role)
-const verifyToken = require('./utils/verifyToken');
-const requireRole = require('./utils/requireRole');
+const verifyToken = require('./utils/verifyToken.js');
+const requireRole = require('./utils/requireRole.js');
 
 // init express
 const app = express();
@@ -30,10 +32,15 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // test route
 app.get('/hello', (req, res) => {
   res.json({ message: 'Hello backend' });
+});
+// ✅ route หลัก
+app.get('/', (req, res) => {
+  res.send('Server is running ✅');
 });
 
 // route

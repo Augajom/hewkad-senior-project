@@ -11,10 +11,15 @@ const PostCard = ({ post, onDelete, onEdit }) => {
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
           <img
-            src={post.avatar || 'https://i.pravatar.cc/150'}
+            src={
+              post.avatar
+                ? `http://localhost:5000/uploads/${post.avatar}`
+                : 'https://i.pravatar.cc/150'
+            }
             alt="avatar"
-            className="w-10 h-10 rounded-full object-cover"
+             className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
           />
+          
           <div>
             <div className="font-bold text-base">{post.nickname || 'ไม่ระบุชื่อ'}</div>
             <div className="text-sm text-gray-500">{post.username || '@username'}</div>
@@ -22,21 +27,23 @@ const PostCard = ({ post, onDelete, onEdit }) => {
         </div>
 
         <div className="flex flex-col items-end">
-          <div className="badge badge-success">Available</div>
+          {/* แก้ status ให้ใช้ status_name */}
+          <div className="badge badge-success">
+            {post.status_name || ''}
+          </div>
           <div className="text-red-600 font-bold text-xl mt-1">
-            {post.serviceFee ? `${post.serviceFee} ฿` : '0 ฿'}
+            {post.service_fee ? `${post.service_fee} ฿` : '0 ฿'}
           </div>
         </div>
       </div>
 
-      {/* ข้อมูลสินค้า */}
       <div className="mt-4 text-sm space-y-1">
-        <p><span className="font-semibold">สถานที่ส่ง</span> : {post.deliveryLocation || '-'}</p>
-        <p><span className="font-semibold">ชื่อร้าน</span> : {post.storeName || '-'}</p>
-        <p><span className="font-semibold">หัว</span> : {post.product || '-'}</p>
+        <p><span className="font-semibold">สถานที่ส่ง</span> : {post.delivery || '-'}</p>
+        <p><span className="font-semibold">ชื่อร้าน</span> : {post.store_name || '-'}</p>
+        <p><span className="font-semibold">หิ้ว</span> : {post.product || '-'}</p>
         <p><span className="font-semibold">ราคา</span> : {post.price || '-'}</p>
-        <p><span className="font-semibold">ตลาด</span> : {post.kadName || '-'}</p>
-        <p><span className="font-semibold">เวลาจัดส่ง</span> : {post.receivingTime || '-'}</p>
+        <p><span className="font-semibold">ตลาด</span> : {post.kad_name || '-'}</p>
+        <p><span className="font-semibold">เวลาจัดส่ง</span> : {post.delivery_at || '-'}</p>
       </div>
 
       {/* ปุ่มแก้ไข/ลบ */}
@@ -51,7 +58,7 @@ const PostCard = ({ post, onDelete, onEdit }) => {
 
         <button
           className="btn btn-sm btn-neutral"
-          onClick={() => onEdit(post)} // ส่ง post กลับไป Home
+          onClick={() => onEdit(post)}
           aria-label="แก้ไขโพสต์"
         >
           <FaEdit />
@@ -68,8 +75,8 @@ const PostCard = ({ post, onDelete, onEdit }) => {
               <button
                 className="btn btn-error"
                 onClick={() => {
-                  onDelete(post.id);      // เรียก callback ลบโพสต์จริง
-                  setConfirmAction(null); // ปิด modal หลังลบ
+                  onDelete(post.id);
+                  setConfirmAction(null);
                 }}
               >
                 ลบเลย
@@ -79,15 +86,8 @@ const PostCard = ({ post, onDelete, onEdit }) => {
           </div>
         </div>
       )}
-
-
-      
-      
     </div>
-        
-   
   );
-
 };
 
 export default PostCard;
