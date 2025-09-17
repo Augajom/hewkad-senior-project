@@ -21,10 +21,10 @@ router.get('/google/callback',
 
     // สร้าง JWT
     const token = jwt.sign(
-      { id: user.id, roles }, 
-      process.env.JWT_ACCESS_SECRET, 
-      { expiresIn: '1d' }
-    );
+  { id: user.id, roles, fullName: user.fullName, email: user.email },
+  process.env.JWT_ACCESS_SECRET,
+  { expiresIn: '1d' }
+);
 
     // เก็บ cookie แล้ว redirect
     res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000 });

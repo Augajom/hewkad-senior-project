@@ -1,60 +1,151 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Home from './Home';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/navbar";
+import "../DaisyUI.css";
 
-import Navbar from '../components/navbar';
-import { Link } from 'react-router-dom'
-import '../DaisyUI.css'
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // ดึงข้อมูล user จาก localStorage (Google Login)
-  const googleUser = JSON.parse(localStorage.getItem('user') || '{}');
-
+  // ดึงข้อมูล user จาก localStorage (Google Login - เผื่อใช้เป็นค่าเริ่มต้น)
+  const googleUser = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [user, setUser] = useState({
-    picture: googleUser.picture || googleUser.imageUrl || '',
-    nickname: googleUser.given_name || '',
-    fullName: googleUser.name || '',
-    email: googleUser.email || '',
-    phone: '',
-    address: '',
-    bank: '',
-    accountNumber: '',
-    accountOwner: '',
-    identityFile: '',
-    identityFileName: '', // ✅ เพิ่มบรรทัดนี้
-
+    picture: googleUser.picture || googleUser.imageUrl || "",
+    nickname: googleUser.given_name || "",
+    fullName: googleUser.name || "",
+    email: googleUser.email || "",
+    phone: "",
+    address: "",
+    bank: "",
+    accountNumber: "",
+    accountOwner: "",
+    identityFile: "",
+    identityFileName: "",
   });
 
   const [editMode, setEditMode] = useState(false);
   const [editUser, setEditUser] = useState(user);
 
   useEffect(() => {
-    setUser((prev) => ({
-      ...prev,
-      picture: googleUser.picture || prev.picture,
-      nickname: googleUser.given_name || prev.nickname,
-      fullName: googleUser.name || prev.fullName,
-      email: googleUser.email || prev.email,
-    }));
-    setEditUser((prev) => ({
-      ...prev,
-      picture: googleUser.picture || prev.picture,
-      nickname: googleUser.given_name || prev.nickname,
-      fullName: googleUser.name || prev.fullName,
-      email: googleUser.email || prev.email,
-    }));
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/profile`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          setUser((prev) => ({
+            ...prev,
+            picture: googleUser.picture || prev.picture || "",
+            nickname: googleUser.given_name || prev.nickname || "",
+            fullName: googleUser.name || prev.fullName || "",
+            email: googleUser.email || prev.email || "",
+          }));
+          setEditUser((prev) => ({
+            ...prev,
+            picture: googleUser.picture || prev.picture || "",
+            nickname: googleUser.given_name || prev.nickname || "",
+            fullName: googleUser.name || prev.fullName || "",
+            email: googleUser.email || prev.email || "",
+          }));
+          return;
+        }
+
+        const data = await res.json();
+
+        const merged = {
+          picture: data?.picture || googleUser.picture || "",
+          nickname: googleUser.given_name || "",
+          fullName: data?.fullName || data?.name || googleUser.name || "",
+          email: data?.email || googleUser.email || "",
+          phone: data?.phone || "",
+          address: data?.address || "",
+          bank: data?.bank || "",
+          accountNumber: data?.accountNumber || "",
+          accountOwner: data?.accountOwner || "",
+          identityFile: data?.identityFile || "",
+          identityFileName: data?.identityFileName || "",
+        };
+
+        setUser(merged);
+        setEditUser(merged);
+      } catch (e) {
+        console.error("load profile error:", e);
+        setUser((prev) => ({
+          ...prev,
+          picture: googleUser.picture || prev.picture || "",
+          nickname: googleUser.given_name || prev.nickname || "",
+          fullName: googleUser.name || prev.fullName || "",
+          email: googleUser.email || prev.email || "",
+        }));
+        setEditUser((prev) => ({
+          ...prev,
+          picture: googleUser.picture || prev.picture || "",
+          nickname: googleUser.given_name || prev.nickname || "",
+          fullName: googleUser.name || prev.fullName || "",
+          email: googleUser.email || prev.email || "",
+        }));
+      }
+    })();
     // eslint-disable-next-line
   }, []);
 
   const handleEdit = () => setEditMode(true);
 
-  const handleSave = () => {
-    setUser(editUser);
-    setEditMode(false);
+  const handleSave = async () => {
+    try {
+      const payload = {
+        picture: editUser.picture,
+        fullName: editUser.fullName,
+        email: editUser.email,
+        phone: editUser.phone,
+        address: editUser.address,
+        bank: editUser.bank,
+        accountNumber: editUser.accountNumber,
+        accountOwner: editUser.accountOwner,
+        identityFile: editUser.identityFile,
+        identityFileName: editUser.identityFileName,
+      };
+
+      const res = await fetch(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        const text = await res.text();
+        console.error(
+          "Non-JSON response:",
+          res.status,
+          res.url,
+          text.slice(0, 300)
+        );
+        throw new Error(`Server returned non-JSON (status ${res.status}).`);
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
+
+      if (data.profile) {
+        setUser(data.profile);
+        setEditUser(data.profile);
+      } else {
+        setUser(editUser);
+        setEditUser(editUser);
+      }
+      setEditMode(false);
+      alert("Profile saved.");
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Save failed");
+    }
   };
 
   const handleCancel = () => {
@@ -66,55 +157,40 @@ export default function ProfilePage() {
     const { name, value } = e.target;
     setEditUser((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleLogout = () => {
-    localStorage.removeItem('user'); // ลบข้อมูล user ออกจาก localStorage
-    navigate('/', { replace: true }); // กลับไปหน้า login
+    // ถ้ามี endpoint /auth/logout ให้เรียกแบบนี้:
+    // await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+    localStorage.removeItem("user");
+    navigate("/", { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navbar */}
-
       <Navbar />
 
-      <div className="max-w-4xl  ml-100 mt-10 flex gap-60 items-start">
+      <div className="max-w-4xl ml-100 mt-10 flex gap-60 items-start">
         {/* Profile Image */}
         <div className="flex flex-col items-center">
-          {/* Avatar */}
           <div className="avatar relative">
             <div className="w-48 h-48 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center">
-              <img
-                src={editMode ? editUser.picture || user.picture : user.picture}
-                alt="avatar"
-                className="w-full h-full object-cover"
-              />
-
-              {/* ตอน Edit ให้โชว์ overlay icon กล้อง */}
-              {editMode && (
-                <label
-                  htmlFor="profileUpload"
-                  className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center cursor-pointer hover:bg-opacity-60 transition rounded-full"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-10 w-10 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 7h4l2-3h6l2 3h4v13H3V7z"
-                    />
-                    <circle cx="12" cy="13" r="3" />
-                  </svg>
-                </label>
-              )}
+              {editMode ? (
+                editUser.picture || user.picture ? (
+                  <img
+                    src={editUser.picture || user.picture}
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : null
+              ) : user.picture ? (
+                <img
+                  src={user.picture}
+                  alt="avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
             </div>
 
-            {/* hidden input file */}
             <input
               type="file"
               id="profileUpload"
@@ -127,7 +203,7 @@ export default function ProfilePage() {
                   reader.onloadend = () => {
                     setEditUser((prev) => ({
                       ...prev,
-                      picture: reader.result, // preview image ใหม่
+                      picture: reader.result,
                     }));
                   };
                   reader.readAsDataURL(file);
@@ -135,6 +211,7 @@ export default function ProfilePage() {
               }}
             />
           </div>
+
           {!editMode && (
             <button
               onClick={handleEdit}
@@ -148,27 +225,27 @@ export default function ProfilePage() {
         {/* Profile Info */}
         <div className="flex-1">
           <form
-            onSubmit={e => {
+            onSubmit={(e) => {
               e.preventDefault();
               handleSave();
             }}
           >
             <div className="space-y-4">
-              <div className='flex items-center'>
+              <div className="flex items-center">
                 <label className="text-black w-45 mr-2">Nickname :</label>
                 {editMode ? (
                   <input
                     name="nickname"
                     value={editUser.nickname}
                     onChange={handleChange}
-                    className="input input-bordered w-full  bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
+                    className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
                   />
                 ) : (
-                  <div className='text-black'>{user.nickname}</div>
+                  <div className="text-black">{user.nickname}</div>
                 )}
               </div>
 
-              <div className='flex items-center'>
+              <div className="flex items-center">
                 <label className="text-black w-45 mr-2">Name-Surname :</label>
                 {editMode ? (
                   <input
@@ -178,12 +255,11 @@ export default function ProfilePage() {
                     className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
                   />
                 ) : (
-                  <div className='text-black'>{user.fullName}</div>
+                  <div className="text-black">{user.fullName}</div>
                 )}
               </div>
 
-
-              <div className='flex items-center'>
+              <div className="flex items-center">
                 <label className="text-black w-45 mr-2">Phone :</label>
                 {editMode ? (
                   <input
@@ -193,11 +269,11 @@ export default function ProfilePage() {
                     className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
                   />
                 ) : (
-                  <div className='text-black'>{user.phone}</div>
+                  <div className="text-black">{user.phone}</div>
                 )}
               </div>
 
-              <div className='flex items-center'>
+              <div className="flex items-center">
                 <label className="text-black w-45 mr-2">Address :</label>
                 {editMode ? (
                   <input
@@ -207,26 +283,28 @@ export default function ProfilePage() {
                     className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
                   />
                 ) : (
-                  <div className='text-black'>{user.address}</div>
+                  <div className="text-black">{user.address}</div>
                 )}
               </div>
-              <div className='flex items-center'>
-                <label className="text-black w-45 mr-2" >Email :</label>
-                <div className='text-black'>{user.email}</div>
 
+              <div className="flex items-center">
+                <label className="text-black w-45 mr-2">Email :</label>
+                <div className="text-black">{user.email}</div>
               </div>
-
             </div>
-            <div className='space-y-1'>
-              <div className="mt-8 text-black text-center font-semibold">Payment Information (Optional)</div>
+
+            <div className="space-y-1">
+              <div className="mt-8 text-black text-center font-semibold">
+                Payment Information (Optional)
+              </div>
               <div className="text-center text-xs text-gray-500 mb-4">
-                A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs
+                A User Who Wants To Be A Service Provider Should Focus On
+                Delivering Quality And Meeting Customer Needs
               </div>
             </div>
-
 
             <div className="space-y-4">
-              <div className='flex items-center'>
+              <div className="flex items-center">
                 <label className="text-black w-45 mr-2">Bank :</label>
                 {editMode ? (
                   <input
@@ -236,12 +314,12 @@ export default function ProfilePage() {
                     className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
                   />
                 ) : (
-                  <div className='text-black'>{user.bank}</div>
+                  <div className="text-black">{user.bank}</div>
                 )}
               </div>
 
-              <div className='flex items-center'>
-                <label className="text-black w-45 mr-2">Accout Number :</label>
+              <div className="flex items-center">
+                <label className="text-black w-45 mr-2">Account Number :</label>
                 {editMode ? (
                   <input
                     name="accountNumber"
@@ -250,12 +328,12 @@ export default function ProfilePage() {
                     className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
                   />
                 ) : (
-                  <div className='text-black'>{user.accountNumber}</div>
+                  <div className="text-black">{user.accountNumber}</div>
                 )}
               </div>
 
-              <div className='flex items-center'>
-                <label className="text-black w-45 mr-2">Accout Owner :</label>
+              <div className="flex items-center">
+                <label className="text-black w-45 mr-2">Account Owner :</label>
                 {editMode ? (
                   <input
                     name="accountOwner"
@@ -264,7 +342,7 @@ export default function ProfilePage() {
                     className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
                   />
                 ) : (
-                  <div className='text-black'>{user.accountOwner}</div>
+                  <div className="text-black">{user.accountOwner}</div>
                 )}
               </div>
 
@@ -282,7 +360,7 @@ export default function ProfilePage() {
                           setEditUser((prev) => ({
                             ...prev,
                             identityFile: reader.result,
-                            identityFileName: file.name, // ✅ เก็บชื่อไฟล์
+                            identityFileName: file.name,
                           }));
                         };
                         reader.readAsDataURL(file);
@@ -298,8 +376,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-
-
             {editMode && (
               <div className="flex justify-end gap-4 mt-8">
                 <button
@@ -309,27 +385,26 @@ export default function ProfilePage() {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="btn btn-success"
-                >
+                <button type="submit" className="btn btn-success">
                   Save
                 </button>
               </div>
             )}
-
           </form>
+
           <button
-            onClick={()=>setShowLogoutModal(true)}
+            onClick={() => setShowLogoutModal(true)}
             className="fixed bottom-6 right-6 bg-red-500 text-black font-semibold px-6 py-2 rounded-lg shadow-lg hover:bg-red-600 transition cursor-pointer"
           >
             Logout
           </button>
-          {/* ✅ Modal ยืนยัน Logout (เหมือน confirm update modal) */}
+
           {showLogoutModal && (
             <dialog className="modal modal-open">
               <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
-                <h3 className="font-bold text-lg text-center mb-4">Confirm Logout</h3>
+                <h3 className="font-bold text-lg text-center mb-4">
+                  Confirm Logout
+                </h3>
                 <p className="text-center mb-6">You sure to logout?</p>
                 <div className="modal-action flex justify-center gap-4">
                   <button
