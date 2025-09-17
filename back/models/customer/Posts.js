@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../../config/db');
 
 const post = {
   // ดึงโพสต์ทั้งหมด

@@ -1,16 +1,18 @@
 
 const express = require('express');
 const cors = require('cors');
-const session = require('express-session');
-const MemoryStore = require('memorystore')(session);
+const passport = require('passport');
 require('dotenv').config();
 const path = require('path');
+require('./config/passport');
 
 // import routes
-const indexRoute = require('./api/index.js');
+const authRoute = require('./routes/auth.js');
 const adminRoute = require('./api/admin.js');
 const customerRoute = require('./api/customer.js');
 const serviceRoute = require('./api/service.js');
+const historyRoute = require('./api/customer.js');
+
 
 // middleware สำหรับ auth (JWT + role)
 const verifyToken = require('./utils/verifyToken.js');
@@ -19,24 +21,16 @@ const requireRole = require('./utils/requireRole.js');
 // init express
 const app = express();
 
-// session setup
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'secret_key',
-  resave: false,
-  saveUninitialized: true,
-  store: new MemoryStore({ checkPeriod: 86400000 }),
-  cookie: { maxAge: 86400000 }
-}));
-
 // middleware พื้นฐาน
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// test route
-app.get('/hello', (req, res) => {
-  res.json({ message: 'Hello backend' });
+// test route หลังจาก login
+app.get('/profile', (req, res) => {
+  console.log('req.user:', req.user);
+  res.json(req.user);
 });
 // ✅ route หลัก
 app.get('/', (req, res) => {
@@ -44,10 +38,15 @@ app.get('/', (req, res) => {
 });
 
 // route
-app.use('/', indexRoute);
+app.use('/auth', authRoute);
 app.use('/admin', verifyToken, requireRole('admin'), adminRoute);
 app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
+
+
+//history
+app.use('/history', historyRoute);
+
 
 // start server
 const PORT = process.env.PORT || 5000;

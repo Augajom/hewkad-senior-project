@@ -2,74 +2,91 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
-const Post = require('../models/Posts');
-const Kad = require('../models/Kad');
+const jwt = require('jsonwebtoken');
+const Post = require('../models/customer/Posts');
+const Kad = require('../models/customer/Kad');
+const History = require('../models/customer/History');
 
+// ✅ เพิ่มบรรทัดนี้
+const verifyToken = require('../utils/verifyToken');
+const requireRole = require('../utils/requireRole');
+router.get('/:status', async (req, res) => {
+  const status = req.params.status;
+  const userId = req.query.userId || null;  // ส่ง userId ผ่าน query string เช่น ?userId=1
 
-router.get('/', (req, res) => {
-  res.json({ message: 'Customer route working' });
+  try {
+    const posts = await History.getByStatus(status, userId);
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch history' });
+  }
 });
 
 // GET all posts
 router.get('/posts', async (req, res) => {
   try {
-    const posts = await Post.getAll();
+    const posts = await post.getAll();
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch posts' });
   }
 });
 
 // GET kad options
 router.get('/kad', async (req, res) => {
   try {
-    const kads = await Kad.getAll();
+    // สมมติมี model kad
+    const kads = await kad.getAll();
     res.json(kads);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch kads' });
   }
 });
 
-// CREATE post
+// POST create
 router.post('/create', async (req, res) => {
   try {
-    const post = await Post.create(
+    const newPost = await post.create(
       req.body.kad_id,
       req.body.store_name,
       req.body.product,
       req.body.service_fee,
       req.body.price,
-      req.body.user_id,
-      req.body.profile_id,
+      req.user.id,
+      req.user.profileId,
       req.body.status_id,
       req.body.delivery,
       req.body.delivery_at
     );
-    res.status(201).json(post);
+    res.json(newPost);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to create post' });
   }
 });
 
-// UPDATE post
+// PUT update
 router.put('/edit/:id', async (req, res) => {
   try {
-    const success = await Post.update(req.params.id, req.body);
-    if (!success) return res.status(404).json({ message: 'Post not found' });
-    res.json({ message: 'Post updated successfully' });
+    const updated = await post.update(req.params.id, req.body);
+    res.json({ success: updated });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update post' });
   }
 });
 
-// DELETE post
+// DELETE
 router.delete('/delete/:id', async (req, res) => {
   try {
-    const success = await Post.delete(req.params.id);
-    if (!success) return res.status(404).json({ message: 'Post not found' });
-    res.json({ message: 'Post deleted successfully' });
+    const deleted = await post.delete(req.params.id);
+    res.json({ success: deleted });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to delete post' });
   }
 });
 
