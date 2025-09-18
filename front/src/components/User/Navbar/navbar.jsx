@@ -1,37 +1,57 @@
 import React from "react";
-import { ShoppingCart, Search, CreditCard, MessageCircle, User } from "lucide-react";
-import { Link } from 'react-router-dom'
-import '../DaisyUI.css'
+import { ShoppingCart, Search, CreditCard, User } from "lucide-react";
+import { Link } from "react-router-dom";
+import "../DaisyUI.css";
 
-function Navbar({ currentPage, onNavigate, orderingCount }) {
+function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
   const baseBtnClass = "text-base transition-colors";
   const activeClass = "text-cyan-500 font-bold";
   const inactiveClass = "text-black hover:text-cyan-500";
 
+  // ฟังก์ชันเมื่อกด Enter ใน search input
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      onSearchSubmit(e.target.value); // ส่งค่าไป parent (Home)
+    }
+  };
+
   return (
     <div className="w-full">
+      {/* Top Navbar */}
       <div className="navbar bg-gray-100 px-4 shadow-sm">
         <div className="flex items-center gap-2">
-          <img src="/src/assets/logo.png" alt="Logo" className="w-30 h-20 object-cover" />
+          <img
+            src="/src/assets/logo.png"
+            alt="Logo"
+            className="w-30 h-20 object-cover"
+          />
         </div>
 
-        <div className="flex-1 mx-4 flex justify-center ">
-          <div className="relative w-full max-w-md ">
+        {/* Search Box */}
+        <div className="flex-1 mx-4 flex justify-center text-base-content text-black">
+          <div className="relative w-full max-w-md text-base-content text-black">
             <input
               type="text"
               placeholder="Search here..."
-              className="input input-bordered w-full max-w-md text-black placeholder-gray-500 "
+              className=" input input-bordered w-full max-w-md placeholder-gray-500 bg-white text-black"
+              onKeyDown={handleKeyDown} // ✅ Enter key
             />
-            <Search className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2 text-black" />
+            <Search className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2" />
           </div>
         </div>
 
+        {/* Right Buttons */}
         <div className="flex items-center gap-3">
-          <button onClick={() => onNavigate("ordering")} className="btn btn-ghost relative">
+          <button
+            onClick={() => onNavigate("ordering")}
+            className="btn btn-ghost relative"
+          >
             <ShoppingCart className="w-5 h-5 text-black" />
             <span className="ml-1 font-semibold text-black">Ordering</span>
             {orderingCount > 0 && (
-              <div className="badge badge-info badge-sm absolute top-0 right-0">{orderingCount}</div>
+              <div className="badge badge-info badge-sm absolute top-0 right-0">
+                {orderingCount}
+              </div>
             )}
           </button>
 
@@ -46,25 +66,32 @@ function Navbar({ currentPage, onNavigate, orderingCount }) {
         </div>
       </div>
 
+      {/* Bottom Navbar (Navigation) */}
       <div className="navbar bg-white shadow-md border-t">
         <div className="flex justify-center items-center w-full gap-8">
           <button
             onClick={() => onNavigate("home")}
-            className={`${baseBtnClass} ${currentPage === "home" ? activeClass : inactiveClass}`}
+            className={`${baseBtnClass} ${
+              currentPage === "home" ? activeClass : inactiveClass
+            }`}
           >
             Home
           </button>
 
           <button
             onClick={() => onNavigate("history")}
-            className={`${baseBtnClass} ${currentPage === "history" ? activeClass : inactiveClass}`}
+            className={`${baseBtnClass} ${
+              currentPage === "history" ? activeClass : inactiveClass
+            }`}
           >
             History
           </button>
 
           <button
             onClick={() => onNavigate("chat")}
-            className={`${baseBtnClass} ${currentPage === "chat" ? activeClass : inactiveClass}`}
+            className={`${baseBtnClass} ${
+              currentPage === "chat" ? activeClass : inactiveClass
+            }`}
           >
             Chat
           </button>

@@ -5,10 +5,17 @@ import PostCard from '../components/Postcard';
 import KadDropdown from '../components/Kaddropdown';
 import '../DaisyUI.css';
 
-export default function Home({ currentUser }) {
+export default function Home({ }) {
   const [posts, setPosts] = useState([]);
   const [kadOptions, setKadOptions] = useState([]);
   const [selectedKad, setSelectedKad] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState('home');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredPosts, setFilteredPosts] = useState([]);
+  const [orderingCount, setOrderingCount] = useState(0); // ✅ นับจำนวน orderings
+
+  const handleNavigate = (page) => setCurrentPage(page);
   const [formData, setFormData] = useState({
     kadId: '',
     storeName: '',
@@ -26,23 +33,23 @@ export default function Home({ currentUser }) {
 
   // ---------------- FETCH POSTS ----------------
   const fetchPosts = async (status = 'Available') => { // ✅ เพิ่ม param status
-  setLoading(true);
-  setError(null);
-  try {
-    const res = await fetch(`http://localhost:5000/customer/posts?status=${status}`, {
-      credentials: 'include', // 🔑 ส่ง cookie JWT
-    });
-    if (!res.ok) throw new Error('Failed to fetch posts');
-    const data = await res.json();
-    setPosts(Array.isArray(data) ? data : []);
-  } catch (err) {
-    console.error('Fetch posts failed:', err);
-    setError(err.message);
-    setPosts([]);
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`http://localhost:5000/customer/posts?status=${status}`, {
+        credentials: 'include', // 🔑 ส่ง cookie JWT
+      });
+      if (!res.ok) throw new Error('Failed to fetch posts');
+      const data = await res.json();
+      setPosts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Fetch posts failed:', err);
+      setError(err.message);
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ---------------- FETCH KAD OPTIONS ----------------
   const fetchKadOptions = async () => {
@@ -58,10 +65,16 @@ export default function Home({ currentUser }) {
     }
   };
 
+
   useEffect(() => {
+    fetch('http://localhost:5000/auth/me', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setCurrentUser(data))
+      .catch(err => console.error(err));
     fetchPosts();
     fetchKadOptions();
-  }, []);
+  },
+    []);
 
   // ---------------- CREATE POST ----------------
   const createPost = async () => {
@@ -191,14 +204,40 @@ export default function Home({ currentUser }) {
     else createPost();
   };
 
+  
+  // ---------------- SEARCH ----------------
+  const handleSearchSubmit = (value) => {
+    setSearchQuery(value);
+  };
+
+  useEffect(() => {
+    let tempPosts = [...posts];
+
+    // Filter by Kad
+    if (selectedKad.length > 0) {
+      tempPosts = tempPosts.filter(post => selectedKad.includes(post.kad_name));
+    }
+
+    // Filter by search query
+    if (searchQuery.trim() !== '') {
+      tempPosts = tempPosts.filter(post =>
+        post.store_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.product?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.kad_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.delivery?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredPosts(tempPosts);
+  }, [posts, selectedKad, searchQuery]);
+
+
   // ---------------- FILTER ----------------
-  const filteredPosts = selectedKad.length > 0
-    ? posts.filter((post) => selectedKad.includes(post.kad_name))
-    : posts;
+  
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar onSearchSubmit={handleSearchSubmit} />
       <KadDropdown
         kadOptions={kadOptions}
         selectedKad={selectedKad}
@@ -214,17 +253,17 @@ export default function Home({ currentUser }) {
           <p className="text-center text-red-500">{error}</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-  <CreatePostBox onClick={() => setShowFormModal(true)} />
-  {filteredPosts.map((post) => (
-    <PostCard
-      key={post.id}
-      post={post}
-      currentUser={currentUser} // ✅ ส่ง currentUser ลงไป
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-    />
-  ))}
-</div>
+            <CreatePostBox onClick={() => setShowFormModal(true)} />
+            {filteredPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUser={currentUser} // ✅ ส่ง currentUser ลงไป
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
         )}
       </div>
 
