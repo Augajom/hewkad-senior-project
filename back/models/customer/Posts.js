@@ -12,15 +12,15 @@ const post = {
           p.product, 
           p.service_fee, 
           p.price, 
-          p.user_id,       -- เพิ่ม user_id
-          p.profile_id,    -- เพิ่ม profile_id
+          p.user_id,       
+          p.profile_id,    
           u.username, 
           pr.name AS nickname,
           p.delivery, 
           p.delivery_at, 
           p.created_at, 
           pr.picture AS avatar, 
-          s.status_name
+          s.status_name 
         FROM posts p
         JOIN status s ON p.status_id = s.id
         JOIN users u ON p.user_id = u.id
@@ -37,28 +37,31 @@ const post = {
 
 
   // ดึงโพสต์ตาม id
-  getById: (id) => {
-    return new Promise((resolve, reject) => {
-      db.query(
-        `SELECT p.id, k.kad_name, p.store_name, p.product,
-                p.service_fee, p.price, u.username, pr.name AS nickname,
-                p.delivery, p.delivery_at, p.created_at, pr.picture AS avatar,
-                s.status_name
-         FROM posts p
-         JOIN status s ON p.status_id = s.id
-         JOIN users u ON p.user_id = u.id
-         JOIN profile pr ON p.profile_id = pr.id
-         JOIN kad k ON p.kad_id = k.id
-         WHERE p.id = ?`,
-        [id],
-        (err, results) => {
-          if (err) return reject(err);
-          resolve(results[0] || null);
-        }
-      );
-    });
-  },
+  // ดึงโพสต์ตาม id (รวม user_id และ profile_id)
+getById: (id) => {
+  return new Promise((resolve, reject) => {
+    db.query(
+      `SELECT p.id, p.kad_id, k.kad_name, p.store_name, p.product,
+              p.service_fee, p.price, p.user_id, p.profile_id,
+              u.username, pr.name AS nickname,
+              p.delivery, p.delivery_at, p.created_at, pr.picture AS avatar,
+              s.status_name
+       FROM posts p
+       JOIN status s ON p.status_id = s.id
+       JOIN users u ON p.user_id = u.id
+       JOIN profile pr ON p.profile_id = pr.id
+       JOIN kad k ON p.kad_id = k.id
+       WHERE p.id = ?`,
+      [id],
+      (err, results) => {
+        if (err) return reject(err);
+        resolve(results[0] || null);
+      }
+    );
+  });
+}
 
+,
   // สร้างโพสต์ใหม่
   create: (kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at) => {
     return new Promise((resolve, reject) => {

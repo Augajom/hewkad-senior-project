@@ -4,16 +4,12 @@ const passport = require('passport');
 require('dotenv').config();
 require('./config/passport');
 
+
 // import routes
 const authRoute = require('./routes/auth.js');
 const adminRoute = require('./api/admin.js');
 const customerRoute = require('./api/customer.js');
 const serviceRoute = require('./api/service.js');
-<<<<<<< HEAD
-const historyRoute = require('./api/customer.js');
-const homeRoute = require('./api/customer.js');
-=======
->>>>>>> f77f3c08b42ef9cdacd17435dcedb84c2cdd25d7
 
 // middleware สำหรับ auth (JWT + role)
 const verifyToken = require('./utils/verifyToken.js');
@@ -46,16 +42,9 @@ app.use('/auth', authRoute);
 app.use('/admin', verifyToken, requireRole('admin'), adminRoute);
 app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const historyRoutes = require('./api/customer'); // 👈 path must be correct
-app.use('/history', historyRoutes);
-
-<<<<<<< HEAD
-//history
-app.use('/history', historyRoute);
-app.use('/home', homeRoute);
-=======
->>>>>>> f77f3c08b42ef9cdacd17435dcedb84c2cdd25d7
 
 // start server
 const PORT = process.env.PORT || 5000;

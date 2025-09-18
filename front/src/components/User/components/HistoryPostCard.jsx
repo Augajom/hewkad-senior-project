@@ -20,9 +20,9 @@ const HistoryPostCard = ({ post }) => {
             <div className="flex justify-between items-start">
                 <div className="flex gap-3">
                     <img
-                        src={post.avatar || 'https://i.pravatar.cc/150'}
+                        src={post.avatar ? `http://localhost:5000/uploads/${post.avatar}` : 'https://i.pravatar.cc/150'}
                         alt="avatar"
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
                     />
                     <div>
                         <div className="font-bold text-base">{post.nickname || 'ไม่ระบุชื่อ'}</div>
