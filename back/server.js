@@ -4,6 +4,7 @@ const passport = require('passport');
 require('dotenv').config();
 require('./config/passport');
 
+
 // import routes
 const authRoute = require('./routes/auth.js');
 const adminRoute = require('./api/admin.js');
@@ -41,9 +42,8 @@ app.use('/auth', authRoute);
 app.use('/admin', verifyToken, requireRole('admin'), adminRoute);
 app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
-
-const historyRoutes = require('./api/customer'); // 👈 path must be correct
-app.use('/history', historyRoutes);
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // start server

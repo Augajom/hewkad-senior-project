@@ -16,7 +16,6 @@ function authenticateJWT(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
     // เพิ่ม log เมื่อ verify สำเร็จ
     console.log('=== JWT decoded:', decoded);
-
     req.user = decoded;
     next();
   } catch (err) {

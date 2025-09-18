@@ -11,29 +11,31 @@ export default function History() {
 
     // ฟังก์ชันดึงข้อมูลจาก API
     const fetchPosts = async (status = "Complete") => {
-  setLoading(true);
-  setError(null);
-  try {
-    const res = await fetch(`http://localhost:5000/history/${status}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        // 🔑 Add your JWT here
-        Authorization: `Bearer ${localStorage.getItem("token")}`, 
-      },
-      credentials: "include", // keep if you also need cookies
-    });
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch(`http://localhost:5000/customer/history/${status}`, {
+                method: 'GET',
+                credentials: 'include', // 🔑 ต้องมี
+            });
 
-    if (!res.ok) throw new Error("Failed to fetch posts");
-    const data = await res.json();
-    setPosts(data);
-  } catch (err) {
-    console.error(err);
-    setError(err.message || "Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
+            if (!res.ok) {
+                if (res.status === 401) throw new Error("Unauthorized: Please login");
+                throw new Error("Failed to fetch posts");
+            }
+
+            const data = await res.json();
+            setPosts(data);
+
+        } catch (err) {
+            console.error(err);
+            setError(err.message || "Something went wrong");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
 
 
     useEffect(() => {

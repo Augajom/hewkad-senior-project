@@ -214,16 +214,7 @@ const User = {
   }
 };
 
-User.comparePassword = async (userId, plainPassword) => {
-  try {
-    const user = await User.findById(userId);
-    if (!user || !user.password) return false;
 
-    return bcrypt.compare(plainPassword, user.password);
-  } catch (err) {
-    console.error(err);
-    return false;
-  }
-};
+
 
 module.exports = User;
