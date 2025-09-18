@@ -4,8 +4,11 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const db = require('../config/db'); // ใช้ query เพื่อดึง profile_id
+const verifyToken = require('../utils/verifyToken');
 require('dotenv').config();
-
+router.get('/me', verifyToken, (req, res) => {
+  res.json({ id: req.user.id, profile_id: req.user.profile_id });
+});
 // เริ่ม login
 router.get('/google',
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })

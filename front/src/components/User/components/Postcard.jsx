@@ -6,7 +6,7 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
   const [confirmAction, setConfirmAction] = useState(null);
 
   // ✅ ตรวจสอบเจ้าของโพสต์
-  
+  const isOwner = currentUser && post && Number(currentUser.id) === Number(post.user_id);
   console.log('Current user:', currentUser?.id, 'Post user_id:', post.user_id);
   return (
     <div className="relative card w-full bg-white shadow-lg rounded-xl border border-gray-200 p-4 text-black">
@@ -43,7 +43,7 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
       </div>
 
       {/* Edit/Delete ปุ่ม */}
-      <div className={ 'mt-4 flex justify-end gap-2' }>
+      <div className={isOwner ? 'mt-4 flex justify-end gap-2' : 'hidden'}>
         <button
           className="btn btn-sm btn-error text-white"
           onClick={() => setConfirmAction('delete')}
