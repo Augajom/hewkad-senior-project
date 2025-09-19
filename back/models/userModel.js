@@ -119,7 +119,7 @@ const User = {
       // insert profile
       await new Promise((resolve, reject) => {
         db.query(
-          'INSERT INTO profile (user_id, name, email,picture) VALUES (?, ?, ?)',
+          'INSERT INTO profile (user_id, name, email, picture) VALUES (?, ?, ?)',
           [userId, name, email, picture || null],
           (err) => {
             if (err) return reject(err);

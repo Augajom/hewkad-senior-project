@@ -25,9 +25,9 @@ const requireRole = require('./utils/requireRole.js');
 const app = express();
 
 // middleware พื้นฐาน
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
 app.use(cors({
   origin: process.env.FRONTEND_URL, // URL ของ React app
   credentials: true // ต้องมีเพื่อส่ง cookie
