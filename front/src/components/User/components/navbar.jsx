@@ -1,19 +1,23 @@
 import React, { useState } from "react";
 import { ShoppingCart, Search, CreditCard, MessageCircle, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import '../DaisyUI.css';
 
-function Navbar({ onSearchSubmit, currentPage, onNavigate, orderingCount }) {
+function Navbar({ onSearchSubmit, orderingCount }) {
   const [searchValue, setSearchValue] = useState('');
   const baseBtnClass = "text-base transition-colors";
   const activeClass = "text-cyan-500 font-bold";
   const inactiveClass = "text-black hover:text-cyan-500";
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && onSearchSubmit) {
       onSearchSubmit(searchValue);
     }
   };
+
+  // ใช้ useLocation เพื่อเช็ค path ปัจจุบัน
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   return (
     <div className="w-full">
@@ -68,9 +72,9 @@ function Navbar({ onSearchSubmit, currentPage, onNavigate, orderingCount }) {
       {/* Bottom Navbar */}
       <div className="navbar bg-white shadow-md border-t">
         <div className="flex justify-center items-center w-full gap-8">
-          <button onClick={() => onNavigate("home")} className={`${baseBtnClass} ${currentPage === "home" ? activeClass : inactiveClass}`}>Home</button>
-          <button onClick={() => onNavigate("history")} className={`${baseBtnClass} ${currentPage === "history" ? activeClass : inactiveClass}`}>History</button>
-          <button onClick={() => onNavigate("chat")} className={`${baseBtnClass} ${currentPage === "chat" ? activeClass : inactiveClass}`}>Chat</button>
+          <Link to="/home" className={`${baseBtnClass} ${currentPath === "/home" ? activeClass : inactiveClass}`}>Home</Link>
+          <Link to="/history" className={`${baseBtnClass} ${currentPath === "/history" ? activeClass : inactiveClass}`}>History</Link>
+          <Link to="/chat" className={`${baseBtnClass} ${currentPath === "/chat" ? activeClass : inactiveClass}`}>Chat</Link>
         </div>
       </div>
     </div>

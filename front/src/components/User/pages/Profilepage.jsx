@@ -75,7 +75,15 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-white">
       {/* Navbar */}
 
-      <Navbar />
+       <Navbar
+        currentPage="profile"
+        onNavigate={(page) => {
+          if (page === "home") navigate("/home");
+          if (page === "history") navigate("/history");
+          if (page === "chat") navigate("/chat");
+        }}
+      />
+
 
       <div className="max-w-4xl  ml-100 mt-10 flex gap-60 items-start">
         {/* Profile Image */}
