@@ -11,12 +11,9 @@ const authRoute = require('./routes/auth.js');
 const adminRoute = require('./api/admin.js');
 const customerRoute = require('./api/customer.js');
 const serviceRoute = require('./api/service.js');
-<<<<<<< HEAD
-=======
 const historyRoute = require('./api/customer.js');
 const profileRoute =require('./routes/profile.js')
 
->>>>>>> origin/feature/profile
 
 // middleware สำหรับ auth (JWT + role)
 const verifyToken = require('./utils/verifyToken.js');
@@ -32,9 +29,6 @@ app.use(cors({
   origin: 'http://localhost:5173',  // <<< ให้ตรงกับ frontend
   credentials: true
 }));
-
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
 
 // middleware พื้นฐาน
 app.use(cookieParser());

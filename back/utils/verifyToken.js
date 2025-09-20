@@ -23,4 +23,4 @@ function verifyToken(req, res, next) {
   }
 }
 
-module.exports = authenticateJWT;
+module.exports = verifyToken;
