@@ -1,11 +1,9 @@
 const jwt = require('jsonwebtoken');
 
-function authenticateJWT(req, res, next) {
-  // เพิ่มบรรทัดนี้!
-  console.log('=== Incoming Cookies:', req.cookies);
-
-  const token = req.cookies?.token;
-
+function verifyToken(req, res, next) {
+  // ดึง token จาก header หรือ cookie
+  const cookieToken  = req.cookies?.token;
+  const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
   if (!token) {
     // เพิ่ม log เมื่อไม่มี token
     console.log('Cookies:', req.cookies);

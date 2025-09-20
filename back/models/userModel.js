@@ -119,8 +119,8 @@ const User = {
       // insert profile
       await new Promise((resolve, reject) => {
         db.query(
-          'INSERT INTO profile (user_id, name, email) VALUES (?, ?, ?)',
-          [userId, name, email],
+          'INSERT INTO profile (user_id, name, email, picture) VALUES (?, ?, ?)',
+          [userId, name, email, picture || null],
           (err) => {
             if (err) return reject(err);
             resolve();
