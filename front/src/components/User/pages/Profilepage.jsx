@@ -3,14 +3,15 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import "../DaisyUI.css";
 
-const API_BASE = (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
+const API_BASE =
+  (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
 
 function resolveImg(src) {
   if (!src) return "";
   if (src.startsWith("data:")) return src;
   if (src.startsWith("http")) return src;
-  // ให้รูปที่เป็น /uploads/... ชี้ไปที่ backend เสมอ
-  return `${API_BASE}${src.startsWith("/") ? src : `/${src}`}`;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_BASE}${path}`;
 }
 
 export default function ProfilePage() {
@@ -19,6 +20,8 @@ export default function ProfilePage() {
 
   const [loaded, setLoaded] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [user, setUser] = useState({
     picture: "",
     nickname: "",
@@ -34,10 +37,10 @@ export default function ProfilePage() {
   });
   const [editUser, setEditUser] = useState(user);
 
-  // ✅ preview URL ชั่วคราวของรูปใหม่ตอนอยู่ใน edit mode
+  // URL preview ชั่วคราวตอนเลือกภาพ
   const [avatarPreview, setAvatarPreview] = useState("");
 
-  // cleanup preview URL เมื่อคอมโพเนนต์ unmount หรือเปลี่ยนไฟล์
+  // cleanup preview URL เมื่อเปลี่ยนไฟล์/ออกจากหน้า
   useEffect(() => {
     return () => {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
@@ -71,13 +74,14 @@ export default function ProfilePage() {
       };
       setUser(next);
       setEditUser(next);
-      // เคลียร์ preview ถ้ามี
+
       if (avatarPreview) {
         URL.revokeObjectURL(avatarPreview);
         setAvatarPreview("");
       }
     } catch (e) {
       console.error(e);
+      alert("โหลดโปรไฟล์ไม่สำเร็จ");
     } finally {
       setLoaded(true);
     }
@@ -89,7 +93,7 @@ export default function ProfilePage() {
 
   const handleEdit = () => setEditMode(true);
 
-  // อัปโหลดรูปไปที่ /upload/avatar แล้วตั้งค่า editUser.picture เป็น URL ถาวร
+  // อัปโหลดรูปไปที่ /upload/avatar แล้วตั้งค่าเป็น URL ถาวร
   const onUploadAvatar = useCallback(async (file) => {
     if (!file) return;
     const form = new FormData();
@@ -99,47 +103,66 @@ export default function ProfilePage() {
       credentials: "include",
       body: form,
     });
-    const data = await res.json();
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Upload failed");
-    setEditUser((p) => ({ ...p, picture: data.url })); // เก็บ URL (เช่น /uploads/u9_....png)
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (_) {}
+    if (!res.ok || !data?.ok) {
+      throw new Error(data?.error || "Upload failed");
+    }
+    setEditUser((p) => ({ ...p, picture: data.url })); // ex. /uploads/u9_....png
   }, []);
 
   const handleSave = useCallback(async () => {
-    const payload = {
-      nickname: editUser.nickname || null,
-      fullName: editUser.fullName || null,
-      phone: editUser.phone || null,
-      address: editUser.address || null,
-      picture: editUser.picture || "", // URL ถาวรจากอัปโหลด
-      bank: editUser.bank || "",
-      accountNumber: editUser.accountNumber || null,
-      accountOwner: editUser.accountOwner || null,
-    };
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        nickname: editUser.nickname || null,
+        fullName: editUser.fullName || null,
+        phone: editUser.phone || null,
+        address: editUser.address || null,
+        picture: editUser.picture || "", // URL จากอัปโหลด
+        bank: editUser.bank || "",
+        accountNumber: editUser.accountNumber || null,
+        accountOwner: editUser.accountOwner || null,
+      };
 
-    const res = await fetch(`${API_BASE}/profile`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
 
-    const ct = res.headers.get("content-type") || "";
-    if (!ct.includes("application/json")) {
-      const text = await res.text();
-      throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
+
+      await loadProfile(); // sync state กับ DB
+      setEditMode(false);
+
+      // ล้าง preview หลังบันทึกสำเร็จ
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview("");
+      }
+      alert("Profile saved.");
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || "บันทึกไม่สำเร็จ");
+    } finally {
+      setIsSaving(false);
     }
-
-    const data = await res.json();
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
-
-    await loadProfile(); // state = DB
-    setEditMode(false);
-    alert("Profile saved.");
-  }, [editUser, loadProfile]);
+  }, [editUser, loadProfile, avatarPreview, isSaving]);
 
   const handleCancel = () => {
     setEditUser(user);
-    // ล้าง preview
     if (avatarPreview) {
       URL.revokeObjectURL(avatarPreview);
       setAvatarPreview("");
@@ -181,8 +204,15 @@ export default function ProfilePage() {
                 <label
                   htmlFor="profileUpload"
                   className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center cursor-pointer hover:bg-opacity-60 transition rounded-full"
+                  title="Upload new avatar"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-10 w-10 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h4l2-3h6l2 3h4v13H3V7z" />
                     <circle cx="12" cy="13" r="3" />
                   </svg>
@@ -198,12 +228,12 @@ export default function ProfilePage() {
                 const file = e.target.files && e.target.files[0];
                 if (!file) return;
 
-                // ✅ สร้าง preview ทันที
+                // Preview ทันที
                 if (avatarPreview) URL.revokeObjectURL(avatarPreview);
                 const url = URL.createObjectURL(file);
                 setAvatarPreview(url);
 
-                // ✅ อัปโหลดจริงเพื่อให้ได้ URL ถาวรไปเก็บ DB
+                // อัปโหลดจริงเพื่อได้ URL ถาวร
                 onUploadAvatar(file).catch((err) => alert(err.message));
 
                 e.currentTarget.value = "";
@@ -211,7 +241,7 @@ export default function ProfilePage() {
             />
           </div>
           {!editMode && (
-            <button onClick={() => setEditMode(true)} className="btn btn-link mt-2 text-primary no-underline">
+            <button onClick={handleEdit} className="btn btn-link mt-2 text-primary no-underline">
               Edit Profile
             </button>
           )}
@@ -221,8 +251,8 @@ export default function ProfilePage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!loaded) return;
-              handleSave().catch((err) => alert(err?.message || "Failed"));
+              if (!loaded || isSaving) return;
+              handleSave();
             }}
           >
             <div className="space-y-4">
@@ -253,7 +283,9 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-8 text-black text-center font-semibold">Payment Information (Optional)</div>
+            <div className="mt-8 text-black text-center font-semibold">
+              Payment Information (Optional)
+            </div>
             <div className="text-center text-xs text-gray-500 mb-4">
               A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs
             </div>
@@ -300,14 +332,25 @@ export default function ProfilePage() {
                   className="file-input file-input-bordered w-full max-w-xs bg-white text-black"
                 />
               ) : (
-                <div className="text-black">{user.identityFileName ? user.identityFileName : "-"}</div>
+                <div className="text-black">
+                  {user.identityFileName ? user.identityFileName : "-"}
+                </div>
               )}
             </div>
 
             {editMode && (
               <div className="flex justify-end gap-4 mt-8">
-                <button type="button" onClick={handleCancel} className="btn btn-neutral">Cancel</button>
-                <button type="submit" className="btn btn-success">Save</button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="btn btn-neutral"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-success" disabled={!loaded || isSaving}>
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
               </div>
             )}
           </form>
@@ -325,8 +368,18 @@ export default function ProfilePage() {
                 <h3 className="font-bold text-lg text-center mb-4">Confirm Logout</h3>
                 <p className="text-center mb-6">You sure to logout?</p>
                 <div className="modal-action flex justify-center gap-4">
-                  <button className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white" onClick={() => setShowLogoutModal(false)}>Cancel</button>
-                  <button className="btn btn-success px-8 py-3 rounded-full text-black" onClick={handleLogout}>Confirm</button>
+                  <button
+                    className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white"
+                    onClick={() => setShowLogoutModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-success px-8 py-3 rounded-full text-black"
+                    onClick={handleLogout}
+                  >
+                    Confirm
+                  </button>
                 </div>
               </div>
             </dialog>

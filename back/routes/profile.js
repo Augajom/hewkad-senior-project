@@ -1,7 +1,9 @@
 const router = require('express').Router();
 const db = require('../config/db');
 
-// GET /profile
+/** ================================
+ * GET /profile  → โหลดโปรไฟล์ของ user ปัจจุบัน
+ * ================================ */
 router.get('/', async (req, res) => {
   try {
     const userId = req.user.id;
@@ -9,17 +11,18 @@ router.get('/', async (req, res) => {
     const [rows] = await db.promise().query(
       `
       SELECT
-        p.id           AS profileId,
-        p.user_id      AS userId,
-        p.name         AS fullName,
+        p.id            AS profileId,
+        p.user_id       AS userId,
+        p.nickname      AS nickname,
+        p.name          AS fullName,
         p.email,
-        p.phone_num    AS phone,
+        p.phone_num     AS phone,
         p.address,
         p.picture,
-        b.id           AS bankId,
-        b.bank_name    AS bank,
-        pba.acc_number AS accountNumber,
-        pba.acc_owner  AS accountOwner
+        b.id            AS bankId,
+        b.bank_name     AS bank,
+        pba.acc_number  AS accountNumber,
+        pba.acc_owner   AS accountOwner
       FROM profile p
       LEFT JOIN profile_bank_accounts pba ON pba.profile_id = p.id
       LEFT JOIN bank b ON b.id = pba.bank_id
@@ -43,16 +46,20 @@ router.get('/', async (req, res) => {
   }
 });
 
-// PUT /profile
+/** ==========================================
+ * PUT /profile  → สร้าง/แก้ไขโปรไฟล์ของ user
+ * body: { nickname, fullName, phone, address, picture, bank, accountNumber, accountOwner }
+ * ========================================== */
 router.put('/', async (req, res) => {
   try {
     const userId = req.user.id;
     const {
+      nickname,
       fullName,
       phone,
       address,
       picture,
-      bank,         
+      bank,
       accountNumber,
       accountOwner,
     } = req.body || {};
@@ -64,36 +71,44 @@ router.put('/', async (req, res) => {
       'SELECT id, email, picture FROM profile WHERE user_id = ? LIMIT 1',
       [userId]
     );
+
     const currentPicture = pRows[0]?.picture ?? '';
     let profileId;
 
     if (!pRows.length) {
       const userEmail = req.user.email || null;
       const [ins] = await conn.query(
-        `INSERT INTO profile
-          (user_id, name, email, phone_num, address, picture)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `
+        INSERT INTO profile
+          (user_id, nickname, name, email, phone_num, address, picture)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
         [
           userId,
+          nickname ?? null,
           fullName ?? null,
           userEmail ?? null,
           phone ?? null,
           address ?? null,
-          (picture ?? currentPicture ?? ''), // picture NOT NULL
+          (picture ?? currentPicture ?? ''),
         ]
       );
       profileId = ins.insertId;
     } else {
+
       profileId = pRows[0].id;
       await conn.query(
-        `UPDATE profile
-         SET name = ?, phone_num = ?, address = ?, picture = ?
-         WHERE id = ?`,
+        `
+        UPDATE profile
+        SET nickname = ?, name = ?, phone_num = ?, address = ?, picture = ?
+        WHERE id = ?
+        `,
         [
+          nickname ?? null,
           fullName ?? null,
           phone ?? null,
           address ?? null,
-          (picture ?? currentPicture ?? ''), // picture NOT NULL
+          (picture ?? currentPicture ?? ''),
           profileId,
         ]
       );
@@ -107,12 +122,16 @@ router.put('/', async (req, res) => {
     );
 
     if (!bankName) {
+
       if (existingAcc.length) {
         await conn.query('DELETE FROM profile_bank_accounts WHERE id = ?', [existingAcc[0].id]);
       }
     } else {
-
-      const [bRows] = await conn.query('SELECT id FROM bank WHERE bank_name = ? LIMIT 1', [bankName]);
+      // ensure bank id
+      const [bRows] = await conn.query(
+        'SELECT id FROM bank WHERE bank_name = ? LIMIT 1',
+        [bankName]
+      );
       let bankIdVal = bRows.length ? bRows[0].id : null;
       if (!bankIdVal) {
         const [insB] = await conn.query('INSERT INTO bank (bank_name) VALUES (?)', [bankName]);
@@ -121,35 +140,40 @@ router.put('/', async (req, res) => {
 
       if (existingAcc.length) {
         await conn.query(
-          `UPDATE profile_bank_accounts
-           SET bank_id = ?, acc_number = ?, acc_owner = ?
-           WHERE id = ?`,
+          `
+          UPDATE profile_bank_accounts
+          SET bank_id = ?, acc_number = ?, acc_owner = ?
+          WHERE id = ?
+          `,
           [bankIdVal, accountNumber ?? null, accountOwner ?? null, existingAcc[0].id]
         );
       } else {
         await conn.query(
-          `INSERT INTO profile_bank_accounts (profile_id, bank_id, acc_number, acc_owner)
-           VALUES (?, ?, ?, ?)`,
+          `
+          INSERT INTO profile_bank_accounts (profile_id, bank_id, acc_number, acc_owner)
+          VALUES (?, ?, ?, ?)
+          `,
           [profileId, bankIdVal, accountNumber ?? null, accountOwner ?? null]
         );
       }
     }
 
-
+    // ตอบกลับโปรไฟล์ล่าสุด
     const [rows] = await conn.query(
       `
       SELECT
-        p.id           AS profileId,
-        p.user_id      AS userId,
-        p.name         AS fullName,
+        p.id            AS profileId,
+        p.user_id       AS userId,
+        p.nickname      AS nickname,
+        p.name          AS fullName,
         p.email,
-        p.phone_num    AS phone,
+        p.phone_num     AS phone,
         p.address,
         p.picture,
-        b.id           AS bankId,
-        b.bank_name    AS bank,
-        pba.acc_number AS accountNumber,
-        pba.acc_owner  AS accountOwner
+        b.id            AS bankId,
+        b.bank_name     AS bank,
+        pba.acc_number  AS accountNumber,
+        pba.acc_owner   AS accountOwner
       FROM profile p
       LEFT JOIN profile_bank_accounts pba ON pba.profile_id = p.id
       LEFT JOIN bank b ON b.id = pba.bank_id
