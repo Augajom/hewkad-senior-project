@@ -3,32 +3,30 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import "../DaisyUI.css";
 
-const API_BASE = (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
+const API_BASE =
+  (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
 
-function safeParse(raw) { try { return raw ? JSON.parse(raw) : null; } catch { return null; } }
-function pickFilled(obj) {
-  const out = {};
-  Object.entries(obj || {}).forEach(([k, v]) => {
-    if (v !== "" && v !== null && v !== undefined) out[k] = v;
-  });
-  return out;
+function resolveImg(src) {
+  if (!src) return "";
+  if (src.startsWith("data:")) return src;
+  if (src.startsWith("http")) return src;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_BASE}${path}`;
 }
-function loadGoogleUser() { return safeParse(localStorage.getItem("user")) || {}; }
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const googleUser = loadGoogleUser();
-  const userEmail = googleUser?.email || "";
-  const PROFILE_KEY = userEmail ? `profile:${userEmail}` : "profile:anon";
-  const cached = safeParse(localStorage.getItem(PROFILE_KEY));
+  const [loaded, setLoaded] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const defaultState = {
-    picture: googleUser.picture || googleUser.imageUrl || "",
-    nickname: googleUser.given_name || "",
-    fullName: googleUser.name || "",
-    email: userEmail || "",
+  const [user, setUser] = useState({
+    picture: "",
+    nickname: "",
+    fullName: "",
+    email: "",
     phone: "",
     address: "",
     bank: "",
@@ -36,123 +34,151 @@ export default function ProfilePage() {
     accountOwner: "",
     identityFile: "",
     identityFileName: "",
-  };
+  });
+  const [editUser, setEditUser] = useState(user);
 
-  const initial = cached ? { ...defaultState, ...cached } : defaultState;
+  // URL preview ชั่วคราวตอนเลือกภาพ
+  const [avatarPreview, setAvatarPreview] = useState("");
 
-  const [user, setUser] = useState(initial);
-  const [editMode, setEditMode] = useState(false);
-  const [editUser, setEditUser] = useState(initial);
-  const [loaded, setLoaded] = useState(false);
-
-  const writeCache = useCallback((p) => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-  }, [PROFILE_KEY]);
-
+  // cleanup preview URL เมื่อเปลี่ยนไฟล์/ออกจากหน้า
   useEffect(() => {
-    const legacy = safeParse(localStorage.getItem("profile"));
-    if (legacy && !localStorage.getItem(PROFILE_KEY)) {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(legacy));
-      localStorage.removeItem("profile");
-    }
-  }, [PROFILE_KEY]);
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
 
-  useEffect(() => {
-    const base = cached ? { ...defaultState, ...cached } : { ...defaultState };
-    setUser(base);
-    setEditUser(base);
+  // โหลดจาก DB เท่านั้น
+  const loadProfile = useCallback(async () => {
     setLoaded(false);
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/profile`, { credentials: "include" });
-        if (res.ok) {
-          const d = await res.json();
-          const fromServer = {
-            picture: d?.picture ?? "",
-            fullName: d?.fullName || d?.name || "",
-            email: d?.email || userEmail || "",
-            phone: d?.phone || "",
-            address: d?.address || "",
-            bank: d?.bank || "",
-            accountNumber: d?.accountNumber || "",
-            accountOwner: d?.accountOwner || "",
-          };
-          const merged = { ...base, ...pickFilled(fromServer) };
-          setUser(merged);
-          setEditUser(merged);
-          writeCache(merged);
-        } else {
-          setUser(base);
-          setEditUser(base);
-          writeCache(base);
-        }
-      } catch {
-        setUser(base);
-        setEditUser(base);
-        writeCache(base);
-      } finally {
-        setLoaded(true);
+    try {
+      const res = await fetch(`${API_BASE}/profile`, { credentials: "include" });
+      if (res.status === 401) {
+        navigate("/", { replace: true });
+        return;
       }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userEmail, PROFILE_KEY]);
+      if (!res.ok) throw new Error("Failed to load profile");
+      const d = await res.json();
+
+      const next = {
+        picture: d?.picture ?? "",
+        nickname: d?.nickname ?? "",
+        fullName: d?.fullName || d?.name || "",
+        email: d?.email || "",
+        phone: d?.phone || "",
+        address: d?.address || "",
+        bank: d?.bank || "",
+        accountNumber: d?.accountNumber || "",
+        accountOwner: d?.accountOwner || "",
+        identityFile: "",
+        identityFileName: "",
+      };
+      setUser(next);
+      setEditUser(next);
+
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview("");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("โหลดโปรไฟล์ไม่สำเร็จ");
+    } finally {
+      setLoaded(true);
+    }
+  }, [navigate, avatarPreview]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const handleEdit = () => setEditMode(true);
 
-  const handleSave = useCallback(async () => {
-    const payload = {
-      fullName: editUser.fullName || null,
-      phone: editUser.phone || null,
-      address: editUser.address || null,
-      picture: editUser.picture || "",
-      bank: editUser.bank || "",
-      accountNumber: editUser.accountNumber || null,
-      accountOwner: editUser.accountOwner || null,
-    };
-
-    const res = await fetch(`${API_BASE}/profile`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
+  // อัปโหลดรูปไปที่ /upload/avatar แล้วตั้งค่าเป็น URL ถาวร
+  const onUploadAvatar = useCallback(async (file) => {
+    if (!file) return;
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/upload/avatar`, {
+      method: "POST",
       credentials: "include",
-      body: JSON.stringify(payload),
+      body: form,
     });
-
-    const ct = res.headers.get("content-type") || "";
-    if (!ct.includes("application/json")) {
-      const text = await res.text();
-      throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (_) {}
+    if (!res.ok || !data?.ok) {
+      throw new Error(data?.error || "Upload failed");
     }
+    setEditUser((p) => ({ ...p, picture: data.url })); // ex. /uploads/u9_....png
+  }, []);
 
-    const data = await res.json();
-    if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
+  const handleSave = useCallback(async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        nickname: editUser.nickname || null,
+        fullName: editUser.fullName || null,
+        phone: editUser.phone || null,
+        address: editUser.address || null,
+        picture: editUser.picture || "", // URL จากอัปโหลด
+        bank: editUser.bank || "",
+        accountNumber: editUser.accountNumber || null,
+        accountOwner: editUser.accountOwner || null,
+      };
 
-    const p = data.profile || {};
-    const latest = {
-      picture: p.picture || editUser.picture || "",
-      nickname: editUser.nickname || user.nickname || "",
-      fullName: p.fullName || p.name || editUser.fullName || "",
-      email: p.email || user.email || "",
-      phone: p.phone || editUser.phone || "",
-      address: p.address || editUser.address || "",
-      bank: p.bank || editUser.bank || "",
-      accountNumber: p.accountNumber || editUser.accountNumber || "",
-      accountOwner: p.accountOwner || editUser.accountOwner || "",
-      identityFile: editUser.identityFile || user.identityFile || "",
-      identityFileName: editUser.identityFileName || user.identityFileName || "",
-    };
+      const res = await fetch(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
 
-    setUser(latest);
-    setEditUser(latest);
-    writeCache(latest);
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
+
+      await loadProfile(); // sync state กับ DB
+      setEditMode(false);
+
+      // ล้าง preview หลังบันทึกสำเร็จ
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview("");
+      }
+      alert("Profile saved.");
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || "บันทึกไม่สำเร็จ");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [editUser, loadProfile, avatarPreview, isSaving]);
+
+  const handleCancel = () => {
+    setEditUser(user);
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview("");
+    }
     setEditMode(false);
-    alert("Profile saved.");
-  }, [API_BASE, editUser, user, writeCache]);
+  };
 
-  const handleCancel = () => { setEditUser(user); setEditMode(false); };
-  const handleChange = (e) => { const { name, value } = e.target; setEditUser((p) => ({ ...p, [name]: value ?? "" })); };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setEditUser((p) => ({ ...p, [name]: value ?? "" }));
+  };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+    } catch {}
     navigate("/", { replace: true });
   };
 
@@ -163,16 +189,30 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center">
           <div className="avatar relative">
             <div className="w-48 h-48 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center">
-              {(editMode ? editUser.picture || user.picture : user.picture) ? (
+              {(editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture) ? (
                 <img
-                  src={editMode ? editUser.picture || user.picture : user.picture}
+                  src={
+                    editMode
+                      ? (avatarPreview || resolveImg(editUser.picture || user.picture))
+                      : resolveImg(user.picture)
+                  }
                   alt="avatar"
                   className="w-full h-full object-cover"
                 />
               ) : null}
               {editMode && (
-                <label htmlFor="profileUpload" className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center cursor-pointer hover:bg-opacity-60 transition rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <label
+                  htmlFor="profileUpload"
+                  className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center cursor-pointer hover:bg-opacity-60 transition rounded-full"
+                  title="Upload new avatar"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-10 w-10 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h4l2-3h6l2 3h4v13H3V7z" />
                     <circle cx="12" cy="13" r="3" />
                   </svg>
@@ -187,15 +227,21 @@ export default function ProfilePage() {
               onChange={(e) => {
                 const file = e.target.files && e.target.files[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onloadend = () => { setEditUser((prev) => ({ ...prev, picture: String(reader.result || "") })); };
-                reader.readAsDataURL(file);
+
+                // Preview ทันที
+                if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+                const url = URL.createObjectURL(file);
+                setAvatarPreview(url);
+
+                // อัปโหลดจริงเพื่อได้ URL ถาวร
+                onUploadAvatar(file).catch((err) => alert(err.message));
+
                 e.currentTarget.value = "";
               }}
             />
           </div>
           {!editMode && (
-            <button onClick={() => setEditMode(true)} className="btn btn-link mt-2 text-primary no-underline">
+            <button onClick={handleEdit} className="btn btn-link mt-2 text-primary no-underline">
               Edit Profile
             </button>
           )}
@@ -203,7 +249,11 @@ export default function ProfilePage() {
 
         <div className="flex-1">
           <form
-            onSubmit={(e) => { e.preventDefault(); if (!loaded) return; handleSave().catch((err) => alert(err?.message || "Failed")); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!loaded || isSaving) return;
+              handleSave();
+            }}
           >
             <div className="space-y-4">
               {[
@@ -215,19 +265,27 @@ export default function ProfilePage() {
                 <div className="flex items-center" key={f.name}>
                   <label className="text-black w-45 mr-2">{f.label}</label>
                   {editMode ? (
-                    <input name={f.name} value={f.value || ""} onChange={handleChange} className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black" />
+                    <input
+                      name={f.name}
+                      value={f.value || ""}
+                      onChange={handleChange}
+                      className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
+                    />
                   ) : (
                     <div className="text-black">{user[f.name] || ""}</div>
                   )}
                 </div>
               ))}
+
               <div className="flex items-center">
                 <label className="text-black w-45 mr-2">Email :</label>
                 <div className="text-black">{user.email}</div>
               </div>
             </div>
 
-            <div className="mt-8 text-black text-center font-semibold">Payment Information (Optional)</div>
+            <div className="mt-8 text-black text-center font-semibold">
+              Payment Information (Optional)
+            </div>
             <div className="text-center text-xs text-gray-500 mb-4">
               A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs
             </div>
@@ -240,7 +298,12 @@ export default function ProfilePage() {
               <div className="flex items-center" key={f.name}>
                 <label className="text-black w-45 mr-2">{f.label}</label>
                 {editMode ? (
-                  <input name={f.name} value={f.value || ""} onChange={handleChange} className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black" />
+                  <input
+                    name={f.name}
+                    value={f.value || ""}
+                    onChange={handleChange}
+                    className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
+                  />
                 ) : (
                   <div className="text-black">{user[f.name] || ""}</div>
                 )}
@@ -258,26 +321,44 @@ export default function ProfilePage() {
                     if (!file) return;
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                      setEditUser((prev) => ({ ...prev, identityFile: String(reader.result || ""), identityFileName: file.name }));
+                      setEditUser((prev) => ({
+                        ...prev,
+                        identityFile: String(reader.result || ""),
+                        identityFileName: file.name,
+                      }));
                     };
                     reader.readAsDataURL(file);
                   }}
                   className="file-input file-input-bordered w-full max-w-xs bg-white text-black"
                 />
               ) : (
-                <div className="text-black">{user.identityFileName ? user.identityFileName : "-"}</div>
+                <div className="text-black">
+                  {user.identityFileName ? user.identityFileName : "-"}
+                </div>
               )}
             </div>
 
             {editMode && (
               <div className="flex justify-end gap-4 mt-8">
-                <button type="button" onClick={handleCancel} className="btn btn-neutral">Cancel</button>
-                <button type="submit" className="btn btn-success">Save</button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="btn btn-neutral"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-success" disabled={!loaded || isSaving}>
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
               </div>
             )}
           </form>
 
-          <button onClick={() => setShowLogoutModal(true)} className="fixed bottom-6 right-6 bg-red-500 text-black font-semibold px-6 py-2 rounded-lg shadow-lg hover:bg-red-600 transition cursor-pointer">
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="fixed bottom-6 right-6 bg-red-500 text-black font-semibold px-6 py-2 rounded-lg shadow-lg hover:bg-red-600 transition cursor-pointer"
+          >
             Logout
           </button>
 
@@ -287,8 +368,18 @@ export default function ProfilePage() {
                 <h3 className="font-bold text-lg text-center mb-4">Confirm Logout</h3>
                 <p className="text-center mb-6">You sure to logout?</p>
                 <div className="modal-action flex justify-center gap-4">
-                  <button className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white" onClick={() => setShowLogoutModal(false)}>Cancel</button>
-                  <button className="btn btn-success px-8 py-3 rounded-full text-black" onClick={handleLogout}>Confirm</button>
+                  <button
+                    className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white"
+                    onClick={() => setShowLogoutModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-success px-8 py-3 rounded-full text-black"
+                    onClick={handleLogout}
+                  >
+                    Confirm
+                  </button>
                 </div>
               </div>
             </dialog>
