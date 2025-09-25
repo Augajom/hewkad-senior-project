@@ -1,7 +1,7 @@
-
 const router = require('express').Router();
 const db = require('../config/db');
 
+// GET /profile
 router.get('/', async (req, res) => {
   try {
     const userId = req.user.id;
@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-
+// PUT /profile
 router.put('/', async (req, res) => {
   try {
     const userId = req.user.id;
@@ -52,7 +52,7 @@ router.put('/', async (req, res) => {
       phone,
       address,
       picture,
-      bank,           
+      bank,         
       accountNumber,
       accountOwner,
     } = req.body || {};
@@ -79,7 +79,7 @@ router.put('/', async (req, res) => {
           userEmail ?? null,
           phone ?? null,
           address ?? null,
-          (picture ?? currentPicture ?? ''),
+          (picture ?? currentPicture ?? ''), // picture NOT NULL
         ]
       );
       profileId = ins.insertId;
@@ -93,7 +93,7 @@ router.put('/', async (req, res) => {
           fullName ?? null,
           phone ?? null,
           address ?? null,
-          (picture ?? currentPicture ?? ''),
+          (picture ?? currentPicture ?? ''), // picture NOT NULL
           profileId,
         ]
       );
@@ -111,6 +111,7 @@ router.put('/', async (req, res) => {
         await conn.query('DELETE FROM profile_bank_accounts WHERE id = ?', [existingAcc[0].id]);
       }
     } else {
+
       const [bRows] = await conn.query('SELECT id FROM bank WHERE bank_name = ? LIMIT 1', [bankName]);
       let bankIdVal = bRows.length ? bRows[0].id : null;
       if (!bankIdVal) {

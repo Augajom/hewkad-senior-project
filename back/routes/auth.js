@@ -30,7 +30,7 @@ router.get(
     const user = req.user;
 
       // ดึง roles จาก DB
-      const roles = await User.getRoles(user.id, true);
+      const roles = await User.getRoles(user.id);
 
     // สร้าง JWT
     const token = jwt.sign(
