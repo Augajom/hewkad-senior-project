@@ -81,7 +81,7 @@ const OrderingPostCard = ({ post }) => {
             </div>
           )}
           <div className="text-red-600 font-bold text-xl truncate max-w-full">
-            {post.serviceFee ? `${post.serviceFee} ฿` : '0 ฿'}
+            {post.service_fee ? `${post.service_fee} ฿` : '0 ฿'}
           </div>
         </div>
       </div>
@@ -89,7 +89,7 @@ const OrderingPostCard = ({ post }) => {
       {/* Product Information */}
       <div className="mt-4 text-sm space-y-1">
         <p><span className="font-semibold">Delivery Location</span> : {post.deliveryLocation || '-'}</p>
-        <p><span className="font-semibold">Store Name</span> : {post.storeName || '-'}</p>
+        <p><span className="font-semibold">Store Name</span> : {post.store_name || '-'}</p>
         <p><span className="font-semibold">Product</span> : {post.product || '-'}</p>
         <p><span className="font-semibold">Price</span> : {post.price ? `${post.price} บาท` : '-'}</p>
         <p><span className="font-semibold">Kad Name</span> : {post.kadName || '-'}</p>
