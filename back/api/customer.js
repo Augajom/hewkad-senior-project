@@ -7,6 +7,8 @@ const Post = require('../models/customer/Posts');
 const History = require('../models/customer/History');
 const Kad = require('../models/customer/Kad');
 const Ordering = require('../models/customer/Ordering');
+const QRCode = require("qrcode");
+const promptpay = require("promptpay-qr");
 
 // ===================
 // GET KAD options
@@ -181,4 +183,32 @@ router.put('/orders/:id', async (req, res) => {
   }
 });
 
+// GET /customer/payment/qr/:orderId
+router.get("/payment/qr/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // 1) ดึงข้อมูล order จาก DB
+    const sql = `SELECT price, service_fee FROM posts WHERE id = ?`;
+    db.query(sql, [orderId], async (err, results) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      if (results.length === 0) return res.status(404).json({ error: "Order not found" });
+
+      const order = results[0];
+      const amount = parseFloat(order.price) + parseFloat(order.service_fee || 0);
+
+      const promptPayId = "0817270727"; // 👈 เปลี่ยนเป็นของคุณ
+
+      const payload = require("promptpay-qr")(promptPayId, { amount });
+      const QRCode = require("qrcode");
+      
+const qrImage = await QRCode.toDataURL(payload);
+
+      res.json({ success: true, amount, qr: qrImage });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "QR generation failed" });
+  }
+});
 module.exports = router;

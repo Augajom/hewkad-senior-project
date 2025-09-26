@@ -13,33 +13,74 @@ const OrderingPostCard = ({ post }) => {
     details: '',
   });
 
-  const total = parseFloat(post.price || 0) + parseFloat(post.serviceFee || 0);
+  const total = (parseFloat(post.price || 0) + parseFloat(post.service_fee || 0)).toFixed(2);
 
-  const handleConfirmPayment = () => {
-    setStatus('Ordering');
-    setShowQRModal(false);
+  const handleOpenQR = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/customer/payment/qr/${post.id}`, {
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Fetch error:", text);
+        alert("ไม่สามารถสร้าง QR ได้");
+        return;
+      }
+
+      const data = await res.json();
+      setQrCode(data.qr);
+      setShowQRModal(true);
+
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาด");
+    }
+  };
+
+
+
+  const handleConfirmPayment = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/customer/orders/${post.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Ordering' }),
+        credentials: 'include',
+      });
+
+      if (!res.ok) throw new Error('Failed to update order status');
+
+      setStatus('Ordering');       // อัปเดต UI ทันที
+      setShowQRModal(false);       // ปิด modal
+      alert('Payment confirmed, status updated to Ordering!');
+      window.location.reload();    // sync กับ DB
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
   };
 
   const handleConfirmOrder = async () => {
-  try {
-    const res = await fetch(`http://localhost:5000/customer/orders/${post.id}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'Complete' }),
-    });
+    try {
+      const res = await fetch(`http://localhost:5000/customer/orders/${post.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Complete' }),
+      });
 
-    if (!res.ok) throw new Error('Failed to update order status');
+      if (!res.ok) throw new Error('Failed to update order status');
 
-    setStatus('Complete');
-    alert('Order confirmed!');
-    window.location.reload();
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
-};
-  
+      setStatus('Complete');
+      alert('Order confirmed!');
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
   const handleReportInputChange = (e) => {
     const { name, value } = e.target;
     setReportForm((prev) => ({ ...prev, [name]: value }));
@@ -71,11 +112,10 @@ const OrderingPostCard = ({ post }) => {
         <div className="flex flex-col items-end gap-2 max-w-full">
           {status && (
             <div
-              className={`badge font-semibold text-white px-3 py-1 text-center whitespace-nowrap text-xs max-w-full truncate ${
-                status === 'Ordering' ? 'badge-info' :
+              className={`badge font-semibold text-white px-3 py-1 text-center whitespace-nowrap text-xs max-w-full truncate ${status === 'Ordering' ? 'badge-info' :
                 status === 'Complete' ? 'badge-success' :
-                'badge-warning'
-              }`}
+                  'badge-warning'
+                }`}
             >
               {status}
             </div>
@@ -104,11 +144,10 @@ const OrderingPostCard = ({ post }) => {
 
         {/* Buttons */}
         {status === 'Rider Received' && (
-          <button onClick={() => setShowQRModal(true)} className="btn btn-info text-white">
+          <button onClick={handleOpenQR} className="btn btn-info text-white">
             Payment
           </button>
         )}
-
         {status === 'Order Received' && (
           <div className="flex gap-2">
             <button onClick={handleConfirmOrder} className="btn btn-success text-white">
@@ -130,12 +169,12 @@ const OrderingPostCard = ({ post }) => {
         {showQRModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg w-80 space-y-4 text-center shadow-xl">
-              <h2 className="text-xl font-bold text-black">Scan QR Code</h2>
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?data=payto:${total}฿&size=200x200`}
-                alt="QR Code"
-                className="mx-auto"
-              />
+              <h2 className="text-xl font-bold text-black">Scan to Pay</h2>
+              {qrCode ? (
+                <img src={qrCode} alt="PromptPay QR" className="mx-auto" />
+              ) : (
+                <p>กำลังโหลด...</p>
+              )}
               <div>Total Amount: <span className="font-bold text-lg">{total} ฿</span></div>
               <button onClick={handleConfirmPayment} className="btn btn-success w-full mt-4">
                 ยืนยันการชำระเงิน
