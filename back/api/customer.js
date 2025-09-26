@@ -6,6 +6,7 @@ const verifyToken = require('../utils/verifyToken');
 const Post = require('../models/customer/Posts');
 const History = require('../models/customer/History');
 const Kad = require('../models/customer/Kad');
+const Ordering = require('../models/customer/Ordering');
 
 // ===================
 // GET KAD options
@@ -23,37 +24,24 @@ router.get('/kad', async (req, res) => {
 // ===================
 // GET all posts
 // ===================
+// GET all posts
 router.get('/posts', async (req, res) => {
   try {
-    const status = req.query.status || 'Available'; // default = Available
-    const posts = await new Promise((resolve, reject) => {
-      db.query(
-        `SELECT 
-          p.id, p.kad_id, k.kad_name, p.store_name, p.product,
-          p.service_fee, p.price, p.user_id, p.profile_id,
-          u.username, pr.name AS nickname,
-          p.delivery, p.delivery_at, p.created_at, pr.picture AS avatar,
-          s.status_name
-        FROM posts p
-        JOIN status s ON p.status_id = s.id
-        JOIN users u ON p.user_id = u.id
-        JOIN profile pr ON p.profile_id = pr.id
-        JOIN kad k ON p.kad_id = k.id
-        WHERE s.status_name = ?
-        ORDER BY p.created_at DESC`,
-        [status],
-        (err, results) => {
-          if (err) return reject(err);
-          resolve(results);
-        }
-      );
-    });
-    res.json(posts);
+    const status = req.query.status || 'Available';
+    
+    // เรียกจาก model
+    const postsList = await Post.getAll();
+
+    // กรองตาม status ถ้าต้องการ
+    const filtered = postsList.filter(p => p.status_name === status);
+
+    res.json(filtered);
   } catch (err) {
     console.error('Failed to get posts:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 
 // ===================
@@ -63,27 +51,29 @@ router.post('/posts', verifyToken, async (req, res) => {
   try {
     const { kad_id, store_name, product, service_fee, price, status_id, delivery, delivery_at } = req.body;
     const user_id = req.user.id;
-    const profile_id = req.user.profile_id;
+    const profile_id = req.user.profile_id; // ต้องมี profile_id จาก JWT
 
-    if (!user_id || !profile_id) {
-      return res.status(400).json({ message: 'User not authenticated properly' });
+    if (!profile_id) {
+      return res.status(400).json({ message: "User profile_id is missing" });
     }
 
-    db.query(
-      `INSERT INTO posts 
-        (kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at],
-      (err, result) => {
-        if (err) return res.status(500).json({ message: err.message });
-        res.json({
-          id: result.insertId,
-          kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at
-        });
-      }
+    // เรียก model create()
+    const newPost = await Post.create(
+      kad_id,
+      store_name,
+      product,
+      service_fee,
+      price,
+      user_id,
+      profile_id,
+      status_id,
+      delivery,
+      delivery_at
     );
 
+    res.json(newPost);
   } catch (err) {
+    console.error("Create post error:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -163,6 +153,31 @@ router.get('/history/:status', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch history' });
+  }
+});
+
+router.get('/ordering', verifyToken, async (req, res) => {
+    try {
+        const { status } = req.query; // รับ status จาก query
+        const statuses = status ? [status] : ['Rider Received', 'Ordering', 'Order Received'];
+
+        const posts = await Ordering.getByStatus(statuses, req.user.id);
+        res.json(posts);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+router.put('/orders/:id', async (req, res) => {
+  const orderId = req.params.id;
+  const { status } = req.body;
+
+  try {
+    const result = await Ordering.updateStatus(orderId, status);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

@@ -1,14 +1,16 @@
 // src/components/OrderingPostCard.jsx
 import React, { useState } from 'react';
-import '../DaisyUI.css'
+import '../DaisyUI.css';
 
 const OrderingPostCard = ({ post }) => {
   const [status, setStatus] = useState(post.status);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [qrCode, setQrCode] = useState(null);
+
   const [reportForm, setReportForm] = useState({
-    kadName: '',
-    storeName: '',
+    report: '',
+    details: '',
   });
 
   const total = parseFloat(post.price || 0) + parseFloat(post.serviceFee || 0);
@@ -18,6 +20,26 @@ const OrderingPostCard = ({ post }) => {
     setShowQRModal(false);
   };
 
+  const handleConfirmOrder = async () => {
+  try {
+    const res = await fetch(`http://localhost:5000/customer/orders/${post.id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Complete' }),
+    });
+
+    if (!res.ok) throw new Error('Failed to update order status');
+
+    setStatus('Complete');
+    alert('Order confirmed!');
+    window.location.reload();
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+};
+  
   const handleReportInputChange = (e) => {
     const { name, value } = e.target;
     setReportForm((prev) => ({ ...prev, [name]: value }));
@@ -25,7 +47,6 @@ const OrderingPostCard = ({ post }) => {
 
   const handleReportSubmit = (e) => {
     e.preventDefault();
-    // ส่งข้อมูล reportForm ไป backend หรือเก็บใน state ตามต้องการ
     console.log('Report submitted:', reportForm);
     setShowReportModal(false);
   };
@@ -47,17 +68,19 @@ const OrderingPostCard = ({ post }) => {
         </div>
 
         {/* Status and Service Fee */}
-        <div className="flex flex-col items-end">
+        <div className="flex flex-col items-end gap-2 max-w-full">
           {status && (
             <div
-              className={`badge font-semibold text-white ${
-                status === 'Ordering' ? 'badge-info' : 'badge-warning'
+              className={`badge font-semibold text-white px-3 py-1 text-center whitespace-nowrap text-xs max-w-full truncate ${
+                status === 'Ordering' ? 'badge-info' :
+                status === 'Complete' ? 'badge-success' :
+                'badge-warning'
               }`}
             >
               {status}
             </div>
           )}
-          <div className="text-red-600 font-bold text-xl mt-1">
+          <div className="text-red-600 font-bold text-xl truncate max-w-full">
             {post.serviceFee ? `${post.serviceFee} ฿` : '0 ฿'}
           </div>
         </div>
@@ -65,41 +88,40 @@ const OrderingPostCard = ({ post }) => {
 
       {/* Product Information */}
       <div className="mt-4 text-sm space-y-1">
-        <p>
-          <span className="font-semibold">Delivery Location</span> : {post.deliveryLocation || '-'}
-        </p>
-        <p>
-          <span className="font-semibold">Store Name</span> : {post.storeName || '-'}
-        </p>
-        <p>
-          <span className="font-semibold">Product</span> : {post.product || '-'}
-        </p>
-        <p>
-          <span className="font-semibold">Price</span> : {post.price ? `${post.price} บาท` : '-'}
-        </p>
-        <p>
-          <span className="font-semibold">Kad Name</span> : {post.kadName || '-'}
-        </p>
-        <p>
-          <span className="font-semibold">เวลาจัดส่ง</span> : {post.receivingTime || '-'}
-        </p>
+        <p><span className="font-semibold">Delivery Location</span> : {post.deliveryLocation || '-'}</p>
+        <p><span className="font-semibold">Store Name</span> : {post.storeName || '-'}</p>
+        <p><span className="font-semibold">Product</span> : {post.product || '-'}</p>
+        <p><span className="font-semibold">Price</span> : {post.price ? `${post.price} บาท` : '-'}</p>
+        <p><span className="font-semibold">Kad Name</span> : {post.kadName || '-'}</p>
+        <p><span className="font-semibold">เวลาจัดส่ง</span> : {post.receivingTime || '-'}</p>
       </div>
 
       {/* Bottom buttons */}
-      <div className="mt-4 flex justify-between items-center">
+      <div className="mt-4 flex justify-between items-center gap-2">
         <div className="text-gray-800 text-xl font-bold">
           <span className="font-semibold">Total :</span> {total} ฿
         </div>
 
-        {status === 'Rider Received' ? (
+        {/* Buttons */}
+        {status === 'Rider Received' && (
           <button onClick={() => setShowQRModal(true)} className="btn btn-info text-white">
             Payment
           </button>
-        ) : (
-          <button
-            className="btn btn-error text-white"
-            onClick={() => setShowReportModal(true)}
-          >
+        )}
+
+        {status === 'Order Received' && (
+          <div className="flex gap-2">
+            <button onClick={handleConfirmOrder} className="btn btn-success text-white">
+              Confirm
+            </button>
+            <button onClick={() => setShowReportModal(true)} className="btn btn-error text-white">
+              Report
+            </button>
+          </div>
+        )}
+
+        {status === 'Ordering' && (
+          <button onClick={() => setShowReportModal(true)} className="btn btn-error text-white">
             Report
           </button>
         )}
@@ -114,16 +136,11 @@ const OrderingPostCard = ({ post }) => {
                 alt="QR Code"
                 className="mx-auto"
               />
-              <div>
-                Total Amount: <span className="font-bold text-lg">{total} ฿</span>
-              </div>
+              <div>Total Amount: <span className="font-bold text-lg">{total} ฿</span></div>
               <button onClick={handleConfirmPayment} className="btn btn-success w-full mt-4">
                 ยืนยันการชำระเงิน
               </button>
-              <button
-                onClick={() => setShowQRModal(false)}
-                className="btn btn-ghost w-full mt-2"
-              >
+              <button onClick={() => setShowQRModal(false)} className="btn btn-ghost w-full mt-2">
                 ยกเลิก
               </button>
             </div>
@@ -133,27 +150,21 @@ const OrderingPostCard = ({ post }) => {
         {/* Report Modal */}
         {showReportModal && (
           <dialog className="modal modal-open">
-            <div
-              className="modal-box p-6 rounded-lg shadow-xl bg-white text-black"
-              style={{ maxWidth: '400px' }}
-            >
+            <div className="modal-box p-6 rounded-lg shadow-xl bg-white text-black" style={{ maxWidth: '400px' }}>
               <h3 className="font-bold text-lg text-center mb-4 text-black">Report Issue</h3>
               <form onSubmit={handleReportSubmit} className="space-y-4">
                 <select
-                  name="Report"
+                  name="report"
                   className="select select-bordered w-full text-black bg-white"
                   value={reportForm.report}
                   onChange={handleReportInputChange}
                   required
                 >
-                  <option disabled value="">
-                    Report
-                  </option>
+                  <option disabled value="">Report</option>
                   <option>ส่งผิดที่</option>
                   <option>ส่งไม่ตรงเวลา</option>
                   <option>การกระทำไม่ดี</option>
                 </select>
-
                 <input
                   type="text"
                   name="details"
@@ -163,18 +174,11 @@ const OrderingPostCard = ({ post }) => {
                   onChange={handleReportInputChange}
                   required
                 />
-
                 <div className="modal-action flex justify-center gap-3 mt-6">
-                  <button
-                    type="button"
-                    className="btn btn-ghost bg-red-500 text-white"
-                    onClick={() => setShowReportModal(false)}
-                  >
+                  <button type="button" className="btn btn-ghost bg-red-500 text-white" onClick={() => setShowReportModal(false)}>
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-success text-black">
-                    Submit
-                  </button>
+                  <button type="submit" className="btn btn-success text-black">Submit</button>
                 </div>
               </form>
             </div>
