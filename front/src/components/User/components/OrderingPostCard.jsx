@@ -1,5 +1,5 @@
 // src/components/OrderingPostCard.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../DaisyUI.css';
 
 const OrderingPostCard = ({ post }) => {
@@ -7,6 +7,7 @@ const OrderingPostCard = ({ post }) => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [qrCode, setQrCode] = useState(null);
+  const [reportReasons, setReportReasons] = useState([]); // <-- เก็บเหตุผลจาก DB
 
   const [reportForm, setReportForm] = useState({
     report: '',
@@ -14,6 +15,23 @@ const OrderingPostCard = ({ post }) => {
   });
 
   const total = (parseFloat(post.price || 0) + parseFloat(post.service_fee || 0)).toFixed(2);
+
+  // โหลดเหตุผลจาก DB
+  useEffect(() => {
+    const fetchReasons = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/customer/report-reasons', {
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed to load report reasons');
+        const data = await res.json();
+        setReportReasons(data);
+      } catch (err) {
+        console.error("Fetch report reasons error:", err);
+      }
+    };
+    fetchReasons();
+  }, []);
 
   const handleOpenQR = async () => {
     try {
@@ -38,8 +56,6 @@ const OrderingPostCard = ({ post }) => {
     }
   };
 
-
-
   const handleConfirmPayment = async () => {
     try {
       const res = await fetch(`http://localhost:5000/customer/orders/${post.id}`, {
@@ -51,12 +67,45 @@ const OrderingPostCard = ({ post }) => {
 
       if (!res.ok) throw new Error('Failed to update order status');
 
-      setStatus('Ordering');       // อัปเดต UI ทันที
-      setShowQRModal(false);       // ปิด modal
+      setStatus('Ordering');
+      setShowQRModal(false);
       alert('Payment confirmed, status updated to Ordering!');
-      window.location.reload();    // sync กับ DB
+      window.location.reload();
     } catch (err) {
       console.error(err);
+      alert(err.message);
+    }
+  };
+
+  const handleReportSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('http://localhost:5000/customer/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          post_id: post.id,
+          reason_id: reportForm.report,  // <<-- ใช้ id ของเหตุผล
+          detail: reportForm.details,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Failed to submit report');
+      }
+
+      const data = await res.json();
+      console.log("Report success:", data);
+
+      setStatus('Reported');
+      setShowReportModal(false);
+      alert('Report submitted successfully!');
+      window.location.reload();
+
+    } catch (err) {
+      console.error("Report error:", err);
       alert(err.message);
     }
   };
@@ -86,15 +135,9 @@ const OrderingPostCard = ({ post }) => {
     setReportForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleReportSubmit = (e) => {
-    e.preventDefault();
-    console.log('Report submitted:', reportForm);
-    setShowReportModal(false);
-  };
-
   return (
     <div className="card w-full bg-white shadow-lg rounded-xl border border-gray-200 p-4 text-black">
-      {/* Header section */}
+      {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
           <img
@@ -108,13 +151,12 @@ const OrderingPostCard = ({ post }) => {
           </div>
         </div>
 
-        {/* Status and Service Fee */}
         <div className="flex flex-col items-end gap-2 max-w-full">
           {status && (
             <div
-              className={`badge font-semibold text-white px-3 py-1 text-center whitespace-nowrap text-xs max-w-full truncate ${status === 'Ordering' ? 'badge-info' :
-                status === 'Complete' ? 'badge-success' :
-                  'badge-warning'
+              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${status === 'Ordering' ? 'badge-info' :
+                  status === 'Complete' ? 'badge-success' :
+                    'badge-warning'
                 }`}
             >
               {status}
@@ -126,7 +168,7 @@ const OrderingPostCard = ({ post }) => {
         </div>
       </div>
 
-      {/* Product Information */}
+      {/* Product Info */}
       <div className="mt-4 text-sm space-y-1">
         <p><span className="font-semibold">Delivery Location</span> : {post.deliveryLocation || '-'}</p>
         <p><span className="font-semibold">Store Name</span> : {post.store_name || '-'}</p>
@@ -136,13 +178,13 @@ const OrderingPostCard = ({ post }) => {
         <p><span className="font-semibold">เวลาจัดส่ง</span> : {post.receivingTime || '-'}</p>
       </div>
 
-      {/* Bottom buttons */}
+      {/* Bottom */}
       <div className="mt-4 flex justify-between items-center gap-2">
         <div className="text-gray-800 text-xl font-bold">
           <span className="font-semibold">Total :</span> {total} ฿
         </div>
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         {status === 'Rider Received' && (
           <button onClick={handleOpenQR} className="btn btn-info text-white">
             Payment
@@ -158,14 +200,13 @@ const OrderingPostCard = ({ post }) => {
             </button>
           </div>
         )}
-
         {status === 'Ordering' && (
           <button onClick={() => setShowReportModal(true)} className="btn btn-error text-white">
             Report
           </button>
         )}
 
-        {/* QR Payment Modal */}
+        {/* QR Modal */}
         {showQRModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg w-80 space-y-4 text-center shadow-xl">
@@ -199,15 +240,17 @@ const OrderingPostCard = ({ post }) => {
                   onChange={handleReportInputChange}
                   required
                 >
-                  <option disabled value="">Report</option>
-                  <option>ส่งผิดที่</option>
-                  <option>ส่งไม่ตรงเวลา</option>
-                  <option>การกระทำไม่ดี</option>
+                  <option disabled value="">เลือกเหตุผล</option>
+                  {reportReasons.map((reason) => (
+                    <option key={reason.id} value={reason.id}>
+                      {reason.title}
+                    </option>
+                  ))}
                 </select>
                 <input
                   type="text"
                   name="details"
-                  placeholder="details"
+                  placeholder="รายละเอียด"
                   className="input input-bordered w-full text-black bg-white"
                   value={reportForm.details}
                   onChange={handleReportInputChange}

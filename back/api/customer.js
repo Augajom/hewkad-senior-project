@@ -7,6 +7,7 @@ const Post = require('../models/customer/Posts');
 const History = require('../models/customer/History');
 const Kad = require('../models/customer/Kad');
 const Ordering = require('../models/customer/Ordering');
+const Report = require('../models/customer/Report');
 const QRCode = require("qrcode");
 const promptpay = require("promptpay-qr");
 
@@ -211,4 +212,54 @@ const qrImage = await QRCode.toDataURL(payload);
     res.status(500).json({ error: "QR generation failed" });
   }
 });
+
+
+// POST /customer/reports
+router.post('/reports', verifyToken, async (req, res) => {
+  try {
+    const { post_id, reason_id, detail } = req.body;
+    const reporter_id = req.user.id;
+
+    if (!post_id || !reason_id) {
+      return res.status(400).json({ message: 'Missing fields' });
+    }
+
+    // สร้าง report
+    await Report.create(post_id, reporter_id, reason_id, detail);
+
+    // อัปเดตสถานะโพสต์เป็น Reported
+    await Report.updatePostStatusToReported(post_id);
+
+    res.json({ success: true, message: 'Report submitted and status updated' });
+  } catch (err) {
+    console.error("Report error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /customer/reports/:postId
+router.get('/reports/:postId', verifyToken, async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const reports = await Report.getReportsByPost(postId);
+    res.json(reports);
+  } catch (err) {
+    console.error("Get reports error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /customer/report-reasons
+router.get('/report-reasons', async (req, res) => {
+  try {
+    const reasons = await Report.getReportReasons(); // เราจะต้องเพิ่มฟังก์ชันใน model
+    res.json(reasons);
+  } catch (err) {
+    console.error("Get report reasons error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
+
+
