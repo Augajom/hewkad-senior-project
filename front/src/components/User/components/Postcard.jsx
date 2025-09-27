@@ -20,7 +20,7 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
           />
           <div>
             <div className="font-bold text-base">{post.nickname || 'ไม่ระบุชื่อ'}</div>
-            <div className="text-sm text-gray-500">{post.username || '@username'}</div>
+            <div className="text-sm text-gray-500">{post.username || '@username'}</div> 
           </div>
         </div>
 

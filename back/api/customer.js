@@ -6,6 +6,10 @@ const verifyToken = require('../utils/verifyToken');
 const Post = require('../models/customer/Posts');
 const History = require('../models/customer/History');
 const Kad = require('../models/customer/Kad');
+const Ordering = require('../models/customer/Ordering');
+const Report = require('../models/customer/Report');
+const QRCode = require("qrcode");
+const promptpay = require("promptpay-qr");
 
 // ===================
 // GET KAD options
@@ -23,37 +27,24 @@ router.get('/kad', async (req, res) => {
 // ===================
 // GET all posts
 // ===================
+// GET all posts
 router.get('/posts', async (req, res) => {
   try {
-    const status = req.query.status || 'Available'; // default = Available
-    const posts = await new Promise((resolve, reject) => {
-      db.query(
-        `SELECT 
-          p.id, p.kad_id, k.kad_name, p.store_name, p.product,
-          p.service_fee, p.price, p.user_id, p.profile_id,
-          u.username, pr.name AS nickname,
-          p.delivery, p.delivery_at, p.created_at, pr.picture AS avatar,
-          s.status_name
-        FROM posts p
-        JOIN status s ON p.status_id = s.id
-        JOIN users u ON p.user_id = u.id
-        JOIN profile pr ON p.profile_id = pr.id
-        JOIN kad k ON p.kad_id = k.id
-        WHERE s.status_name = ?
-        ORDER BY p.created_at DESC`,
-        [status],
-        (err, results) => {
-          if (err) return reject(err);
-          resolve(results);
-        }
-      );
-    });
-    res.json(posts);
+    const status = req.query.status || 'Available';
+    
+    // เรียกจาก model
+    const postsList = await Post.getAll();
+
+    // กรองตาม status ถ้าต้องการ
+    const filtered = postsList.filter(p => p.status_name === status);
+
+    res.json(filtered);
   } catch (err) {
     console.error('Failed to get posts:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 
 // ===================
@@ -63,27 +54,29 @@ router.post('/posts', verifyToken, async (req, res) => {
   try {
     const { kad_id, store_name, product, service_fee, price, status_id, delivery, delivery_at } = req.body;
     const user_id = req.user.id;
-    const profile_id = req.user.profile_id;
+    const profile_id = req.user.profile_id; // ต้องมี profile_id จาก JWT
 
-    if (!user_id || !profile_id) {
-      return res.status(400).json({ message: 'User not authenticated properly' });
+    if (!profile_id) {
+      return res.status(400).json({ message: "User profile_id is missing" });
     }
 
-    db.query(
-      `INSERT INTO posts 
-        (kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at],
-      (err, result) => {
-        if (err) return res.status(500).json({ message: err.message });
-        res.json({
-          id: result.insertId,
-          kad_id, store_name, product, service_fee, price, user_id, profile_id, status_id, delivery, delivery_at
-        });
-      }
+    // เรียก model create()
+    const newPost = await Post.create(
+      kad_id,
+      store_name,
+      product,
+      service_fee,
+      price,
+      user_id,
+      profile_id,
+      status_id,
+      delivery,
+      delivery_at
     );
 
+    res.json(newPost);
   } catch (err) {
+    console.error("Create post error:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -166,4 +159,108 @@ router.get('/history/:status', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/ordering', verifyToken, async (req, res) => {
+    try {
+        const { status } = req.query; // รับ status จาก query
+        const statuses = status ? [status] : ['Rider Received', 'Ordering', 'Order Received'];
+
+        const posts = await Ordering.getByStatus(statuses, req.user.id);
+        res.json(posts);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+router.put('/orders/:id', async (req, res) => {
+  const orderId = req.params.id;
+  const { status } = req.body;
+
+  try {
+    const result = await Ordering.updateStatus(orderId, status);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /customer/payment/qr/:orderId
+router.get("/payment/qr/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // 1) ดึงข้อมูล order จาก DB
+    const sql = `SELECT price, service_fee FROM posts WHERE id = ?`;
+    db.query(sql, [orderId], async (err, results) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+      if (results.length === 0) return res.status(404).json({ error: "Order not found" });
+
+      const order = results[0];
+      const amount = parseFloat(order.price) + parseFloat(order.service_fee || 0);
+
+      const promptPayId = "0817270727"; // 👈 เปลี่ยนเป็นของคุณ
+
+      const payload = require("promptpay-qr")(promptPayId, { amount });
+      const QRCode = require("qrcode");
+      
+const qrImage = await QRCode.toDataURL(payload);
+
+      res.json({ success: true, amount, qr: qrImage });
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "QR generation failed" });
+  }
+});
+
+
+// POST /customer/reports
+router.post('/reports', verifyToken, async (req, res) => {
+  try {
+    const { post_id, reason_id, detail } = req.body;
+    const reporter_id = req.user.id;
+
+    if (!post_id || !reason_id) {
+      return res.status(400).json({ message: 'Missing fields' });
+    }
+
+    // สร้าง report
+    await Report.create(post_id, reporter_id, reason_id, detail);
+
+    // อัปเดตสถานะโพสต์เป็น Reported
+    await Report.updatePostStatusToReported(post_id);
+
+    res.json({ success: true, message: 'Report submitted and status updated' });
+  } catch (err) {
+    console.error("Report error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /customer/reports/:postId
+router.get('/reports/:postId', verifyToken, async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const reports = await Report.getReportsByPost(postId);
+    res.json(reports);
+  } catch (err) {
+    console.error("Get reports error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /customer/report-reasons
+router.get('/report-reasons', async (req, res) => {
+  try {
+    const reasons = await Report.getReportReasons(); // เราจะต้องเพิ่มฟังก์ชันใน model
+    res.json(reasons);
+  } catch (err) {
+    console.error("Get report reasons error:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 module.exports = router;
+
+

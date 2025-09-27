@@ -42,6 +42,7 @@ app.use('/admin', verifyToken, requireRole('admin'), adminRoute);
 app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
 app.use('/profile', verifyToken, profileRoute);
+app.use('/uploads', express.static('uploads')); // โฟลเดอร์สำหรับรูปภาพ
 
 
 app.use('/upload', uploadRoute); 
