@@ -61,7 +61,7 @@ function Navbar({ onSearchSubmit, orderingCount }) {
             <MessageCircle className="w-5 h-5 text-black" />
           </button>
 
-          <Link to="/profile">
+          <Link to="/user/profile">
             <button className="btn btn-ghost btn-circle">
               <User className="w-5 h-5 text-black" />
             </button>
