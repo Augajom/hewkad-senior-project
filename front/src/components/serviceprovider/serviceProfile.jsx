@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Navbar from "../components/navbar";
-import "../DaisyUI.css";
+import Navbar from "../../components/User/Navbar/navbar";
+import "../../components/User/DaisyUI.css";  
 
 const API_BASE =
   (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
@@ -14,7 +14,7 @@ function resolveImg(src) {
   return `${API_BASE}${path}`;
 }
 
-export default function ProfilePage() {
+export default function serviceProfile() {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -181,7 +181,6 @@ export default function ProfilePage() {
     } catch {}
     navigate("/", { replace: true });
   };
-
 
   //swirch role
   const location = useLocation();
@@ -368,7 +367,7 @@ export default function ProfilePage() {
             onClick={() => handleSwitchRole()}
             className="fixed bottom-6 right-35 bg-green-500 text-black font-semibold px-6 py-2 rounded-lg shadow-lg hover:bg-green-600 transition cursor-pointer"
           >
-            Switch/Provider
+            Switch/User
           </button>
 
           <button
