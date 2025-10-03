@@ -1,6 +1,6 @@
 import React from "react";
 import { ShoppingCart, Search, CreditCard, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "../DaisyUI.css";
 
 function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
@@ -14,6 +14,10 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
       onSearchSubmit(e.target.value); // ส่งค่าไป parent (Home)
     }
   };
+
+  // ใช้ useLocation เพื่อเช็ค path ปัจจุบัน
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   return (
     <div className="w-full">
@@ -60,7 +64,7 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
             <span className="text-black">Payment</span>
           </button>
 
-          <Link to="/Profile" className="btn btn-ghost btn-circle">
+          <Link to="/provider/profile" className="btn btn-ghost btn-circle">
             <User className="w-5 h-5 text-black" />
           </Link>
         </div>
@@ -69,32 +73,9 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
       {/* Bottom Navbar (Navigation) */}
       <div className="navbar bg-white shadow-md border-t">
         <div className="flex justify-center items-center w-full gap-8">
-          <button
-            onClick={() => onNavigate("home")}
-            className={`${baseBtnClass} ${
-              currentPage === "home" ? activeClass : inactiveClass
-            }`}
-          >
-            Home
-          </button>
-
-          <button
-            onClick={() => onNavigate("history")}
-            className={`${baseBtnClass} ${
-              currentPage === "history" ? activeClass : inactiveClass
-            }`}
-          >
-            History
-          </button>
-
-          <button
-            onClick={() => onNavigate("chat")}
-            className={`${baseBtnClass} ${
-              currentPage === "chat" ? activeClass : inactiveClass
-            }`}
-          >
-            Chat
-          </button>
+          <Link to="/main" className={`${baseBtnClass} ${currentPath === "/main" ? activeClass : inactiveClass}`}>Home</Link>
+          {/* <Link to="/history" className={`${baseBtnClass} ${currentPath === "/history" ? activeClass : inactiveClass}`}>History</Link>
+          <Link to="/chat" className={`${baseBtnClass} ${currentPath === "/chat" ? activeClass : inactiveClass}`}>Chat</Link> */}
         </div>
       </div>
     </div>

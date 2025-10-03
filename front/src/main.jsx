@@ -11,13 +11,14 @@ import Activity from './components/admin/menu/Activity.jsx'
 import LoginAdmin from './components/admin/LoginAdmin.jsx'
 
 //User Oomsin
-import Profile from './components/User/pages/Profilepage.jsx'
+import UserProfile from './components/User/pages/Profilepage.jsx'
 import Home from './components/User/pages/Home.jsx'
 import History from './components/User/pages/History.jsx'
 import Ordering from './components/User/pages/Ordering.jsx'
 
 //Service Provider Kaew
 import Main from './components/User/User Main.jsx'
+import ServiceProfile from './components/serviceprovider/serviceProfile.jsx'
 
 const router = createBrowserRouter([
   {
@@ -50,8 +51,8 @@ const router = createBrowserRouter([
   },
   //User
   {
-    path: "Profile",
-    element: <Profile />
+    path: "user/profile",
+    element: <UserProfile />
   },
   {
     path: "Home",
@@ -68,6 +69,11 @@ const router = createBrowserRouter([
   {
     path: "Main",
     element: <Main />
+  },
+  // Service Provider
+  {
+    path: "provider/profile",
+    element: <ServiceProfile />
   },
 ])
 
