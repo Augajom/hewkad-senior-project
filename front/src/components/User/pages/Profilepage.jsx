@@ -3,13 +3,11 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import "../DaisyUI.css";
 
-const API_BASE =
-  (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
+const API_BASE = (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
 
 function resolveImg(src) {
   if (!src) return "";
-  if (src.startsWith("data:")) return src;
-  if (src.startsWith("http")) return src;
+  if (src.startsWith("data:") || src.startsWith("http")) return src;
   const path = src.startsWith("/") ? src : `/${src}`;
   return `${API_BASE}${path}`;
 }
@@ -17,7 +15,6 @@ function resolveImg(src) {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-
   const [loaded, setLoaded] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -33,32 +30,27 @@ export default function ProfilePage() {
     accountNumber: "",
     accountOwner: "",
     identityFile: "",
-    identityFileName: "",
+    identityFileName: ""
   });
   const [editUser, setEditUser] = useState(user);
-
-  // URL preview ชั่วคราวตอนเลือกภาพ
   const [avatarPreview, setAvatarPreview] = useState("");
 
-  // cleanup preview URL เมื่อเปลี่ยนไฟล์/ออกจากหน้า
   useEffect(() => {
     return () => {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
     };
   }, [avatarPreview]);
 
-  // โหลดจาก DB เท่านั้น
   const loadProfile = useCallback(async () => {
     setLoaded(false);
     try {
-      const res = await fetch(`${API_BASE}/profile`, { credentials: "include" });
+      const res = await fetch(`${API_BASE}/profile?t=${Date.now()}`, { credentials: "include" });
       if (res.status === 401) {
         navigate("/", { replace: true });
         return;
       }
       if (!res.ok) throw new Error("Failed to load profile");
       const d = await res.json();
-
       const next = {
         picture: d?.picture ?? "",
         nickname: d?.nickname ?? "",
@@ -70,17 +62,15 @@ export default function ProfilePage() {
         accountNumber: d?.accountNumber || "",
         accountOwner: d?.accountOwner || "",
         identityFile: "",
-        identityFileName: "",
+        identityFileName: ""
       };
       setUser(next);
       setEditUser(next);
-
       if (avatarPreview) {
         URL.revokeObjectURL(avatarPreview);
         setAvatarPreview("");
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       alert("โหลดโปรไฟล์ไม่สำเร็จ");
     } finally {
       setLoaded(true);
@@ -93,7 +83,6 @@ export default function ProfilePage() {
 
   const handleEdit = () => setEditMode(true);
 
-  // อัปโหลดรูปไปที่ /upload/avatar แล้วตั้งค่าเป็น URL ถาวร
   const onUploadAvatar = useCallback(async (file) => {
     if (!file) return;
     const form = new FormData();
@@ -101,17 +90,25 @@ export default function ProfilePage() {
     const res = await fetch(`${API_BASE}/upload/avatar`, {
       method: "POST",
       credentials: "include",
-      body: form,
+      body: form
     });
     let data = {};
-    try {
-      data = await res.json();
-    } catch (_) {}
-    if (!res.ok || !data?.ok) {
-      throw new Error(data?.error || "Upload failed");
-    }
-    setEditUser((p) => ({ ...p, picture: data.url })); // ex. /uploads/u9_....png
-  }, []);
+    try { data = await res.json(); } catch {}
+    if (!res.ok || !data?.ok) throw new Error(data?.error || "Upload failed");
+    const url = data.url;
+    const bust = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    const tmp = URL.createObjectURL(file);
+    setAvatarPreview(tmp);
+    setEditUser((p) => ({ ...p, picture: bust }));
+    await fetch(`${API_BASE}/profile`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ picture: url })
+    });
+    await loadProfile();
+  }, [avatarPreview, loadProfile]);
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
@@ -122,39 +119,34 @@ export default function ProfilePage() {
         fullName: editUser.fullName || null,
         phone: editUser.phone || null,
         address: editUser.address || null,
-        picture: editUser.picture || "", // URL จากอัปโหลด
         bank: editUser.bank || "",
         accountNumber: editUser.accountNumber || null,
-        accountOwner: editUser.accountOwner || null,
+        accountOwner: editUser.accountOwner || null
       };
-
+      if (editUser.picture && String(editUser.picture).trim() !== "") {
+        payload.picture = editUser.picture.split("?")[0];
+      }
       const res = await fetch(`${API_BASE}/profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
-
       const ct = res.headers.get("content-type") || "";
       if (!ct.includes("application/json")) {
         const text = await res.text();
         throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
       }
-
       const data = await res.json();
       if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
-
-      await loadProfile(); // sync state กับ DB
+      await loadProfile();
       setEditMode(false);
-
-      // ล้าง preview หลังบันทึกสำเร็จ
       if (avatarPreview) {
         URL.revokeObjectURL(avatarPreview);
         setAvatarPreview("");
       }
       alert("Profile saved.");
     } catch (err) {
-      console.error(err);
       alert(err?.message || "บันทึกไม่สำเร็จ");
     } finally {
       setIsSaving(false);
@@ -182,37 +174,35 @@ export default function ProfilePage() {
     navigate("/", { replace: true });
   };
 
+  const rawImg = editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture;
+  const currentImg = resolveImg(rawImg);
+  const hasImg = Boolean(currentImg && currentImg.trim() !== "");
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <div className="max-w-4xl ml-100 mt-10 flex gap-60 items-start">
         <div className="flex flex-col items-center">
           <div className="avatar relative">
-            <div className="w-48 h-48 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center">
-              {(editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture) ? (
+            <div className="w-48 h-48 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center bg-gray-100">
+              {hasImg ? (
                 <img
-                  src={
-                    editMode
-                      ? (avatarPreview || resolveImg(editUser.picture || user.picture))
-                      : resolveImg(user.picture)
-                  }
+                  key={currentImg}
+                  src={currentImg}
                   alt="avatar"
                   className="w-full h-full object-cover"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
                 />
-              ) : null}
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+              )}
               {editMode && (
                 <label
                   htmlFor="profileUpload"
                   className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center cursor-pointer hover:bg-opacity-60 transition rounded-full"
                   title="Upload new avatar"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-10 w-10 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h4l2-3h6l2 3h4v13H3V7z" />
                     <circle cx="12" cy="13" r="3" />
                   </svg>
@@ -227,15 +217,7 @@ export default function ProfilePage() {
               onChange={(e) => {
                 const file = e.target.files && e.target.files[0];
                 if (!file) return;
-
-                // Preview ทันที
-                if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-                const url = URL.createObjectURL(file);
-                setAvatarPreview(url);
-
-                // อัปโหลดจริงเพื่อได้ URL ถาวร
                 onUploadAvatar(file).catch((err) => alert(err.message));
-
                 e.currentTarget.value = "";
               }}
             />
@@ -260,7 +242,7 @@ export default function ProfilePage() {
                 { label: "Nickname :", name: "nickname", value: editUser.nickname },
                 { label: "Name-Surname :", name: "fullName", value: editUser.fullName },
                 { label: "Phone :", name: "phone", value: editUser.phone },
-                { label: "Address :", name: "address", value: editUser.address },
+                { label: "Address :", name: "address", value: editUser.address }
               ].map((f) => (
                 <div className="flex items-center" key={f.name}>
                   <label className="text-black w-45 mr-2">{f.label}</label>
@@ -283,9 +265,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-8 text-black text-center font-semibold">
-              Payment Information (Optional)
-            </div>
+            <div className="mt-8 text-black text-center font-semibold">Payment Information (Optional)</div>
             <div className="text-center text-xs text-gray-500 mb-4">
               A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs
             </div>
@@ -293,7 +273,7 @@ export default function ProfilePage() {
             {[
               { label: "Bank :", name: "bank", value: editUser.bank },
               { label: "Account Number :", name: "accountNumber", value: editUser.accountNumber },
-              { label: "Account Owner :", name: "accountOwner", value: editUser.accountOwner },
+              { label: "Account Owner :", name: "accountOwner", value: editUser.accountOwner }
             ].map((f) => (
               <div className="flex items-center" key={f.name}>
                 <label className="text-black w-45 mr-2">{f.label}</label>
@@ -324,7 +304,7 @@ export default function ProfilePage() {
                       setEditUser((prev) => ({
                         ...prev,
                         identityFile: String(reader.result || ""),
-                        identityFileName: file.name,
+                        identityFileName: file.name
                       }));
                     };
                     reader.readAsDataURL(file);
@@ -332,20 +312,13 @@ export default function ProfilePage() {
                   className="file-input file-input-bordered w-full max-w-xs bg-white text-black"
                 />
               ) : (
-                <div className="text-black">
-                  {user.identityFileName ? user.identityFileName : "-"}
-                </div>
+                <div className="text-black">{user.identityFileName ? user.identityFileName : "-"}</div>
               )}
             </div>
 
             {editMode && (
               <div className="flex justify-end gap-4 mt-8">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="btn btn-neutral"
-                  disabled={isSaving}
-                >
+                <button type="button" onClick={handleCancel} className="btn btn-neutral" disabled={isSaving}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-success" disabled={!loaded || isSaving}>
@@ -368,16 +341,10 @@ export default function ProfilePage() {
                 <h3 className="font-bold text-lg text-center mb-4">Confirm Logout</h3>
                 <p className="text-center mb-6">You sure to logout?</p>
                 <div className="modal-action flex justify-center gap-4">
-                  <button
-                    className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white"
-                    onClick={() => setShowLogoutModal(false)}
-                  >
+                  <button className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white" onClick={() => setShowLogoutModal(false)}>
                     Cancel
                   </button>
-                  <button
-                    className="btn btn-success px-8 py-3 rounded-full text-black"
-                    onClick={handleLogout}
-                  >
+                  <button className="btn btn-success px-8 py-3 rounded-full text-black" onClick={handleLogout}>
                     Confirm
                   </button>
                 </div>

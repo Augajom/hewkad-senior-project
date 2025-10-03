@@ -1,13 +1,44 @@
 const router = require('express').Router();
 const db = require('../config/db');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 
-/** ================================
- * GET /profile  → โหลดโปรไฟล์ของ user ปัจจุบัน
- * ================================ */
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase() || '.png';
+    const uid = req.user && req.user.id ? String(req.user.id) : 'u';
+    cb(null, `avatar_${uid}_${Date.now()}${ext}`);
+  }
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+function nonEmpty(v) {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s === '' ? null : s;
+}
+function firstNonEmpty(...vals) {
+  for (const v of vals) {
+    const t = nonEmpty(v);
+    if (t !== null) return t;
+  }
+  return '';
+}
+function normalizePicture(p) {
+  if (!p) return '';
+  const s = String(p);
+  if (s.startsWith('/uploads/')) return s.split('?')[0];
+  return s;
+}
+
 router.get('/', async (req, res) => {
   try {
     const userId = req.user.id;
-
     const [rows] = await db.promise().query(
       `
       SELECT
@@ -32,133 +63,133 @@ router.get('/', async (req, res) => {
       [userId]
     );
 
+    const row = rows?.[0] || {};
     const base = {
       id: userId,
-      email: rows?.[0]?.email || req.user.email || null,
-      fullName: rows?.[0]?.fullName || req.user.fullName || null,
-      roles: req.user.roles || [],
+      email: row.email || req.user.email || null,
+      fullName: row.fullName || req.user.fullName || null,
+      roles: req.user.roles || []
     };
 
-    return res.json(rows[0] ? { ...rows[0], ...base } : base);
-  } catch (err) {
-    console.error('[GET /profile] error:', err);
-    return res.status(500).json({ error: 'Failed to load profile' });
+    const picture = normalizePicture(firstNonEmpty(row.picture, req.user?.picture));
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.json({ ...row, ...base, picture });
+  } catch {
+    res.status(500).json({ error: 'Failed to load profile' });
   }
 });
 
-/** ==========================================
- * PUT /profile  → สร้าง/แก้ไขโปรไฟล์ของ user
- * body: { nickname, fullName, phone, address, picture, bank, accountNumber, accountOwner }
- * ========================================== */
-router.put('/', async (req, res) => {
+router.put('/', upload.single('avatar'), async (req, res) => {
   try {
     const userId = req.user.id;
-    const {
-      nickname,
-      fullName,
-      phone,
-      address,
-      picture,
-      bank,
-      accountNumber,
-      accountOwner,
-    } = req.body || {};
+    const body = req.body || {};
+    const { nickname, fullName, phone, address, picture, bank, accountNumber, accountOwner } = body;
 
     const conn = db.promise();
-
-    // หา/สร้าง profile
     const [pRows] = await conn.query(
-      'SELECT id, email, picture FROM profile WHERE user_id = ? LIMIT 1',
+      'SELECT id, email, nickname, name, phone_num, address, picture FROM profile WHERE user_id = ? LIMIT 1',
       [userId]
     );
 
-    const currentPicture = pRows[0]?.picture ?? '';
-    let profileId;
+    const exists = !!pRows.length;
+    const current = pRows[0] || {};
+    const currentPicture = current.picture ?? '';
 
-    if (!pRows.length) {
-      const userEmail = req.user.email || null;
+    let newAvatarUrl = null;
+    if (req.file && req.file.filename) newAvatarUrl = `/uploads/${req.file.filename}`;
+    const pictureToSave = normalizePicture(firstNonEmpty(newAvatarUrl, picture, currentPicture, req.user.picture));
+
+    const fields = [];
+    const params = [];
+
+    function addIfProvided(column, incoming, currentVal) {
+      if (incoming === undefined) return;
+      fields.push(`${column} = ?`);
+      params.push(nonEmpty(incoming));
+    }
+
+    addIfProvided('nickname', nickname, current.nickname);
+    addIfProvided('name', fullName, current.name);
+    addIfProvided('phone_num', phone, current.phone_num);
+    addIfProvided('address', address, current.address);
+
+    if (newAvatarUrl !== null || picture !== undefined) {
+      fields.push('picture = ?');
+      params.push(pictureToSave);
+    }
+
+    if (!exists) {
+      const insertCols = ['user_id', 'nickname', 'name', 'email', 'phone_num', 'address', 'picture'];
+      const insertVals = [
+        userId,
+        nonEmpty(nickname) ?? null,
+        nonEmpty(fullName) ?? null,
+        req.user.email || null,
+        nonEmpty(phone) ?? null,
+        nonEmpty(address) ?? null,
+        pictureToSave
+      ];
+      const placeholders = insertCols.map(() => '?').join(', ');
       const [ins] = await conn.query(
-        `
-        INSERT INTO profile
-          (user_id, nickname, name, email, phone_num, address, picture)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        `,
-        [
-          userId,
-          nickname ?? null,
-          fullName ?? null,
-          userEmail ?? null,
-          phone ?? null,
-          address ?? null,
-          (picture ?? currentPicture ?? ''),
-        ]
+        `INSERT INTO profile (${insertCols.join(', ')}) VALUES (${placeholders})`,
+        insertVals
       );
-      profileId = ins.insertId;
+      var profileId = ins.insertId;
     } else {
-
-      profileId = pRows[0].id;
-      await conn.query(
-        `
-        UPDATE profile
-        SET nickname = ?, name = ?, phone_num = ?, address = ?, picture = ?
-        WHERE id = ?
-        `,
-        [
-          nickname ?? null,
-          fullName ?? null,
-          phone ?? null,
-          address ?? null,
-          (picture ?? currentPicture ?? ''),
-          profileId,
-        ]
-      );
+      if (fields.length) {
+        await conn.query(`UPDATE profile SET ${fields.join(', ')} WHERE id = ?`, [...params, current.id]);
+      }
+      var profileId = current.id;
     }
 
+    const wantUpdateBank =
+      bank !== undefined || accountNumber !== undefined || accountOwner !== undefined;
 
-    const bankName = (bank || '').trim();
-    const [existingAcc] = await conn.query(
-      'SELECT id FROM profile_bank_accounts WHERE profile_id = ? LIMIT 1',
-      [profileId]
-    );
-
-    if (!bankName) {
-
-      if (existingAcc.length) {
-        await conn.query('DELETE FROM profile_bank_accounts WHERE id = ?', [existingAcc[0].id]);
-      }
-    } else {
-      // ensure bank id
-      const [bRows] = await conn.query(
-        'SELECT id FROM bank WHERE bank_name = ? LIMIT 1',
-        [bankName]
+    if (wantUpdateBank) {
+      const bankName = (bank || '').trim();
+      const [existingAcc] = await conn.query(
+        'SELECT id FROM profile_bank_accounts WHERE profile_id = ? LIMIT 1',
+        [profileId]
       );
-      let bankIdVal = bRows.length ? bRows[0].id : null;
-      if (!bankIdVal) {
-        const [insB] = await conn.query('INSERT INTO bank (bank_name) VALUES (?)', [bankName]);
-        bankIdVal = insB.insertId;
-      }
 
-      if (existingAcc.length) {
-        await conn.query(
-          `
-          UPDATE profile_bank_accounts
-          SET bank_id = ?, acc_number = ?, acc_owner = ?
-          WHERE id = ?
-          `,
-          [bankIdVal, accountNumber ?? null, accountOwner ?? null, existingAcc[0].id]
-        );
+      if (!bankName) {
+        if (existingAcc.length) {
+          await conn.query('DELETE FROM profile_bank_accounts WHERE id = ?', [existingAcc[0].id]);
+        }
       } else {
-        await conn.query(
-          `
-          INSERT INTO profile_bank_accounts (profile_id, bank_id, acc_number, acc_owner)
-          VALUES (?, ?, ?, ?)
-          `,
-          [profileId, bankIdVal, accountNumber ?? null, accountOwner ?? null]
+        const [bRows] = await conn.query(
+          'SELECT id FROM bank WHERE bank_name = ? LIMIT 1',
+          [bankName]
         );
+        let bankIdVal = bRows.length ? bRows[0].id : null;
+        if (!bankIdVal) {
+          const [insB] = await conn.query('INSERT INTO bank (bank_name) VALUES (?)', [bankName]);
+          bankIdVal = insB.insertId;
+        }
+
+        if (existingAcc.length) {
+          await conn.query(
+            `
+            UPDATE profile_bank_accounts
+            SET bank_id = ?, acc_number = ?, acc_owner = ?
+            WHERE id = ?
+            `,
+            [bankIdVal, nonEmpty(accountNumber), nonEmpty(accountOwner), existingAcc[0].id]
+          );
+        } else {
+          await conn.query(
+            `
+            INSERT INTO profile_bank_accounts (profile_id, bank_id, acc_number, acc_owner)
+            VALUES (?, ?, ?, ?)
+            `,
+            [profileId, bankIdVal, nonEmpty(accountNumber), nonEmpty(accountOwner)]
+          );
+        }
       }
     }
 
-    // ตอบกลับโปรไฟล์ล่าสุด
     const [rows] = await conn.query(
       `
       SELECT
@@ -183,10 +214,14 @@ router.put('/', async (req, res) => {
       [userId]
     );
 
-    return res.json({ ok: true, profile: rows[0] || null });
-  } catch (err) {
-    console.error('[PUT /profile] error:', err);
-    return res.status(500).json({ error: 'Failed to save profile' });
+    const row = rows?.[0] || {};
+    const effectivePicture = normalizePicture(firstNonEmpty(row.picture, req.user?.picture));
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.json({ ok: true, profile: { ...row, picture: effectivePicture } });
+  } catch {
+    res.status(500).json({ error: 'Failed to save profile' });
   }
 });
 
