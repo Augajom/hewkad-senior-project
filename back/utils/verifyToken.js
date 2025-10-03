@@ -1,25 +1,21 @@
 const jwt = require('jsonwebtoken');
 
 function verifyToken(req, res, next) {
-  // ดึง token จาก header หรือ cookie
-  const cookieToken  = req.cookies?.token;
-  const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
-  if (!token) {
-    // เพิ่ม log เมื่อไม่มี token
-    console.log('Cookies:', req.cookies);
-    return res.status(401).json({ message: 'Unauthorized: No token provided' });
-  }
-
+  const token = (req.headers.authorization && req.headers.authorization.split(' ')[1]) || req.cookies?.token;
+  if (!token) return res.status(401).json({ message: 'Unauthorized: No token provided' });
   try {
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    // เพิ่ม log เมื่อ verify สำเร็จ
-    console.log('=== JWT decoded:', decoded);
-    req.user = decoded;
+    const p = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    req.user = {
+      id: p.id || p.userId || p.sub,
+      email: p.email || null,
+      fullName: p.fullName || p.name || null,
+      picture: p.picture || null,
+      roles: Array.isArray(p.roles) ? p.roles : [],
+      profile_id: p.profile_id || null
+    };
     next();
-  } catch (err) {
-    // เพิ่ม log เมื่อ JWT verify ไม่สำเร็จ
-    console.log('=== JWT verify error:', err.message);
-    return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+  } catch {
+    res.status(401).json({ message: 'Unauthorized: Invalid token' });
   }
 }
 

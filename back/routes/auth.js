@@ -1,53 +1,72 @@
-const express = require("express");
-const passport = require("passport");
-const router = express.Router();
+const express = require('express');
+const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
-const db = require('../config/db'); // ใช้ query เพื่อดึง profile_id
-const verifyToken = require('../utils/verifyToken');
-require('dotenv').config();
-router.get('/me', verifyToken, (req, res) => {
-  res.json({ id: req.user.id, profile_id: req.user.profile_id });
-});
-// เริ่ม login
-router.get(
-  "/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-    session: false,
-  })
-);
+const db = require('../config/db');
 
-// callback หลังจาก login success
+const router = express.Router();
+
+function sign(res, payload) {
+  const token = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '1d' });
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('token', token, {
+    httpOnly: true,
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd,
+    maxAge: 24 * 60 * 60 * 1000
+  });
+  return token;
+}
+
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
+
 router.get(
-  "/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: `${process.env.FRONTEND_URL}`,
-    session: false,
-  }),
+  '/google/callback',
+  passport.authenticate('google', { failureRedirect: process.env.FRONTEND_URL, session: false }),
   async (req, res) => {
-    // <- ใส่ async ตรงนี้
-    const user = req.user;
+    const roles = await User.getRoles(req.user.id);
+    const [prow] = await db.promise().query('SELECT picture FROM profile WHERE user_id = ? LIMIT 1', [req.user.id]);
+    const dbPic = (prow?.[0]?.picture || '').trim();
+    const picture = dbPic || req.user.picture || null;
 
-      // ดึง roles จาก DB
-      const roles = await User.getRoles(user.id);
-
-    // สร้าง JWT
-    const token = jwt.sign(
-      { id: user.id, roles, fullName: user.fullName, email: user.email },
-      process.env.JWT_ACCESS_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    // เก็บ cookie แล้ว redirect
-    res.cookie("token", token, {
-      httpOnly: true,
-      sameSite: "none",
-      secure:  true,
-      maxAge: 86400000,
+    sign(res, {
+      id: req.user.id,
+      roles,
+      fullName: req.user.fullName || null,
+      email: req.user.email || null,
+      picture
     });
+
     res.redirect(`${process.env.FRONTEND_URL}/home`);
   }
 );
+
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const user = await User.login(email, password);
+    const roles = await User.getRoles(user.id);
+    const [prow] = await db.promise().query('SELECT picture FROM profile WHERE user_id = ? LIMIT 1', [user.id]);
+    const dbPic = (prow?.[0]?.picture || '').trim();
+    const picture = dbPic || user.picture || null;
+
+    sign(res, {
+      id: user.id,
+      roles,
+      fullName: user.name || user.fullName || null,
+      email: user.email || null,
+      picture
+    });
+
+    res.json({ ok: true });
+  } catch {
+    res.status(401).json({ error: 'invalid_credentials' });
+  }
+});
+
+router.post('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ ok: true });
+});
 
 module.exports = router;
