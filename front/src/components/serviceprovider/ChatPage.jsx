@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import '../DaisyUI.css'
+import './DaisyUI.css'
 
 const ChatPage = ({ historyList, orderingList }) => {
   const [selectedUser, setSelectedUser] = useState(null);

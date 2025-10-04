@@ -113,7 +113,7 @@ function Nav() {
         isCollapsed ? "-translate-x-88" : "translate-x-0"
       } w-[350px]`} // w-94 = 94 * 4 = 376px
     >
-      <div className="relative w-full px-4">
+      <div className="relative w-full px-4 text-black">
         <button onClick={toggleSidebar}>
           <BsDiamondHalf className="absolute size-10 -right-5 top-80 transform scale-x-[-1] cursor-pointer" />
         </button>

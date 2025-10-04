@@ -1,5 +1,5 @@
 import React from "react";
-import '../DaisyUI.css'
+import './DaisyUI.css'
 
 const HistoryPage = ({ historyList }) => {
   return (

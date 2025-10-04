@@ -1,7 +1,7 @@
 import React from "react";
 import { ShoppingCart, Search, CreditCard, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import "../DaisyUI.css";
+import "./DaisyUI.css";
 
 function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
   const baseBtnClass = "text-base transition-colors";
@@ -74,8 +74,8 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
       <div className="navbar bg-white shadow-md border-t">
         <div className="flex justify-center items-center w-full gap-8">
           <Link to="/main" className={`${baseBtnClass} ${currentPath === "/main" ? activeClass : inactiveClass}`}>Home</Link>
-          {/* <Link to="/history" className={`${baseBtnClass} ${currentPath === "/history" ? activeClass : inactiveClass}`}>History</Link>
-          <Link to="/chat" className={`${baseBtnClass} ${currentPath === "/chat" ? activeClass : inactiveClass}`}>Chat</Link> */}
+          <Link to="/provider/history" className={`${baseBtnClass} ${currentPath === "/history" ? activeClass : inactiveClass}`}>History</Link>
+          <Link to="/chat" className={`${baseBtnClass} ${currentPath === "/chat" ? activeClass : inactiveClass}`}>Chat</Link>
         </div>
       </div>
     </div>

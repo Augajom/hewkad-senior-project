@@ -12,7 +12,7 @@ function Payment() {
   return (
     <>
       <Nav />
-      <div className="min-h-screen flex items-start justify-center bg-[#F1F1F1]">
+      <div className="min-h-screen flex items-start justify-center bg-[#F1F1F1] text-black">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto set-center flex-col ">
             <div className="searh-con relative">
@@ -33,7 +33,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div>
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -48,7 +48,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className="set-center gap-5 ">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"
@@ -73,7 +73,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div >
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -88,7 +88,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className=" set-center gap-5">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"
@@ -113,7 +113,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div >
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -128,7 +128,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className=" set-center gap-5">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"
@@ -153,7 +153,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div >
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -168,7 +168,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className=" set-center gap-5">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"
@@ -193,7 +193,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div >
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -208,7 +208,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className=" set-center gap-5">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"
@@ -233,7 +233,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div >
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -248,7 +248,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className=" set-center gap-5">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"
@@ -273,7 +273,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div >
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -288,7 +288,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className=" set-center gap-5">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"
@@ -313,7 +313,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div >
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -328,7 +328,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className=" set-center gap-5">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"
@@ -353,7 +353,7 @@ function Payment() {
                   <div className="service-provider">
                     <b>Service Provider : </b>Oomsin (@Users02)
                   </div>
-                  <div className="status">
+                  <div >
                     <b>Status : </b>Completed
                   </div>
                   <div className="price">
@@ -368,7 +368,7 @@ function Payment() {
                 </div>
 
                 <div className="btn-con mt-4">
-                  <div className="btn set-center gap-5">
+                  <div className=" set-center gap-5">
                     <button
                       onClick={showRejectPayment}
                       className="text-xl text-white font-semibold px-5 p-2 w-full rounded-3xl bg-red-500 cursor-pointer"

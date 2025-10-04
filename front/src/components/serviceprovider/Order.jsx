@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ConfirmModal from "./ConfirmModal";
-import '../DaisyUI.css'
+import './DaisyUI.css'
 
 const initialOrders = [
   {

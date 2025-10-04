@@ -16,7 +16,7 @@ function Activity() {
   return (
     <>
       <Nav />
-      <div className="min-h-screen flex items-start justify-center bg-[#F1F1F1]">
+      <div className="min-h-screen flex items-start justify-center bg-[#F1F1F1] text-black">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto set-center flex-col ">
             <div className="filter-con flex gap-2">
