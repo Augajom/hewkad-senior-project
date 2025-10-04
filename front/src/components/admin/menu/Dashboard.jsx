@@ -20,8 +20,8 @@ function Dashboard() {
   return (
     <>
       <Nav />
-      <div className="h-screen flex items-start justify-center bg-[#F1F1F1]">
-        <div className="container m-6 max-w-300 ">
+      <div className="h-screen flex items-start justify-center bg-[#F1F1F1] text-black">
+        <div className="container mx-auto mt-5 px-20">
 
           <div className="filter-con flex gap-5 mb-5">
 

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import Navbar from "./Navbar/navbar.jsx";
-import FoodCardList from "./Main/Order.jsx";
-import SP_OrderStatus from "./Main/SP_OrderStatus.jsx";
-import HistoryPage from "./Main/SP_History.jsx";
-import ChatPage from "./Main/ChatPage";
+import Navbar from "./navbar.jsx";
+import FoodCardList from "./Order.jsx";
+import SP_OrderStatus from "./SP_OrderStatus.jsx";
+import HistoryPage from "./SP_History.jsx";
+import ChatPage from "./ChatPage";
 import './DaisyUI.css'
 
 function userMain() {

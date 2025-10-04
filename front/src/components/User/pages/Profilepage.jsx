@@ -174,6 +174,14 @@ export default function ProfilePage() {
     navigate("/", { replace: true });
   };
 
+  //swirch role
+  const location = useLocation();
+  const switchPath = location.pathname.includes("/provider/profile") ? "/user/profile" : "/provider/profile";
+
+  const handleSwitchRole = () => {
+    navigate(switchPath, { replace: true });
+  }
+
   const rawImg = editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture;
   const currentImg = resolveImg(rawImg);
   const hasImg = Boolean(currentImg && currentImg.trim() !== "");
