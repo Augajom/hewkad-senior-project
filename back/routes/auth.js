@@ -34,7 +34,6 @@ router.get(
       roles,
       fullName: req.user.fullName || null,
       email: req.user.email || null,
-      profile_id: profile_Id,
       picture
     });
 
