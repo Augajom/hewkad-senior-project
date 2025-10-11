@@ -27,6 +27,7 @@ router.get(
     const roles = await User.getRoles(req.user.id);
     const [prow] = await db.promise().query('SELECT picture FROM profile WHERE user_id = ? LIMIT 1', [req.user.id]);
     const dbPic = (prow?.[0]?.picture || '').trim();
+    const profile = prow?.[0];
     const picture = dbPic || req.user.picture || null;
 
     sign(res, {
@@ -48,6 +49,7 @@ router.post('/login', async (req, res) => {
     const roles = await User.getRoles(user.id);
     const [prow] = await db.promise().query('SELECT picture FROM profile WHERE user_id = ? LIMIT 1', [user.id]);
     const dbPic = (prow?.[0]?.picture || '').trim();
+    const profile = prow?.[0];
     const picture = dbPic || user.picture || null;
 
     sign(res, {
@@ -55,7 +57,7 @@ router.post('/login', async (req, res) => {
       roles,
       fullName: user.name || user.fullName || null,
       email: user.email || null,
-      profile_id: profileId ,
+      profile_id: profile?.profile_id || null,
       picture
     });
 
