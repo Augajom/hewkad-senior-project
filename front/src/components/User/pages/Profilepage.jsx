@@ -260,7 +260,7 @@ export default function ProfilePage() {
               {/* Identify */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-start" id="identity-section">
                 <label className="text-black text-sm sm:text-base font-medium sm:col-span-1 flex items-center">
-                  Identify
+                  identification
                 </label>
                 <div className="sm:col-span-2 space-y-2">
                   {editMode ? (
@@ -304,7 +304,7 @@ export default function ProfilePage() {
                             className="w-full max-h-64 object-contain border border-gray-200 rounded-md"
                           />
                         ) : (
-                          <div className="text-gray-500 text-sm">No identity image</div>
+                          <div className="text-gray-500 text-sm">No identification image</div>
                         )}
                       </div>
                     </>
@@ -319,7 +319,7 @@ export default function ProfilePage() {
                           </div>
                           <img
                             src={resolveImg(user.identityFile)}
-                            alt="identity"
+                            alt="identification"
                             className="w-full max-w-52 max-h-52 object-contain border border-gray-200 rounded-md"
                           />
                         </>
