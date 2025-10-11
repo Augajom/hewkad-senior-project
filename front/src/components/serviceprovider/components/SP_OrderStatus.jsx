@@ -1,6 +1,6 @@
 import React from "react";
 import OrderStatus from "./OrderStatus";
-import './DaisyUI.css'
+import '../DaisyUI.css'
 
 const SP_OrderStatus = ({ orderingList, onConfirmPayment, onComplete }) => {
   return (

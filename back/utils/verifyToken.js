@@ -13,10 +13,12 @@ function verifyToken(req, res, next) {
       roles: Array.isArray(p.roles) ? p.roles : [],
       profile_id: p.profile_id || null
     };
+    console.log("Decoded token payload:", p);
     next();
   } catch {
     res.status(401).json({ message: 'Unauthorized: Invalid token' });
   }
 }
+
 
 module.exports = verifyToken;

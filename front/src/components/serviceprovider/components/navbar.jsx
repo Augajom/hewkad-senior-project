@@ -1,7 +1,7 @@
 import React from "react";
 import { ShoppingCart, Search, CreditCard, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import "./DaisyUI.css";
+import "../DaisyUI.css";
 
 function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
   const baseBtnClass = "text-base transition-colors";

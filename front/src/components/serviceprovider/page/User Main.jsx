@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import Navbar from "./navbar.jsx";
-import FoodCardList from "./Order.jsx";
-import SP_OrderStatus from "./SP_OrderStatus.jsx";
+
+import Navbar from "../components/navbar.jsx";
+import FoodCardList from "../components/Order.jsx";
+import SP_OrderStatus from "../components/SP_OrderStatus.jsx";
 import HistoryPage from "./SP_History.jsx";
-import ChatPage from "./ChatPage";
-import './DaisyUI.css'
+import ChatPage from "../components/ChatPage.jsx";
+import "../DaisyUI.css";
 
 function userMain() {
   const [currentPage, setCurrentPage] = useState("home");
