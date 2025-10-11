@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const db = require('../config/db'); // ต้อง import db สำหรับ INSERT
 const verifyToken = require('../utils/verifyToken');
 
@@ -11,6 +12,8 @@ const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
 const QRCode = require("qrcode");
 const promptpay = require("promptpay-qr");
+
+const upload = multer();
 
 // ===================
 // GET KAD options
@@ -205,7 +208,7 @@ router.get("/payment/qr/:orderId", async (req, res) => {
       const order = results[0];
       const amount = parseFloat(order.price) + parseFloat(order.service_fee || 0);
 
-      const promptPayId = "0817270727"; // 👈 เปลี่ยนเป็นของคุณ
+      const promptPayId = "1600101968836"; // 👈 เปลี่ยนเป็นของคุณ
 
       const payload = require("promptpay-qr")(promptPayId, { amount });
       const QRCode = require("qrcode");
@@ -217,6 +220,25 @@ const qrImage = await QRCode.toDataURL(payload);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "QR generation failed" });
+  }
+});
+
+router.post("/upload-slip", upload.single("files"), async (req, res) => {
+  try {
+    const formData = new FormData();
+    formData.append("files", new Blob([req.file.buffer]), req.file.originalname);
+
+    const response = await fetch("https://api.slipok.com/api/line/apikey/54397", {
+      method: "POST",
+      headers: { "x-authorization": "SLIPOKSP5002K" },
+      body: formData,
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to upload slip" });
   }
 });
 
