@@ -54,7 +54,7 @@ router.post('/posts', verifyToken, async (req, res) => {
   try {
     const { kad_id, store_name, product, service_fee, price, status_id, delivery, delivery_at } = req.body;
     const user_id = req.user.id;
-    const profile_id = req.user.profile_id; // ต้องมี profile_id จาก JWT
+    const profile_id = req.user.id; // ต้องมี profile_id จาก JWT
 
     if (!profile_id) {
       return res.status(400).json({ message: "User profile_id is missing" });
@@ -198,7 +198,7 @@ router.get("/payment/qr/:orderId", async (req, res) => {
       const order = results[0];
       const amount = parseFloat(order.price) + parseFloat(order.service_fee || 0);
 
-      const promptPayId = "0817270727"; // 👈 เปลี่ยนเป็นของคุณ
+      const promptPayId = "1600101968836"; // 👈 เปลี่ยนเป็นของคุณ
 
       const payload = require("promptpay-qr")(promptPayId, { amount });
       const QRCode = require("qrcode");
