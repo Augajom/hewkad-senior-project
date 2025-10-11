@@ -1,5 +1,6 @@
 // src/components/OrderingPostCard.jsx
 import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import "../DaisyUI.css";
 
 const OrderingPostCard = ({ post }) => {
@@ -13,6 +14,7 @@ const OrderingPostCard = ({ post }) => {
   // skipok
   const [slipOkData, setSlipOkData] = useState([]);
   const [slipFile, setSlipFile] = useState("");
+  const [slipError, setSlipError] = useState("");
 
   const [reportForm, setReportForm] = useState({
     report: "",
@@ -48,8 +50,6 @@ const OrderingPostCard = ({ post }) => {
     setSlipFile(e.target.files[0]);
   };
 
-  console.log("select file:", slipFile);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!slipFile) return alert("กรุณาแนบไฟล์");
@@ -70,11 +70,35 @@ const OrderingPostCard = ({ post }) => {
 
       const data = await res.json();
       setSlipOkData(data);
+
+      // ตรวจสอบจำนวนเงิน
+      if (parseFloat(data.data.amount) !== Number(total)) {
+        setSlipError("จำนวนเงินไม่ถูกต้อง");
+      } else if (data.success === false){
+        setSlipError("สลิปไม่ถูกต้อง");
+      } else {
+        setSlipError("");
+        successAlert();
+        setShowSlipModal(false);
+      }
       console.log("Response from backend:", data);
     } catch (error) {
       console.error("Error uploading slip:", error);
     }
   };
+
+  // swal
+  const successAlert = () => {
+    Swal.fire({
+      title: 'ชำระเงินสำเร็จ',
+      text: 'ขอบคุณสำหรับการชำระเงิน',
+      icon: 'success',
+      timer: 3000,
+      showConfirmButton: false,
+    }).then (() => {
+      handleConfirmPayment();
+    })
+  }
 
   // modal handlers
   const handleOpenSlipModal = () => {
@@ -123,7 +147,6 @@ const OrderingPostCard = ({ post }) => {
 
       setStatus("Ordering");
       setShowQRModal(false);
-      alert("Payment confirmed, status updated to Ordering!");
       window.location.reload();
     } catch (err) {
       console.error(err);
@@ -353,6 +376,9 @@ const OrderingPostCard = ({ post }) => {
                     className="mx-auto mt-3 rounded-lg max-h-60 object-contain"
                   />
                 )}
+                {slipError && (
+                  <p className="text-red-500 text-sm mt-2">{slipError}</p>
+                )}
                 <button className="btn btn-success w-full mt-4" type="submit">
                   ส่งสลิป
                 </button>
@@ -363,12 +389,6 @@ const OrderingPostCard = ({ post }) => {
                   ยกเลิก
                 </button>
 
-                (slipOkData?.success === true ? (
-                  
-
-                ) : (
-
-                ))
               </form>
             </div>
           </div>
