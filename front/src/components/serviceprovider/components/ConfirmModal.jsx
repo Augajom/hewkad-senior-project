@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import './DaisyUI.css'
+import '../DaisyUI.css'
 
 const ConfirmModal = ({ visible, onCancel, onConfirm, selectedOrder }) => {
   if (!visible) return null;

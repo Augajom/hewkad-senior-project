@@ -17,9 +17,9 @@ import History from './components/User/pages/History.jsx'
 import Ordering from './components/User/pages/Ordering.jsx'
 
 //Service Provider Kaew
-import Main from './components/serviceprovider/User Main.jsx'
+import Main from './components/serviceprovider/page/User Main.jsx'
 import ServiceProfile from './components/serviceprovider/serviceProfile.jsx'
-import SP_History from './components/serviceprovider/SP_History.jsx'
+import SP_History from './components/serviceprovider/page/SP_History.jsx'
 
 const router = createBrowserRouter([
   {

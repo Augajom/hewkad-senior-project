@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const db = require('../config/db'); // ต้อง import db สำหรับ INSERT
 const verifyToken = require('../utils/verifyToken');
 
@@ -8,8 +9,11 @@ const History = require('../models/customer/History');
 const Kad = require('../models/customer/Kad');
 const Ordering = require('../models/customer/Ordering');
 const Report = require('../models/customer/Report');
+const UserRole = require('../models/customer/UserRoles');
 const QRCode = require("qrcode");
 const promptpay = require("promptpay-qr");
+
+const upload = multer();
 
 // ===================
 // GET KAD options
@@ -52,15 +56,20 @@ router.get('/posts', async (req, res) => {
 // ===================
 router.post('/posts', verifyToken, async (req, res) => {
   try {
-    const { kad_id, store_name, product, service_fee, price, status_id, delivery, delivery_at } = req.body;
+    const {
+      kad_id,
+      store_name,
+      product,
+      service_fee,
+      price,
+      status_id,
+      delivery,
+      delivery_at
+    } = req.body;
+
     const user_id = req.user.id;
-    const profile_id = req.user.id; // ต้องมี profile_id จาก JWT
+    const profile_id = user_id; 
 
-    if (!profile_id) {
-      return res.status(400).json({ message: "User profile_id is missing" });
-    }
-
-    // เรียก model create()
     const newPost = await Post.create(
       kad_id,
       store_name,
@@ -74,12 +83,13 @@ router.post('/posts', verifyToken, async (req, res) => {
       delivery_at
     );
 
-    res.json(newPost);
+    res.status(201).json(newPost);
   } catch (err) {
-    console.error("Create post error:", err);
+    console.error('Create post error:', err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // ===================
 // EDIT post
@@ -213,6 +223,25 @@ const qrImage = await QRCode.toDataURL(payload);
   }
 });
 
+router.post("/upload-slip", upload.single("files"), async (req, res) => {
+  try {
+    const formData = new FormData();
+    formData.append("files", new Blob([req.file.buffer]), req.file.originalname);
+
+    const response = await fetch("https://api.slipok.com/api/line/apikey/54397", {
+      method: "POST",
+      headers: { "x-authorization": "SLIPOKSP5002K" },
+      body: formData,
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to upload slip" });
+  }
+});
+
 
 // POST /customer/reports
 router.post('/reports', verifyToken, async (req, res) => {
@@ -259,6 +288,37 @@ router.get('/report-reasons', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+router.post("/switch-role", verifyToken, (req, res) => {
+  const userId = req.user.id;
+
+  UserRole.getCurrentRole(userId, (err, currentRoleRows) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    if (!currentRoleRows || currentRoleRows.length === 0)
+      return res.status(404).json({ message: "User role not found" });
+
+    const activeRole = currentRoleRows[0].role_name;
+    const newRoleName = activeRole === "service" ? "customer" : "service";
+
+    UserRole.getRoleByName(newRoleName, (err, newRoleRows) => {
+      if (err) return res.status(500).json({ message: "DB error" });
+      if (!newRoleRows || newRoleRows.length === 0)
+        return res.status(404).json({ message: "New role not found" });
+
+      const newRoleId = newRoleRows[0].id;
+
+      UserRole.deactivateCurrentRole(userId, (err) => {
+        if (err) return res.status(500).json({ message: "DB error" });
+
+        UserRole.activateRole(userId, newRoleId, (err) => {
+          if (err) return res.status(500).json({ message: "DB error" });
+          res.json({ role_name: newRoleName });
+        });
+      });
+    });
+  });
+});
+
 
 
 module.exports = router;

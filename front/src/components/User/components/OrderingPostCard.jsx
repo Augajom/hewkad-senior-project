@@ -46,29 +46,35 @@ const OrderingPostCard = ({ post }) => {
   // slipok
   const handleFile = (e) => {
     setSlipFile(e.target.files[0]);
-  }
+  };
 
   console.log("select file:", slipFile);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!slipFile) return alert("กรุณาแนบไฟล์");
 
     const formData = new FormData();
     formData.append("files", slipFile);
 
     try {
-      const res = await fetch("https://api.slipok.com/api/line/apikey/54397", {
+      const res = await fetch("http://localhost:5000/customer/upload-slip", {
         method: "POST",
-        headers: {
-          "x-authorization": "SLIPOKSP5002K"
-        }
-      })
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to upload slip: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setSlipOkData(data);
+      console.log("Response from backend:", data);
     } catch (error) {
-      console.log("Error during fetching slipok data:", error);
+      console.error("Error uploading slip:", error);
     }
-
-  }
-
+  };
 
   // modal handlers
   const handleOpenSlipModal = () => {
@@ -134,7 +140,7 @@ const OrderingPostCard = ({ post }) => {
         credentials: "include",
         body: JSON.stringify({
           post_id: post.id,
-          reason_id: reportForm.report, // <<-- ใช้ id ของเหตุผล
+          reason_id: reportForm.report,
           detail: reportForm.details,
         }),
       });
@@ -326,40 +332,43 @@ const OrderingPostCard = ({ post }) => {
               <h2 className="text-xl font-bold text-black">
                 แนบสลิปการชำระเงิน
               </h2>
-              <form action="">
+              <form onSubmit={handleSubmit}>
                 <input
-                type="file"
-                accept="image/*"
-                id="slipUpload"
-                onChange={handleFile}
-                className="hidden"
-              />
-              <label
-                htmlFor="slipUpload"
-                className="btn btn-outline btn-primary w-full cursor-pointer"
-              >
-                เลือกไฟล์
-              </label>
-              {slipFile && (
-                <img
-                  src={URL.createObjectURL(slipFile)}
-                  alt="Slip Preview"
-                  className="mx-auto mt-3 rounded-lg max-h-60 object-contain"
+                  type="file"
+                  accept="image/*"
+                  id="slipUpload"
+                  onChange={handleFile}
+                  className="hidden"
                 />
-              )}
-              <button
-                onClick={""}
-                className="btn btn-success w-full mt-4"
-                type='submit'
-              >
-                ส่งสลิป
-              </button>
-              <button
-                onClick={() => setShowSlipModal(false)}
-                className="btn btn-ghost w-full mt-2"
-              >
-                ยกเลิก
-              </button>
+                <label
+                  htmlFor="slipUpload"
+                  className="btn btn-outline btn-primary w-full cursor-pointer"
+                >
+                  เลือกไฟล์
+                </label>
+                {slipFile && (
+                  <img
+                    src={URL.createObjectURL(slipFile)}
+                    alt="Slip Preview"
+                    className="mx-auto mt-3 rounded-lg max-h-60 object-contain"
+                  />
+                )}
+                <button className="btn btn-success w-full mt-4" type="submit">
+                  ส่งสลิป
+                </button>
+                <button
+                  onClick={() => setShowSlipModal(false)}
+                  className="btn btn-ghost w-full mt-2"
+                >
+                  ยกเลิก
+                </button>
+
+                (slipOkData?.success === true ? (
+                  
+
+                ) : (
+
+                ))
               </form>
             </div>
           </div>
