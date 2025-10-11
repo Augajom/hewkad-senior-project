@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import "../DaisyUI.css";
 
@@ -14,7 +14,6 @@ function resolveImg(src) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -32,16 +31,20 @@ export default function ProfilePage() {
     accountNumber: "",
     accountOwner: "",
     identityFile: "",
-    identityFileName: ""
   });
   const [editUser, setEditUser] = useState(user);
+
   const [avatarPreview, setAvatarPreview] = useState("");
+  const [identityPreview, setIdentityPreview] = useState("");
+  const [identityFileName, setIdentityFileName] = useState("");
+  const [identityUploading, setIdentityUploading] = useState(false);
 
   useEffect(() => {
     return () => {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      if (identityPreview) URL.revokeObjectURL(identityPreview);
     };
-  }, [avatarPreview]);
+  }, [avatarPreview, identityPreview]);
 
   const loadProfile = useCallback(async () => {
     setLoaded(false);
@@ -65,25 +68,22 @@ export default function ProfilePage() {
         bank: d?.bank || "",
         accountNumber: d?.accountNumber || "",
         accountOwner: d?.accountOwner || "",
-        identityFile: "",
-        identityFileName: ""
+        identityFile: d?.identityFile || "",
       };
       setUser(next);
       setEditUser(next);
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-        setAvatarPreview("");
-      }
-    } catch (err) {
+
+      if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
+      if (identityPreview) { URL.revokeObjectURL(identityPreview); setIdentityPreview(""); }
+      setIdentityFileName("");
+    } catch {
       alert("โหลดโปรไฟล์ไม่สำเร็จ");
     } finally {
       setLoaded(true);
     }
-  }, [navigate, avatarPreview]);
+  }, [navigate, avatarPreview, identityPreview]);
 
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+  useEffect(() => { loadProfile(); }, [loadProfile]);
 
   const handleEdit = () => setEditMode(true);
 
@@ -94,12 +94,46 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setEditUser(user);
-    if (avatarPreview) {
-      URL.revokeObjectURL(avatarPreview);
-      setAvatarPreview("");
-    }
+    if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
+    if (identityPreview) { URL.revokeObjectURL(identityPreview); setIdentityPreview(""); }
+    setIdentityFileName("");
     setEditMode(false);
   };
+
+  async function uploadIdentity(file) {
+    if (!file) return;
+    try {
+      setIdentityUploading(true);
+
+      // พรีวิว optimistic
+      if (identityPreview) URL.revokeObjectURL(identityPreview);
+      const url = URL.createObjectURL(file);
+      setIdentityPreview(url);
+      setIdentityFileName(file.name);
+
+      const fd = new FormData();
+      fd.append("identity", file, file.name || "identity.jpg");
+
+      const res = await fetch(`${API_BASE}/profile/identity`, {
+        method: "PUT",
+        credentials: "include",
+        body: fd
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Upload identity failed");
+
+      const savedPath = data?.profile?.identityFile || data?.filePath || "";
+      setUser((prev) => ({ ...prev, identityFile: savedPath }));
+      setEditUser((prev) => ({ ...prev, identityFile: savedPath }));
+    } catch (e) {
+      if (identityPreview) URL.revokeObjectURL(identityPreview);
+      setIdentityPreview("");
+      setIdentityFileName("");
+      alert(e?.message || "อัปโหลดรูปบัตรไม่สำเร็จ");
+    } finally {
+      setIdentityUploading(false);
+    }
+  }
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
@@ -125,12 +159,10 @@ export default function ProfilePage() {
       });
       const data = await res.json();
       if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
+
       await loadProfile();
       setEditMode(false);
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-        setAvatarPreview("");
-      }
+      if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
       alert("Profile saved.");
     } catch (err) {
       alert(err?.message || "บันทึกไม่สำเร็จ");
@@ -140,18 +172,13 @@ export default function ProfilePage() {
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
   const handleLogout = async () => {
-    try {
-      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
-    } catch {}
+    try { await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" }); } catch {}
     navigate("/", { replace: true });
   };
 
   const handleSwitchRole = async () => {
     try {
-      const res = await fetch(`${API_BASE}/customer/switch-role`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE}/customer/switch-role`, { method: "POST", credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Switch role failed");
       const newRole = data.role_name;
@@ -164,12 +191,11 @@ export default function ProfilePage() {
     }
   };
 
-  const rawImg = editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture;
-  const currentImg = resolveImg(rawImg);
+  const currentImg = resolveImg(editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture);
   const hasImg = Boolean(currentImg && currentImg.trim() !== "");
 
   return (
-    <div className="min-h-screen bg-white">      
+    <div className="min-h-screen bg-white">
       <Navbar />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
@@ -184,7 +210,7 @@ export default function ProfilePage() {
               </div>
             </div>
             {!editMode && (
-              <button onClick={handleEdit} className="btn btn-link mt-3 text-primary no-underline">Edit Profile</button>
+              <button onClick={() => setEditMode(true)} className="btn btn-link mt-3 text-primary no-underline">Edit Profile</button>
             )}
           </div>
 
@@ -211,8 +237,11 @@ export default function ProfilePage() {
               </div>
 
               <div className="pt-2 text-black text-center sm:text-left font-semibold">Payment Information (Optional)</div>
-              <div className="text-center sm:text-left text-xs text-gray-500 mb-2 sm:mb-4">A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs</div>
+              <div className="text-center sm:text-left text-xs text-gray-500 mb-2 sm:mb-4">
+                A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs
+              </div>
 
+              {/* Bank + Account */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
                 {["bank", "accountNumber", "accountOwner"].map((field) => (
                   <div className="contents" key={field}>
@@ -228,11 +257,87 @@ export default function ProfilePage() {
                 ))}
               </div>
 
+              {/* Identify */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-start" id="identity-section">
+                <label className="text-black text-sm sm:text-base font-medium sm:col-span-1 flex items-center">
+                  Identify
+                </label>
+                <div className="sm:col-span-2 space-y-2">
+                  {editMode ? (
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="file-input file-input-bordered w-full max-w-md bg-white text-black"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          uploadIdentity(f);
+                        }}
+                      />
+
+                      {identityUploading && (
+                        <div className="text-xs text-gray-500">Uploading...</div>
+                      )}
+
+                      {(user.identityFile || identityPreview) && (
+                        <div
+                          className="text-xs text-gray-600 max-w-md truncate"
+                          title={
+                            identityPreview
+                              ? identityFileName
+                              : decodeURIComponent((user.identityFile || "").split("/").pop() || "")
+                          }
+                        >
+                          <span className="font-medium">File: </span>
+                          {identityPreview
+                            ? identityFileName
+                            : decodeURIComponent((user.identityFile || "").split("/").pop() || "-")}
+                        </div>
+                      )}
+
+                      <div className="w-full max-w-md">
+                        {(identityPreview || user.identityFile) ? (
+                          <img
+                            src={identityPreview || resolveImg(user.identityFile)}
+                            alt="identity"
+                            className="w-full max-h-64 object-contain border border-gray-200 rounded-md"
+                          />
+                        ) : (
+                          <div className="text-gray-500 text-sm">No identity image</div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {user.identityFile ? (
+                        <>
+                          <div
+                            className="text-xs text-gray-600 max-w-md truncate"
+                            title={decodeURIComponent((user.identityFile || "").split("/").pop() || "")}
+                          >
+                          </div>
+                          <img
+                            src={resolveImg(user.identityFile)}
+                            alt="identity"
+                            className="w-full max-w-52 max-h-52 object-contain border border-gray-200 rounded-md"
+                          />
+                        </>
+                      ) : (
+                        <div className="text-black break-words">-</div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
               <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-end pt-2">
                 {editMode ? (
                   <>
                     <button type="button" onClick={handleCancel} className="btn btn-ghost sm:px-6">Cancel</button>
-                    <button type="submit" disabled={isSaving} className="btn btn-success sm:px-6">{isSaving ? "Saving..." : "Save"}</button>
+                    <button type="submit" disabled={isSaving} className="btn btn-success sm:px-6">
+                      {isSaving ? "Saving..." : "Save"}
+                    </button>
                   </>
                 ) : (
                   <>

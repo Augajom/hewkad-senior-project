@@ -1,8 +1,10 @@
+// routes/profile.js
 const router = require('express').Router();
 const db = require('../config/db');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const express = require('express');
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -12,10 +14,13 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname || '').toLowerCase() || '.png';
     const uid = req.user && req.user.id ? String(req.user.id) : 'u';
-    cb(null, `avatar_${uid}_${Date.now()}${ext}`);
+    const prefix = (file.fieldname || 'file').toLowerCase(); // avatar/identity
+    cb(null, `${prefix}_${uid}_${Date.now()}${ext}`);
   }
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+router.use(express.json());
 
 function nonEmpty(v) {
   if (v === undefined || v === null) return null;
@@ -29,16 +34,21 @@ function firstNonEmpty(...vals) {
   }
   return '';
 }
-function normalizePicture(p) {
+function normalizePath(p) {
   if (!p) return '';
   const s = String(p);
-  if (s.startsWith('/uploads/')) return s.split('?')[0];
-  return s;
+  return s.split('?')[0]; // กัน query string ยาว
+}
+function normalizePicture(p) {
+  return normalizePath(p);
 }
 
+// ---------- GET /profile ----------
 router.get('/', async (req, res) => {
   try {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user.id;
+
     const [rows] = await db.promise().query(
       `
       SELECT
@@ -50,6 +60,7 @@ router.get('/', async (req, res) => {
         p.phone_num     AS phone,
         p.address,
         p.picture,
+        p.identity_file AS identityFile,
         b.id            AS bankId,
         b.bank_name     AS bank,
         pba.acc_number  AS accountNumber,
@@ -72,24 +83,25 @@ router.get('/', async (req, res) => {
     };
 
     const picture = normalizePicture(firstNonEmpty(row.picture, req.user?.picture));
+    const identityFile = row.identityFile ? normalizePath(row.identityFile) : null;
+
+    console.log('GET /profile -> identityFile =', identityFile);
+
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    res.json({ ...row, ...base, picture });
-  } catch {
+    res.json({ ...row, ...base, picture, identityFile });
+  } catch (e) {
+    console.error('GET /profile error:', e);
     res.status(500).json({ error: 'Failed to load profile' });
   }
 });
 
-const express = require('express');
-router.use(express.json()); // เผื่อกรณีที่ server ยังไม่ได้ใส่ไว้ (ปลอดภัยไว้ก่อน)
-
+// ---------- PUT /profile (ข้อมูลโปรไฟล์ + avatar) ----------
 const maybeUpload = (req, res, next) => {
   const ct = (req.headers['content-type'] || '').toLowerCase();
   if (ct.startsWith('multipart/form-data')) {
-    return upload.single('avatar')(req, res, next); // มีไฟล์ → ใช้ multer
+    return upload.single('avatar')(req, res, next);
   }
-  return next(); // เป็น JSON → ข้าม multer
+  return next();
 };
 
 router.put('/', maybeUpload, async (req, res) => {
@@ -112,23 +124,21 @@ router.put('/', maybeUpload, async (req, res) => {
     let newAvatarUrl = null;
     if (req.file && req.file.filename) newAvatarUrl = `/uploads/${req.file.filename}`;
 
-    // ถ้าไม่อัปโหลดไฟล์ จะไม่มี req.file -> ใช้ค่าที่ส่งมาใน JSON แทน (picture) หรือค่าเดิม
     const pictureToSave = normalizePicture(firstNonEmpty(newAvatarUrl, picture, currentPicture, req.user.picture));
 
     const fields = [];
     const params = [];
-    const addIfProvided = (column, incoming, _currentVal) => {
+    const addIfProvided = (column, incoming) => {
       if (incoming === undefined) return;
       fields.push(`${column} = ?`);
       params.push(nonEmpty(incoming));
     };
 
-    addIfProvided('nickname', nickname, current.nickname);
-    addIfProvided('name', fullName, current.name);
-    addIfProvided('phone_num', phone, current.phone_num);
-    addIfProvided('address', address, current.address);
+    addIfProvided('nickname', nickname);
+    addIfProvided('name', fullName);
+    addIfProvided('phone_num', phone);
+    addIfProvided('address', address);
 
-    // picture จะอัปเดตเฉพาะกรณีส่งมา หรือมีไฟล์ใหม่
     if (newAvatarUrl !== null || picture !== undefined) {
       fields.push('picture = ?');
       params.push(pictureToSave);
@@ -159,7 +169,7 @@ router.put('/', maybeUpload, async (req, res) => {
       profileId = current.id;
     }
 
-    // อัปเดตข้อมูลธนาคารเฉพาะเมื่อส่งฟิลด์ที่เกี่ยวข้องมา
+    // ธนาคาร (ถ้าส่งมา)
     const wantUpdateBank =
       bank !== undefined || accountNumber !== undefined || accountOwner !== undefined;
 
@@ -199,7 +209,7 @@ router.put('/', maybeUpload, async (req, res) => {
       }
     }
 
-    // โหลดกลับส่งให้ frontend
+    // โหลดกลับ
     const [rows] = await conn.query(
       `SELECT
          p.id            AS profileId,
@@ -210,6 +220,7 @@ router.put('/', maybeUpload, async (req, res) => {
          p.phone_num     AS phone,
          p.address,
          p.picture,
+         p.identity_file AS identityFile,
          b.id            AS bankId,
          b.bank_name     AS bank,
          pba.acc_number  AS accountNumber,
@@ -225,14 +236,69 @@ router.put('/', maybeUpload, async (req, res) => {
     const row = rows?.[0] || {};
     const effectivePicture = normalizePicture(firstNonEmpty(row.picture, req.user?.picture));
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    return res.json({ ok: true, profile: { ...row, picture: effectivePicture } });
+    res.json({ ok: true, profile: { ...row, picture: effectivePicture } });
   } catch (e) {
     console.error('PUT /profile error:', e);
-    return res.status(500).json({ error: 'Failed to save profile', detail: e.message });
+    res.status(500).json({ error: 'Failed to save profile', detail: e.message });
   }
 });
 
+// ---------- PUT /profile/identity (อัปโหลดทันที) ----------
+const maybeIdentityUpload = (req, res, next) => {
+  const ct = (req.headers['content-type'] || '').toLowerCase();
+  if (ct.startsWith('multipart/form-data')) {
+    return upload.single('identity')(req, res, next);
+  }
+  return next();
+};
+
+router.put('/identity', maybeIdentityUpload, async (req, res) => {
+  try {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user.id;
+    const conn = db.promise();
+
+    const [pRows] = await conn.query(
+      'SELECT id, identity_file FROM profile WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    const exists = !!pRows.length;
+    const current = pRows[0] || {};
+
+    let newIdentityUrl = null;
+    if (req.file?.filename) {
+      newIdentityUrl = `/uploads/${req.file.filename}`;
+      console.log('UPLOAD identity ->', newIdentityUrl);
+    }
+
+    const bodyIdentity = (req.body?.identity ?? '').trim() || null;
+    const identityToSave = normalizePath(firstNonEmpty(newIdentityUrl, bodyIdentity, current.identity_file)) || null;
+
+    if (!exists) {
+      await conn.query(
+        `INSERT INTO profile (user_id, identity_file, email, name)
+         VALUES (?, ?, ?, ?)`,
+        [userId, identityToSave, req.user.email || null, req.user.fullName || null]
+      );
+    } else {
+      await conn.query(
+        `UPDATE profile SET identity_file = ? WHERE id = ?`,
+        [identityToSave, current.id]
+      );
+    }
+
+    const [rows] = await conn.query(
+      `SELECT identity_file AS identityFile FROM profile WHERE user_id = ? LIMIT 1`,
+      [userId]
+    );
+    const saved = rows?.[0]?.identityFile || null;
+    console.log('SAVED identity_file ->', saved);
+
+    return res.json({ ok: true, profile: { identityFile: saved } });
+  } catch (e) {
+    console.error('PUT /profile/identity error:', e);
+    return res.status(500).json({ error: 'Failed to save identity', detail: e.message });
+  }
+});
 
 module.exports = router;
