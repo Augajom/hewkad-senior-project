@@ -1,3 +1,4 @@
+// routes/auth.js
 const express = require('express');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
@@ -18,27 +19,48 @@ function sign(res, payload) {
   return token;
 }
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+);
 
 router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: process.env.FRONTEND_URL, session: false }),
   async (req, res) => {
-    const roles = await User.getRoles(req.user.id);
-    const [prow] = await db.promise().query('SELECT picture FROM profile WHERE user_id = ? LIMIT 1', [req.user.id]);
-    const dbPic = (prow?.[0]?.picture || '').trim();
-    const profile = prow?.[0];
-    const picture = dbPic || req.user.picture || null;
+    try {
+      const userId = req.user.id;
 
-    sign(res, {
-      id: req.user.id,
-      roles,
-      fullName: req.user.fullName || null,
-      email: req.user.email || null,
-      picture
-    });
+      // สร้าง profile ถ้ายังไม่มี
+      const [existsRows] = await db.promise().query('SELECT id FROM profile WHERE user_id = ? LIMIT 1', [userId]);
+      if (!existsRows.length) {
+        await db.promise().query(
+          `INSERT INTO profile (user_id, email, name, picture)
+           VALUES (?, ?, ?, ?)`,
+          [userId, req.user.email || null, req.user.fullName || null, (req.user.picture || '').split('?')[0] || null]
+        );
+      }
 
-    res.redirect(`${process.env.FRONTEND_URL}/home`);
+      const roles = await User.getRoles(userId);
+      const [prow] = await db.promise().query(
+        'SELECT picture, identity_file FROM profile WHERE user_id = ? LIMIT 1',
+        [userId]
+      );
+      const p = prow?.[0] || {};
+      const picture = (p.picture || req.user.picture || '').split('?')[0] || null;
+
+      sign(res, {
+        id: userId,
+        roles,
+        fullName: req.user.fullName || null,
+        email: req.user.email || null,
+        picture
+      });
+
+      res.redirect(`${process.env.FRONTEND_URL}/home`);
+    } catch (e) {
+      console.error('google/callback error:', e);
+      res.redirect(process.env.FRONTEND_URL);
+    }
   }
 );
 
@@ -47,22 +69,25 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body || {};
     const user = await User.login(email, password);
     const roles = await User.getRoles(user.id);
-    const [prow] = await db.promise().query('SELECT picture FROM profile WHERE user_id = ? LIMIT 1', [user.id]);
+
+    const [prow] = await db.promise().query(
+      'SELECT picture FROM profile WHERE user_id = ? LIMIT 1',
+      [user.id]
+    );
     const dbPic = (prow?.[0]?.picture || '').trim();
-    const profile = prow?.[0];
-    const picture = dbPic || user.picture || null;
+    const picture = (dbPic || user.picture || '').split('?')[0] || null;
 
     sign(res, {
       id: user.id,
       roles,
       fullName: user.name || user.fullName || null,
       email: user.email || null,
-      profile_id: profile?.profile_id || null,
       picture
     });
 
     res.json({ ok: true });
-  } catch {
+  } catch (e) {
+    console.error('POST /login error:', e);
     res.status(401).json({ error: 'invalid_credentials' });
   }
 });
@@ -74,9 +99,8 @@ router.get('/me', async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
-    // ดึง profile จาก DB
     const [profileRows] = await db.promise().query(
-      'SELECT id AS profile_id, picture FROM profile WHERE user_id = ? LIMIT 1',
+      'SELECT id AS profile_id, picture, identity_file FROM profile WHERE user_id = ? LIMIT 1',
       [decoded.id]
     );
     const profile = profileRows?.[0] || {};
@@ -87,7 +111,7 @@ router.get('/me', async (req, res) => {
       email: decoded.email,
       roles: decoded.roles,
       picture: decoded.picture,
-      profile_id: profile.profile_id || null
+      profile_id: profile.profile_id || null,
     });
   } catch (err) {
     console.error('auth/me error:', err);
