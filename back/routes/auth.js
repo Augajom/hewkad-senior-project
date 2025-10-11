@@ -34,6 +34,7 @@ router.get(
       roles,
       fullName: req.user.fullName || null,
       email: req.user.email || null,
+      profile_id: profile_Id,
       picture
     });
 
@@ -55,12 +56,41 @@ router.post('/login', async (req, res) => {
       roles,
       fullName: user.name || user.fullName || null,
       email: user.email || null,
+      profile_id: profileId ,
       picture
     });
 
     res.json({ ok: true });
   } catch {
     res.status(401).json({ error: 'invalid_credentials' });
+  }
+});
+
+router.get('/me', async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+    if (!token) return res.status(401).json({ error: 'no_token' });
+
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+
+    // ดึง profile จาก DB
+    const [profileRows] = await db.promise().query(
+      'SELECT id AS profile_id, picture FROM profile WHERE user_id = ? LIMIT 1',
+      [decoded.id]
+    );
+    const profile = profileRows?.[0] || {};
+
+    res.json({
+      id: decoded.id,
+      fullName: decoded.fullName,
+      email: decoded.email,
+      roles: decoded.roles,
+      picture: decoded.picture,
+      profile_id: profile.profile_id || null
+    });
+  } catch (err) {
+    console.error('auth/me error:', err);
+    res.status(401).json({ error: 'invalid_token' });
   }
 });
 

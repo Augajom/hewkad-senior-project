@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import Navbar from "./navbar";
+import Navbar from "./components/navbar";
 import "../../components/User/DaisyUI.css";  
 
 const API_BASE =

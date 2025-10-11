@@ -9,14 +9,14 @@ export default function History() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ฟังก์ชันดึงข้อมูลจาก API
+    
     const fetchPosts = async (status = "Complete") => {
         setLoading(true);
         setError(null);
         try {
             const res = await fetch(`http://localhost:5000/customer/history/${status}`, {
                 method: 'GET',
-                credentials: 'include', // 🔑 ต้องมี
+                credentials: 'include', 
             });
 
             if (!res.ok) {
