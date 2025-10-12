@@ -241,7 +241,6 @@ export default function ProfilePage() {
                 A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs
               </div>
 
-              {/* Bank + Account */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
                 {["bank", "accountNumber", "accountOwner"].map((field) => (
                   <div className="contents" key={field}>
@@ -257,7 +256,6 @@ export default function ProfilePage() {
                 ))}
               </div>
 
-              {/* Identify */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-start" id="identity-section">
                 <label className="text-black text-sm sm:text-base font-medium sm:col-span-1 flex items-center">
                   identification

@@ -19,7 +19,8 @@ function sign(res, payload) {
   return token;
 }
 
-router.get('/google',
+router.get(
+  '/google',
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 );
 
@@ -30,13 +31,21 @@ router.get(
     try {
       const userId = req.user.id;
 
-      // สร้าง profile ถ้ายังไม่มี
-      const [existsRows] = await db.promise().query('SELECT id FROM profile WHERE user_id = ? LIMIT 1', [userId]);
+      // ensure profile row exists
+      const [existsRows] = await db.promise().query(
+        'SELECT id FROM profile WHERE user_id = ? LIMIT 1',
+        [userId]
+      );
       if (!existsRows.length) {
         await db.promise().query(
           `INSERT INTO profile (user_id, email, name, picture)
            VALUES (?, ?, ?, ?)`,
-          [userId, req.user.email || null, req.user.fullName || null, (req.user.picture || '').split('?')[0] || null]
+          [
+            userId,
+            req.user.email || null,
+            req.user.fullName || null,
+            (req.user.picture || '').split('?')[0] || null
+          ]
         );
       }
 
@@ -110,8 +119,9 @@ router.get('/me', async (req, res) => {
       fullName: decoded.fullName,
       email: decoded.email,
       roles: decoded.roles,
-      picture: decoded.picture,
+      picture: decoded.picture, 
       profile_id: profile.profile_id || null,
+      identityFile: profile.identity_file || null 
     });
   } catch (err) {
     console.error('auth/me error:', err);

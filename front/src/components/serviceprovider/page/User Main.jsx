@@ -6,6 +6,8 @@ import SP_OrderStatus from "../components/SP_OrderStatus.jsx";
 import HistoryPage from "./SP_History.jsx";
 import ChatPage from "../components/ChatPage.jsx";
 import "../DaisyUI.css";
+import OrderStatus from "../components/OrderStatus.jsx";
+import ConfirmModal from "../components/ConfirmModal.jsx";
 
 function userMain() {
   const [currentPage, setCurrentPage] = useState("home");
