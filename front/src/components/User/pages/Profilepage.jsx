@@ -35,9 +35,6 @@ export default function ProfilePage() {
   const [editUser, setEditUser] = useState(user);
 
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [avatarFileName, setAvatarFileName] = useState("");
-
   const [identityPreview, setIdentityPreview] = useState("");
   const [identityFileName, setIdentityFileName] = useState("");
   const [identityUploading, setIdentityUploading] = useState(false);
@@ -78,7 +75,6 @@ export default function ProfilePage() {
 
       if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
       if (identityPreview) { URL.revokeObjectURL(identityPreview); setIdentityPreview(""); }
-      setAvatarFileName("");
       setIdentityFileName("");
     } catch {
       alert("โหลดโปรไฟล์ไม่สำเร็จ");
@@ -100,55 +96,16 @@ export default function ProfilePage() {
     setEditUser(user);
     if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
     if (identityPreview) { URL.revokeObjectURL(identityPreview); setIdentityPreview(""); }
-    setAvatarFileName("");
     setIdentityFileName("");
     setEditMode(false);
   };
 
-  // -------- Upload Avatar (Profile Picture) ----------
-  async function uploadAvatar(file) {
-    if (!file) return;
-    try {
-      setAvatarUploading(true);
-
-      // preview optimistic
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-      const url = URL.createObjectURL(file);
-      setAvatarPreview(url);
-      setAvatarFileName(file.name);
-
-      const fd = new FormData();
-      fd.append("avatar", file, file.name || "avatar.jpg");
-
-      const res = await fetch(`${API_BASE}/profile`, {
-        method: "PUT",
-        credentials: "include",
-        body: fd, // multipart/form-data → backend จะจับที่ field 'avatar'
-      });
-      const data = await res.json();
-      if (!res.ok || !data?.ok) throw new Error(data?.error || "Upload avatar failed");
-
-      const newPic = data?.profile?.picture || "";
-      setUser((prev) => ({ ...prev, picture: newPic }));
-      setEditUser((prev) => ({ ...prev, picture: newPic }));
-      // NOTE: จะคง preview ไว้, แต่ถ้าอยากใช้ภาพจาก server ให้ใช้:
-      // setAvatarPreview(resolveImg(newPic));
-    } catch (e) {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-      setAvatarPreview("");
-      setAvatarFileName("");
-      alert(e?.message || "อัปโหลดรูปโปรไฟล์ไม่สำเร็จ");
-    } finally {
-      setAvatarUploading(false);
-    }
-  }
-
-  // -------- Upload Identity ----------
   async function uploadIdentity(file) {
     if (!file) return;
     try {
       setIdentityUploading(true);
 
+      // พรีวิว optimistic
       if (identityPreview) URL.revokeObjectURL(identityPreview);
       const url = URL.createObjectURL(file);
       setIdentityPreview(url);
@@ -191,7 +148,6 @@ export default function ProfilePage() {
         accountNumber: editUser.accountNumber || null,
         accountOwner: editUser.accountOwner || null
       };
-      // หมายเหตุ: ถ้าอัปโหลด avatar ผ่าน uploadAvatar แล้ว ไม่ต้องส่ง picture ใน payload ก็ได้
       if (editUser.picture && String(editUser.picture).trim() !== "") {
         payload.picture = editUser.picture.split("?")[0];
       }
@@ -243,7 +199,6 @@ export default function ProfilePage() {
       <Navbar />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
-          {/* -------- Avatar card -------- */}
           <div className="lg:col-span-1 flex flex-col items-center lg:items-start">
             <div className="avatar">
               <div className="rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-gray-100 flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-48 lg:h-48">
@@ -254,50 +209,11 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
-
-            {/* ปุ่มเปลี่ยนรูปโปรไฟล์ (เฉพาะตอนแก้ไข) */}
-            {editMode && (
-              <div className="mt-3 w-full max-w-xs">
-                <label className="block text-sm font-medium text-black mb-2">Change profile picture</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="file-input file-input-bordered w-full bg-white text-black"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    uploadAvatar(f);
-                  }}
-                />
-                {avatarUploading && (
-                  <div className="text-xs text-gray-500 mt-1">Uploading...</div>
-                )}
-                {(avatarPreview || user.picture) && (
-                  <div
-                    className="text-xs text-gray-600 mt-1 max-w-xs truncate"
-                    title={
-                      avatarPreview
-                        ? avatarFileName
-                        : decodeURIComponent((user.picture || "").split("/").pop() || "")
-                    }
-                  >
-                    <span className="font-medium">File: </span>
-                    {avatarPreview
-                      ? avatarFileName
-                      : decodeURIComponent((user.picture || "").split("/").pop() || "-")}
-                  </div>
-                )}
-              </div>
-            )}
-
             {!editMode && (
-              <button onClick={() => setEditMode(true)} className="btn btn-link mt-3 text-primary no-underline">
-                Edit Profile
-              </button>
+              <button onClick={() => setEditMode(true)} className="btn btn-link mt-3 text-primary no-underline">Edit Profile</button>
             )}
           </div>
 
-          {/* -------- Form -------- */}
           <div className="lg:col-span-2">
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
@@ -325,7 +241,6 @@ export default function ProfilePage() {
                 A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs
               </div>
 
-              {/* Bank + Account */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
                 {["bank", "accountNumber", "accountOwner"].map((field) => (
                   <div className="contents" key={field}>
@@ -341,7 +256,6 @@ export default function ProfilePage() {
                 ))}
               </div>
 
-              {/* Identify */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-start" id="identity-section">
                 <label className="text-black text-sm sm:text-base font-medium sm:col-span-1 flex items-center">
                   identification
@@ -399,7 +313,8 @@ export default function ProfilePage() {
                           <div
                             className="text-xs text-gray-600 max-w-md truncate"
                             title={decodeURIComponent((user.identityFile || "").split("/").pop() || "")}
-                          />
+                          >
+                          </div>
                           <img
                             src={resolveImg(user.identityFile)}
                             alt="identification"
