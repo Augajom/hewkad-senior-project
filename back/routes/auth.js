@@ -34,7 +34,6 @@ router.get(
       roles,
       fullName: req.user.fullName || null,
       email: req.user.email || null,
-      profile_id: profile_Id,
       picture
     });
 
@@ -56,7 +55,6 @@ router.post('/login', async (req, res) => {
       roles,
       fullName: user.name || user.fullName || null,
       email: user.email || null,
-      profile_id: profileId ,
       picture
     });
 
