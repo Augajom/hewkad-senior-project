@@ -10,6 +10,7 @@ const Ordering = require('../models/customer/Ordering');
 const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
 const QRCode = require("qrcode");
+const { sendOrderReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
 
 // ===================
@@ -178,18 +179,27 @@ router.get('/ordering', verifyToken, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-router.put('/orders/:id', async (req, res) => {
-  const orderId = req.params.id;
-  const { status } = req.body;
+// router.put('/orders/:id', async (req, res) => {
+//   const orderId = req.params.id;
 
-  try {
-    const result = await Ordering.updateStatus(orderId, status);
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+//   try {
+//     // ✅ อัปเดตสถานะ
+//     await Ordering.updateStatus(orderId, "Rider Received");
+
+//     // ✅ ดึงข้อมูลเจ้าของโพสต์
+//     const orderInfo = await Ordering.getOwnerEmail(orderId);
+//     const { email, nickname, product, store_name } = orderInfo;
+
+//     // ✅ ส่งอีเมล
+//     await sendOrderReceivedEmail(email, nickname, product, store_name);
+
+//     res.json({ success: true, message: "Order updated and email sent" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// });
+
 
 // GET /customer/payment/qr/:orderId
 router.get("/payment/qr/:orderId", async (req, res) => {

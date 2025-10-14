@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ConfirmModal from "./ConfirmModal";
 import '../DaisyUI.css'
 
+
 const FoodCard = ({ order, onRequestConfirm }) => (
   <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden text-black flex flex-col">
     {/* Header */}
@@ -13,7 +14,7 @@ const FoodCard = ({ order, onRequestConfirm }) => (
       />
       <div>
         <div className="font-bold text-sm">{order.nickname || order.name || 'ไม่ระบุชื่อ'}</div>
-        <div className="text-xs text-gray-500">{order.username || '@username'}</div> 
+        <div className="text-xs text-gray-500">{order.username || '@username'}</div>
       </div>
     </div>
 
@@ -71,13 +72,36 @@ const FoodCardList = ({ onConfirmOrder }) => {
     setSelectedOrder(order);
     setModalVisible(true);
   };
+  
 
-  const handleConfirm = () => {
-    const newOrder = { ...selectedOrder, status_name: "Waiting", proof: null };
-    onConfirmOrder(newOrder);
-    setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
-    setModalVisible(false);
-    setSelectedOrder(null);
+  const handleConfirm = async () => {
+    
+    try {
+      // เรียก backend เพื่ออัปเดตสถานะและส่งอีเมล
+      const res = await fetch(`http://localhost:5000/service/orders/${selectedOrder.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        // ไม่ต้องใส่ Authorization เพราะ token อยู่ใน cookie
+      },
+      credentials: 'include', // ส่ง cookies ไปด้วย
+      body: JSON.stringify({})
+    });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+      console.log('Order updated:', result);
+
+      // อัปเดต UI
+      const newOrder = { ...selectedOrder, status_name: "Rider Received" };
+      onConfirmOrder(newOrder);
+      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+    } catch (err) {
+      console.error("Failed to confirm order:", err);
+    } finally {
+      setModalVisible(false);
+      setSelectedOrder(null);
+    }
   };
 
   return (
