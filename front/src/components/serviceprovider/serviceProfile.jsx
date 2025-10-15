@@ -184,7 +184,7 @@ export default function serviceProfile() {
 
   //swirch role
   const location = useLocation();
-  const switchPath = location.pathname.includes("/provider/profile") ? "/user/profile" : "/provider/profile";
+  const switchPath = location.pathname.includes("/service/profile") ? "/user/profile" : "/service/profile";
 
   const handleSwitchRole = () => {
     navigate(switchPath, { replace: true });

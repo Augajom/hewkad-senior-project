@@ -160,7 +160,7 @@ export default function ProfilePage() {
     const newRole = data.role_name;
     localStorage.setItem("role", newRole);
 
-    const switchPath = newRole === "service" ? "/provider/profile" : "/user/profile";
+    const switchPath = newRole === "service" ? "/service/profile" : "/user/profile";
     navigate(switchPath, { replace: true });
   } catch (err) {
     console.error("Switch role failed:", err);
@@ -191,14 +191,14 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 mb-10">
           <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
             <div className="space-y-4">
               {["nickname", "fullName", "phone", "address"].map((field) => (
                 <div className="flex items-center" key={field}>
                   <label className="text-black w-45 mr-2">{field}</label>
                   {editMode ? (
-                    <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white" />
+                    <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white text-black border border-black" />
                   ) : (
                     <div className="text-black">{user[field]}</div>
                   )}
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                 <div className="flex items-center" key={field}>
                   <label className="text-black w-45 mr-2">{field}</label>
                   {editMode ? (
-                    <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white" />
+                    <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white text-black border border-black" />
                   ) : (
                     <div className="text-black">{user[field] || "-"}</div>
                   )}

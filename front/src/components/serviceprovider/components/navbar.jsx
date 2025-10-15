@@ -64,7 +64,7 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
             <span className="text-black">Payment</span>
           </button>
 
-          <Link to="/provider/profile" className="btn btn-ghost btn-circle">
+          <Link to="/service/profile" className="btn btn-ghost btn-circle">
             <User className="w-5 h-5 text-black" />
           </Link>
         </div>
@@ -73,9 +73,9 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
       {/* Bottom Navbar (Navigation) */}
       <div className="navbar bg-white shadow-md border-t">
         <div className="flex justify-center items-center w-full gap-8">
-          <Link to="/main" className={`${baseBtnClass} ${currentPath === "/main" ? activeClass : inactiveClass}`}>Home</Link>
-          <Link to="/provider/history" className={`${baseBtnClass} ${currentPath === "/history" ? activeClass : inactiveClass}`}>History</Link>
-          <Link to="/chat" className={`${baseBtnClass} ${currentPath === "/chat" ? activeClass : inactiveClass}`}>Chat</Link>
+          <Link to="/service/main" className={`${baseBtnClass} ${currentPath === "/service/main" ? activeClass : inactiveClass}`}>Home</Link>
+          <Link to="/service/history" className={`${baseBtnClass} ${currentPath === "/service/history" ? activeClass : inactiveClass}`}>History</Link>
+          <Link to="/service/chat" className={`${baseBtnClass} ${currentPath === "/service/chat" ? activeClass : inactiveClass}`}>Chat</Link>
         </div>
       </div>
     </div>
