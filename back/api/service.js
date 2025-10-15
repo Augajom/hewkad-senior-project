@@ -5,6 +5,9 @@ const verifyToken = require('../utils/verifyToken');
 const requireRole = require('../utils/requireRole');
 const Kad = require('../models/service/kad');
 const Order = require('../models/service/order');
+const Ordering = require('../models/customer/Ordering');
+const { sendOrderReceivedEmail } = require('../utils/notification');
+
 
 // ===================
 // TEST route
@@ -38,6 +41,27 @@ router.get('/Order', verifyToken, requireRole('service'), async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+router.put('/orders/:id', verifyToken, requireRole('service'), async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    // อัปเดต status
+    await Ordering.updateStatus(orderId, 'Rider Received');
+
+    // ดึงเจ้าของ order
+    const { email, nickname, product, store_name } = await Ordering.getOwnerEmail(orderId);
+
+    // ส่งอีเมล
+    await sendOrderReceivedEmail(email, nickname, product, store_name);
+
+    res.json({ success: true, message: 'Order updated and email sent' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
 
 
 module.exports = router;
