@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 
+
 import Navbar from "../components/navbar.jsx";
-import FoodCardList from "../components/Order.jsx";
-import SP_OrderStatus from "../components/SP_OrderStatus.jsx";
+import OrderingList from "./orderingpage.jsx";
 import HistoryPage from "./SP_History.jsx";
+import Home from "./home.jsx";
 import ChatPage from "../components/ChatPage.jsx";
+import { useOrders } from "../hooks/useOrder"; // ✅ ดึง hook
 import "../DaisyUI.css";
 import Kaddropdown from "../../User/components/Kaddropdown.jsx";
 import OrderStatus from "../components/OrderStatus.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
 
-function userMain() {
+function UserMain() {
   const [currentPage, setCurrentPage] = useState("home");
   const [orderingList, setOrderingList] = useState([]);
   const [historyList, setHistoryList] = useState([]);
@@ -51,19 +53,14 @@ function userMain() {
     );
   };
 
-  // แนบหลักฐาน → เปลี่ยนเป็น Complete แล้วย้ายไป History
-  const handleCompleteOrder = (orderId, file) => {
-    const completedOrder = orderingList.find((order) => order.id === orderId);
-    if (completedOrder) {
-      const updatedOrder = {
-        ...completedOrder,
-        status: "Complete",
-        proof: file,
-      };
+  // ✅ ดึงออเดอร์ Rider Received
+  const { orders: riderOrders } = useOrders("Rider Received");
+  const orderingCount = riderOrders.length; // จำนวนออเดอร์ที่ยังดำเนินการอยู่
 
-      setOrderingList((prev) => prev.filter((order) => order.id !== orderId));
-      setHistoryList((prev) => [...prev, updatedOrder]);
-    }
+  // 🔹 เมื่อกด HEW แล้วรับออเดอร์สำเร็จ
+  const handleOrder = (order) => {
+    console.log("Rider accepted order:", order);
+     // ไปหน้าดูออเดอร์ที่รับแล้ว
   };
 
   return (
@@ -71,7 +68,7 @@ function userMain() {
       <Navbar
         currentPage={currentPage}
         onNavigate={setCurrentPage}
-        orderingCount={orderingList.length}
+        orderingCount={orderingCount} // ✅ ส่งจำนวนจริง
       />
       <Kaddropdown
         kadOptions={kadOptions}
@@ -96,9 +93,13 @@ function userMain() {
         {currentPage === "chat" && (
           <ChatPage historyList={historyList} orderingList={orderingList} />
         )}
+        {currentPage === "home" && <Home onConfirmOrder={handleOrder} />}
+        {currentPage === "ordering" && <OrderingList />}
+        {currentPage === "history" && <HistoryPage />}
+        {currentPage === "chat" && <ChatPage />}
       </div>
     </div>
   );
 }
 
-export default userMain;
+export default UserMain;

@@ -46,23 +46,15 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
 
         {/* Right Buttons */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => onNavigate("ordering")}
-            className="btn btn-ghost relative"
-          >
-            <ShoppingCart className="w-5 h-5 text-black" />
-            <span className="ml-1 font-semibold text-black">Ordering</span>
-            {orderingCount > 0 && (
-              <div className="badge badge-info badge-sm absolute top-0 right-0">
-                {orderingCount}
-              </div>
-            )}
-          </button>
-
-          <button className="btn btn-ghost">
-            <CreditCard className="w-5 h-5 mr-1 text-black" />
-            <span className="text-black">Payment</span>
-          </button>
+          <Link to="/service/ordering">
+            <button className="btn btn-ghost relative">
+              <ShoppingCart className="w-5 h-5 text-black" />
+              <span className="ml-1 font-semibold text-black">Ordering</span>
+              {orderingCount > 0 && (
+                <div className="badge badge-info badge-sm absolute top-0 right-0">{orderingCount}</div>
+              )}
+            </button>
+          </Link>
 
           <Link to="/service/profile" className="btn btn-ghost btn-circle">
             <User className="w-5 h-5 text-black" />
