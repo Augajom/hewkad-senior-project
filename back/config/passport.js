@@ -45,7 +45,7 @@ passport.use(
           id: user.id,
           email,
           fullName: displayName,
-          picture
+          picture,
         });
       } catch (err) {
         return done(err, null);
@@ -59,7 +59,7 @@ passport.serializeUser((user, done) => {
     id: user.id,
     email: user.email,
     fullName: user.fullName,
-    picture: user.picture
+    picture: user.picture,
   });
 });
 

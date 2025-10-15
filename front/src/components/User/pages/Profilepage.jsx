@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import "../DaisyUI.css";
 
@@ -14,7 +14,6 @@ function resolveImg(src) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -32,18 +31,21 @@ export default function ProfilePage() {
     accountNumber: "",
     accountOwner: "",
     identityFile: "",
-    identityFileName: ""
   });
   const [editUser, setEditUser] = useState(user);
+
   const [avatarPreview, setAvatarPreview] = useState("");
+  const [identityPreview, setIdentityPreview] = useState("");
+  const [identityFileName, setIdentityFileName] = useState("");
+  const [identityUploading, setIdentityUploading] = useState(false);
 
   useEffect(() => {
     return () => {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      if (identityPreview) URL.revokeObjectURL(identityPreview);
     };
-  }, [avatarPreview]);
+  }, [avatarPreview, identityPreview]);
 
-  // Load profile
   const loadProfile = useCallback(async () => {
     setLoaded(false);
     try {
@@ -66,25 +68,22 @@ export default function ProfilePage() {
         bank: d?.bank || "",
         accountNumber: d?.accountNumber || "",
         accountOwner: d?.accountOwner || "",
-        identityFile: "",
-        identityFileName: ""
+        identityFile: d?.identityFile || "",
       };
       setUser(next);
       setEditUser(next);
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-        setAvatarPreview("");
-      }
-    } catch (err) {
+
+      if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
+      if (identityPreview) { URL.revokeObjectURL(identityPreview); setIdentityPreview(""); }
+      setIdentityFileName("");
+    } catch {
       alert("โหลดโปรไฟล์ไม่สำเร็จ");
     } finally {
       setLoaded(true);
     }
-  }, [navigate, avatarPreview]);
+  }, [navigate, avatarPreview, identityPreview]);
 
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+  useEffect(() => { loadProfile(); }, [loadProfile]);
 
   const handleEdit = () => setEditMode(true);
 
@@ -95,12 +94,46 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setEditUser(user);
-    if (avatarPreview) {
-      URL.revokeObjectURL(avatarPreview);
-      setAvatarPreview("");
-    }
+    if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
+    if (identityPreview) { URL.revokeObjectURL(identityPreview); setIdentityPreview(""); }
+    setIdentityFileName("");
     setEditMode(false);
   };
+
+  async function uploadIdentity(file) {
+    if (!file) return;
+    try {
+      setIdentityUploading(true);
+
+      // พรีวิว optimistic
+      if (identityPreview) URL.revokeObjectURL(identityPreview);
+      const url = URL.createObjectURL(file);
+      setIdentityPreview(url);
+      setIdentityFileName(file.name);
+
+      const fd = new FormData();
+      fd.append("identity", file, file.name || "identity.jpg");
+
+      const res = await fetch(`${API_BASE}/profile/identity`, {
+        method: "PUT",
+        credentials: "include",
+        body: fd
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Upload identity failed");
+
+      const savedPath = data?.profile?.identityFile || data?.filePath || "";
+      setUser((prev) => ({ ...prev, identityFile: savedPath }));
+      setEditUser((prev) => ({ ...prev, identityFile: savedPath }));
+    } catch (e) {
+      if (identityPreview) URL.revokeObjectURL(identityPreview);
+      setIdentityPreview("");
+      setIdentityFileName("");
+      alert(e?.message || "อัปโหลดรูปบัตรไม่สำเร็จ");
+    } finally {
+      setIdentityUploading(false);
+    }
+  }
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
@@ -126,12 +159,10 @@ export default function ProfilePage() {
       });
       const data = await res.json();
       if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
+
       await loadProfile();
       setEditMode(false);
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-        setAvatarPreview("");
-      }
+      if (avatarPreview) { URL.revokeObjectURL(avatarPreview); setAvatarPreview(""); }
       alert("Profile saved.");
     } catch (err) {
       alert(err?.message || "บันทึกไม่สำเร็จ");
@@ -141,121 +172,195 @@ export default function ProfilePage() {
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
   const handleLogout = async () => {
-    try {
-      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
-    } catch { }
+    try { await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" }); } catch {}
     navigate("/", { replace: true });
   };
 
-  // Switch role
   const handleSwitchRole = async () => {
-  try {
-    const res = await fetch(`${API_BASE}/customer/switch-role`, {
-      method: "POST",
-      credentials: "include", // สำคัญ! เพื่อส่ง cookie
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.message || "Switch role failed");
+    try {
+      const res = await fetch(`${API_BASE}/customer/switch-role`, { method: "POST", credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Switch role failed");
+      const newRole = data.role_name;
+      localStorage.setItem("role", newRole);
+      const switchPath = newRole === "service" ? "/provider/profile" : "/user/profile";
+      navigate(switchPath, { replace: true });
+    } catch (err) {
+      console.error("Switch role failed:", err);
+      alert("ไม่สามารถเปลี่ยน role ได้");
+    }
+  };
 
-    const newRole = data.role_name;
-    localStorage.setItem("role", newRole);
-
-    const switchPath = newRole === "service" ? "/provider/profile" : "/user/profile";
-    navigate(switchPath, { replace: true });
-  } catch (err) {
-    console.error("Switch role failed:", err);
-    alert("ไม่สามารถเปลี่ยน role ได้");
-  }
-};
-
-  const rawImg = editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture;
-  const currentImg = resolveImg(rawImg);
+  const currentImg = resolveImg(editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture);
   const hasImg = Boolean(currentImg && currentImg.trim() !== "");
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="max-w-4xl ml-100 mt-10 flex gap-60 items-start">
-        <div className="flex flex-col items-center">
-          <div className="avatar relative">
-            <div className="w-48 h-48 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center bg-gray-100">
-              {hasImg ? (
-                <img key={currentImg} src={currentImg} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
-              )}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
+          <div className="lg:col-span-1 flex flex-col items-center lg:items-start">
+            <div className="avatar">
+              <div className="rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-gray-100 flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 lg:w-48 lg:h-48">
+                {hasImg ? (
+                  <img key={currentImg} src={currentImg} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                )}
+              </div>
             </div>
+            {!editMode && (
+              <button onClick={() => setEditMode(true)} className="btn btn-link mt-3 text-primary no-underline">Edit Profile</button>
+            )}
           </div>
-          {!editMode && (
-            <button onClick={handleEdit} className="btn btn-link mt-2 text-primary no-underline">Edit Profile</button>
-          )}
-        </div>
 
-        <div className="flex-1">
-          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-            <div className="space-y-4">
-              {["nickname", "fullName", "phone", "address"].map((field) => (
-                <div className="flex items-center" key={field}>
-                  <label className="text-black w-45 mr-2">{field}</label>
-                  {editMode ? (
-                    <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white" />
-                  ) : (
-                    <div className="text-black">{user[field]}</div>
-                  )}
-                </div>
-              ))}
-
-              <div className="flex items-center">
-                <label className="text-black w-45 mr-2">Email :</label>
-                <div className="text-black">{user.email}</div>
+          <div className="lg:col-span-2">
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
+                {["nickname", "fullName", "phone", "address"].map((field) => (
+                  <div className="contents" key={field}>
+                    <label className="text-black text-sm sm:text-base font-medium sm:col-span-1 flex items-center">{field}</label>
+                    <div className="sm:col-span-2">
+                      {editMode ? (
+                        <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white text-black border-black" />
+                      ) : (
+                        <div className="text-black break-words">{user[field]}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="mt-8 text-black text-center font-semibold">Payment Information (Optional)</div>
-              <div className="text-center text-xs text-gray-500 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
+                <label className="text-black text-sm sm:text-base font-medium sm:col-span-1">Email :</label>
+                <div className="text-black sm:col-span-2 break-words">{user.email}</div>
+              </div>
+
+              <div className="pt-2 text-black text-center sm:text-left font-semibold">Payment Information (Optional)</div>
+              <div className="text-center sm:text-left text-xs text-gray-500 mb-2 sm:mb-4">
                 A User Who Wants To Be A Service Provider Should Focus On Delivering Quality And Meeting Customer Needs
               </div>
 
-              {["bank", "accountNumber", "accountOwner"].map((field) => (
-                <div className="flex items-center" key={field}>
-                  <label className="text-black w-45 mr-2">{field}</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
+                {["bank", "accountNumber", "accountOwner"].map((field) => (
+                  <div className="contents" key={field}>
+                    <label className="text-black text-sm sm:text-base font-medium sm:col-span-1 flex items-center">{field}</label>
+                    <div className="sm:col-span-2">
+                      {editMode ? (
+                        <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white border-black text-black" />
+                      ) : (
+                        <div className="text-black break-words">{user[field] || "-"}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-start" id="identity-section">
+                <label className="text-black text-sm sm:text-base font-medium sm:col-span-1 flex items-center">
+                  identification
+                </label>
+                <div className="sm:col-span-2 space-y-2">
                   {editMode ? (
-                    <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white" />
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="file-input file-input-bordered w-full max-w-md bg-white text-black"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          uploadIdentity(f);
+                        }}
+                      />
+
+                      {identityUploading && (
+                        <div className="text-xs text-gray-500">Uploading...</div>
+                      )}
+
+                      {(user.identityFile || identityPreview) && (
+                        <div
+                          className="text-xs text-gray-600 max-w-md truncate"
+                          title={
+                            identityPreview
+                              ? identityFileName
+                              : decodeURIComponent((user.identityFile || "").split("/").pop() || "")
+                          }
+                        >
+                          <span className="font-medium">File: </span>
+                          {identityPreview
+                            ? identityFileName
+                            : decodeURIComponent((user.identityFile || "").split("/").pop() || "-")}
+                        </div>
+                      )}
+
+                      <div className="w-full max-w-md">
+                        {(identityPreview || user.identityFile) ? (
+                          <img
+                            src={identityPreview || resolveImg(user.identityFile)}
+                            alt="identity"
+                            className="w-full max-h-64 object-contain border border-gray-200 rounded-md"
+                          />
+                        ) : (
+                          <div className="text-gray-500 text-sm">No identification image</div>
+                        )}
+                      </div>
+                    </>
                   ) : (
-                    <div className="text-black">{user[field] || "-"}</div>
+                    <>
+                      {user.identityFile ? (
+                        <>
+                          <div
+                            className="text-xs text-gray-600 max-w-md truncate"
+                            title={decodeURIComponent((user.identityFile || "").split("/").pop() || "")}
+                          >
+                          </div>
+                          <img
+                            src={resolveImg(user.identityFile)}
+                            alt="identification"
+                            className="w-full max-w-52 max-h-52 object-contain border border-gray-200 rounded-md"
+                          />
+                        </>
+                      ) : (
+                        <div className="text-black break-words">-</div>
+                      )}
+                    </>
                   )}
                 </div>
-              ))}
-            </div>
-          </form>
-
-          <button
-            onClick={handleSwitchRole}
-            className="fixed bottom-6 right-35 bg-green-500 text-black font-semibold px-6 py-2 rounded-lg shadow-lg hover:bg-green-600 transition cursor-pointer"
-          >
-            Switch Role
-          </button>
-
-          <button
-            onClick={() => setShowLogoutModal(true)}
-            className="fixed bottom-6 right-6 bg-red-500 text-black font-semibold px-6 py-2 rounded-lg shadow-lg hover:bg-red-600 transition cursor-pointer"
-          >
-            Logout
-          </button>
-
-          {showLogoutModal && (
-            <dialog className="modal modal-open">
-              <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
-                <h3 className="font-bold text-lg text-center mb-4">Confirm Logout</h3>
-                <p className="text-center mb-6">You sure to logout?</p>
-                <div className="modal-action flex justify-center gap-4">
-                  <button className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white" onClick={() => setShowLogoutModal(false)}>Cancel</button>
-                  <button className="btn btn-success px-8 py-3 rounded-full text-black" onClick={handleLogout}>Confirm</button>
-                </div>
               </div>
-            </dialog>
-          )}
+
+              <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-end pt-2">
+                {editMode ? (
+                  <>
+                    <button type="button" onClick={handleCancel} className="btn btn-ghost sm:px-6">Cancel</button>
+                    <button type="submit" disabled={isSaving} className="btn btn-success sm:px-6">
+                      {isSaving ? "Saving..." : "Save"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" onClick={handleSwitchRole} className="btn bg-green-500 text-black font-semibold border-none sm:px-6">Switch Role</button>
+                    <button type="button" onClick={() => setShowLogoutModal(true)} className="btn bg-red-500 text-black font-semibold border-none sm:px-6">Logout</button>
+                  </>
+                )}
+              </div>
+            </form>
+          </div>
         </div>
       </div>
+
+      {showLogoutModal && (
+        <dialog className="modal modal-open">
+          <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
+            <h3 className="font-bold text-lg text-center mb-4">Confirm Logout</h3>
+            <p className="text-center mb-6">You sure to logout?</p>
+            <div className="modal-action flex justify-center gap-4">
+              <button className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white" onClick={() => setShowLogoutModal(false)}>Cancel</button>
+              <button className="btn btn-success px-8 py-3 rounded-full text-black" onClick={handleLogout}>Confirm</button>
+            </div>
+          </div>
+        </dialog>
+      )}
     </div>
   );
 }
