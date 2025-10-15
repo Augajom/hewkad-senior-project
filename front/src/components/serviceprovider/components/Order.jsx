@@ -32,11 +32,10 @@ const FoodCard = ({ order, onRequestConfirm }) => {
 
         <div className="flex flex-col items-end">
           <div
-            className={`badge ${
-              order.status_name === "Available"
+            className={`badge ${order.status_name === "Available"
                 ? "badge-success"
                 : "badge-info"
-            }`}
+              }`}
           >
             {order.status_name || order.status || ""}
           </div>
@@ -78,7 +77,7 @@ const FoodCard = ({ order, onRequestConfirm }) => {
       <div className="mt-4 flex justify-end">
         <button
           onClick={onRequestConfirm}
-          className="btn btn-error text-white text-sm px-4 py-1"
+          className="btn btn-error text-white text-sm px-4 py-1 cursor-pointer"
         >
           HEW
         </button>
@@ -87,7 +86,7 @@ const FoodCard = ({ order, onRequestConfirm }) => {
   );
 };
 
-const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
+const FoodCardList = ({ onConfirmOrder, status = "Available", filterKad = [] }) => {
   const { orders, loading, error, setOrders } = useOrders(status);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -102,37 +101,57 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
     setSelectedOrder(order);
     setModalVisible(true);
   };
-  
 
   const handleConfirm = async () => {
-    
-    try {
-      // เรียก backend เพื่ออัปเดตสถานะและส่งอีเมล
-      const res = await fetch(`http://localhost:5000/service/orders/${selectedOrder.id}`, {
+  try {
+    // 1️⃣ สร้าง order ใหม่ในตาราง orders
+    const createRes = await fetch('http://localhost:5000/service/hew', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        post_id: selectedOrder.id,
+        order_price: selectedOrder.price,
+        order_service_fee: selectedOrder.service_fee,
+        delivery_address: selectedOrder.location || '',
+        delivery_time: selectedOrder.delivery_at || ''
+      })
+    });
+
+    if (!createRes.ok) throw new Error(`HTTP ${createRes.status}`);
+    const createResult = await createRes.json();
+    console.log('Order created:', createResult.order);
+
+    // 2️⃣ อัปเดต status ของโพสต์เดิม
+    const updateRes = await fetch(`http://localhost:5000/service/orders/${selectedOrder.id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        // ไม่ต้องใส่ Authorization เพราะ token อยู่ใน cookie
-      },
-      credentials: 'include', // ส่ง cookies ไปด้วย
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({})
     });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result = await res.json();
-      console.log('Order updated:', result);
+    if (!updateRes.ok) throw new Error(`HTTP ${updateRes.status}`);
+    const updateResult = await updateRes.json();
+    console.log('Post updated:', updateResult);
 
-      // อัปเดต UI
-      const newOrder = { ...selectedOrder, status_name: "Rider Received" };
-      onConfirmOrder(newOrder);
-      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
-    } catch (err) {
-      console.error("Failed to confirm order:", err);
-    } finally {
-      setModalVisible(false);
-      setSelectedOrder(null);
-    }
-  };
+    // 3️⃣ อัปเดต UI ให้โพสต์แสดงเป็น "Rider Received"
+    const newOrder = { ...selectedOrder, status_name: "Rider Received" };
+    onConfirmOrder(newOrder);
+    setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+    
+  } catch (err) {
+    console.error("Failed to confirm order:", err);
+  } finally {
+    setModalVisible(false);
+    setSelectedOrder(null);
+  }
+};
+
+
+  // ✅ กรอง orders ตาม selectedKad (multi-select)
+  const filteredOrders = filterKad.length > 0
+    ? orders.filter(order => filterKad.includes(order.kad_name))
+    : orders;
 
   return (
     <>
@@ -141,7 +160,7 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
           <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-xl" />
         ))}
 
-        {!loading && orders.map((order) => (
+        {!loading && filteredOrders.map(order => (
           <FoodCard
             key={order.id}
             order={order}
@@ -149,7 +168,7 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
           />
         ))}
 
-        {!loading && orders.length === 0 && (
+        {!loading && filteredOrders.length === 0 && (
           <p className="text-gray-500 w-full text-left mt-10">{emptyText}</p>
         )}
       </div>
@@ -163,5 +182,6 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
     </>
   );
 };
+
 
 export default FoodCardList;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import Navbar from "../components/navbar.jsx";
 import FoodCardList from "../components/Order.jsx";
@@ -6,6 +6,7 @@ import SP_OrderStatus from "../components/SP_OrderStatus.jsx";
 import HistoryPage from "./SP_History.jsx";
 import ChatPage from "../components/ChatPage.jsx";
 import "../DaisyUI.css";
+import Kaddropdown from "../../User/components/Kaddropdown.jsx";
 import OrderStatus from "../components/OrderStatus.jsx";
 import ConfirmModal from "../components/ConfirmModal.jsx";
 
@@ -13,6 +14,25 @@ function userMain() {
   const [currentPage, setCurrentPage] = useState("home");
   const [orderingList, setOrderingList] = useState([]);
   const [historyList, setHistoryList] = useState([]);
+  const [kadOptions, setKadOptions] = useState([]);
+  const [selectedKad, setSelectedKad] = useState([]);
+  const fetchKadOptions = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/customer/kad', {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      setKadOptions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Fetch kad options failed:', err);
+      setKadOptions([]);
+    }
+  };
+  useEffect(() => {
+    fetchKadOptions();
+  }, []);
+
+
 
   // กด HEW → สร้าง order ใหม่ status เป็น Waiting
   const handleOrder = (order) => {
@@ -53,21 +73,14 @@ function userMain() {
         onNavigate={setCurrentPage}
         orderingCount={orderingList.length}
       />
-
-      {currentPage === "home" && (
-        <div className="p-4 w-40">
-          <select className="block w-full p-2 bg-gray-300 text-black rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option value="">New Latest</option>
-            <option value="#">#</option>
-            <option value="#">#</option>
-            <option value="#">#</option>
-          </select>
-        </div>
-      )}
-
+      <Kaddropdown
+        kadOptions={kadOptions}
+        selectedKad={selectedKad}
+        setSelectedKad={setSelectedKad}
+      />
       <div className="p-4">
         {currentPage === "home" && (
-          <FoodCardList onConfirmOrder={handleOrder} />
+          <FoodCardList onConfirmOrder={handleOrder} filterKad={selectedKad} />
         )}
 
         {currentPage === "ordering" && (
