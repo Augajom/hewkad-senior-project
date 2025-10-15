@@ -18,6 +18,8 @@ import Ordering from './components/User/pages/Ordering.jsx'
 
 //Service Provider Kaew
 import Main from './components/serviceprovider/page/User Main.jsx'
+import ServiceOrdering from './components/serviceprovider/page/orderingpage.jsx'
+import ServiceHome from './components/serviceprovider/page/home.jsx'
 import ServiceProfile from './components/serviceprovider/serviceProfile.jsx'
 import SP_History from './components/serviceprovider/page/SP_History.jsx'
 import UserChat from './components/User/pages/Chat.jsx';
@@ -86,6 +88,15 @@ const router = createBrowserRouter([
     path: "service/history",
     element: <SP_History />
   },
+  {
+    path: "service/ordering",
+    element: <ServiceOrdering />
+  },
+  {
+    path: "service/home",
+    element: <ServiceHome />
+  },
+  
   {
     path: "service/chat",
     element: <ServiceChat />

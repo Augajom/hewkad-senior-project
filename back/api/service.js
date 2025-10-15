@@ -32,9 +32,10 @@ router.get('/kad', async (req, res) => {
 // GET all orders
 router.get('/Order', verifyToken, requireRole('service'), async (req, res) => {
   try {
+   
     const status = req.query.status || 'Available';
     const ordersList = await Order.getAll();
-    const filtered = ordersList.filter(o => o.status_name === status);
+    const filtered = ordersList.filter(o => status.split(',').includes(o.status_name));
     res.json(filtered);
   } catch (err) {
     console.error('Failed to get orders:', err);
@@ -60,7 +61,28 @@ router.put('/orders/:id', verifyToken, requireRole('service'), async (req, res) 
     res.status(500).json({ success: false, message: err.message });
   }
 });
+router.get('/orderingstatus', verifyToken, requireRole('service'), async (req, res) => {
+  try {
+    const userId = req.user.id; // ดึง user ปัจจุบัน
+    const statusQuery = req.query.status || "Rider Received,Ordering,Order Received";
 
+    // แยก status เป็น array และ trim
+    const statusArray = statusQuery.split(",").map(s => s.trim());
+
+    // ดึงทุกออเดอร์
+    const ordersList = await Order.getAll();
+
+    // กรองออเดอร์: ของ user ปัจจุบัน + status ที่ต้องการ
+    const filtered = ordersList.filter(
+      o => o.user_id === userId && statusArray.includes(o.status_name)
+    );
+
+    res.json(filtered);
+  } catch (err) {
+    console.error('Failed to get orders:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 
 
