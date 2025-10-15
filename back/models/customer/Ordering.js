@@ -48,6 +48,7 @@ const Ordering = {
       });
     });
   },
+  
 
   // เพิ่ม method update status
   updateStatus: (orderId, newStatus) => {
@@ -68,7 +69,29 @@ const Ordering = {
         resolve({ success: true, message: 'Order status updated' });
       });
     });
+  },
+  getOwnerEmail: (orderId) => {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT 
+          u.email, 
+          pr.name AS nickname, 
+          p.product, 
+          p.store_name
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        JOIN profile pr ON p.profile_id = pr.id
+        WHERE p.id = ?
+      `;
+      db.query(sql, [orderId], (err, results) => {
+        if (err) return reject(err);
+        if (results.length === 0) return reject(new Error('Order not found'));
+        resolve(results[0]);
+      });
+    });
   }
+  
+  
 };
 
 module.exports = Ordering;

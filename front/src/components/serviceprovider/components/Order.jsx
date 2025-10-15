@@ -4,6 +4,7 @@ import ConfirmModal from "./ConfirmModal";
 import { useOrders } from "../hooks/useOrder";
 import "../DaisyUI.css";
 
+
 const FoodCard = ({ order, onRequestConfirm }) => (
   <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden text-black flex flex-col">
     <div className="flex items-center p-3 bg-gray-100">
@@ -61,13 +62,36 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
     setSelectedOrder(order);
     setModalVisible(true);
   };
+  
 
-  const handleConfirm = () => {
-    const newOrder = { ...selectedOrder, status_name: "Waiting", proof: null };
-    onConfirmOrder?.(newOrder);
-    setOrders((prev) => prev.filter((o) => o.id !== selectedOrder.id));
-    setModalVisible(false);
-    setSelectedOrder(null);
+  const handleConfirm = async () => {
+    
+    try {
+      // เรียก backend เพื่ออัปเดตสถานะและส่งอีเมล
+      const res = await fetch(`http://localhost:5000/service/order/${selectedOrder.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        // ไม่ต้องใส่ Authorization เพราะ token อยู่ใน cookie
+      },
+      credentials: 'include', // ส่ง cookies ไปด้วย
+      body: JSON.stringify({})
+    });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+      console.log('Order updated:', result);
+
+      // อัปเดต UI
+      const newOrder = { ...selectedOrder, status_name: "Rider Received" };
+      onConfirmOrder(newOrder);
+      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+    } catch (err) {
+      console.error("Failed to confirm order:", err);
+    } finally {
+      setModalVisible(false);
+      setSelectedOrder(null);
+    }
   };
 
   return (
