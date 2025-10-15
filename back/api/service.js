@@ -44,17 +44,22 @@ router.get('/Order', verifyToken, requireRole('service'), async (req, res) => {
 router.put('/orders/:id', verifyToken, requireRole('service'), async (req, res) => {
   try {
     const orderId = req.params.id;
+    const senderEmail = req.user.email; // ✅ จาก verifyToken
 
-    // อัปเดต status
+    // ✅ 1. อัปเดตสถานะ
     await Ordering.updateStatus(orderId, 'Rider Received');
 
-    // ดึงเจ้าของ order
-    const { email, nickname, product, store_name } = await Ordering.getOwnerEmail(orderId);
+    // ✅ 2. ดึงข้อมูลอีเมลเจ้าของร้าน
+    const { email: receiverEmail, nickname, product, store_name } = await Ordering.getOwnerEmail(orderId);
 
-    // ส่งอีเมล
-    await sendOrderReceivedEmail(email, nickname, product, store_name);
+    // ✅ 3. ส่งอีเมล พร้อมระบุผู้ส่ง
+    await sendOrderReceivedEmail(receiverEmail, nickname, product, store_name, senderEmail);
 
-    res.json({ success: true, message: 'Order updated and email sent' });
+    res.json({
+      success: true,
+      message: 'Order updated and email sent',
+      
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: err.message });
