@@ -39,7 +39,7 @@ router.get(
       picture
     });
 
-    res.redirect(`${process.env.FRONTEND_URL}/home`);
+    res.redirect(`${process.env.FRONTEND_URL}/user/home`);
   }
 );
 

@@ -12,6 +12,7 @@ const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
 const QRCode = require("qrcode");
 const promptpay = require("promptpay-qr");
+const getName = require('../models/getName');
 
 const upload = multer();
 
@@ -317,6 +318,19 @@ router.post("/switch-role", verifyToken, (req, res) => {
       });
     });
   });
+});
+
+// GET Name by userId
+router.get('/name', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id; // ดึง userId จาก token/session
+    const fullName = await getName.getByUserId(userId);
+
+    res.json({ fullName });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch fullName' });
+  }
 });
 
 
