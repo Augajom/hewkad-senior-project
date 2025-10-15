@@ -68,7 +68,7 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
     
     try {
       // เรียก backend เพื่ออัปเดตสถานะและส่งอีเมล
-      const res = await fetch(`http://localhost:5000/service/orders/${selectedOrder.id}`, {
+      const res = await fetch(`http://localhost:5000/service/order/${selectedOrder.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
