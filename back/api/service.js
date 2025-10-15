@@ -6,6 +6,7 @@ const requireRole = require('../utils/requireRole');
 const Kad = require('../models/service/kad');
 const Order = require('../models/service/order');
 const Ordering = require('../models/customer/Ordering');
+const OrderHistory = require('../models/service/History');
 const { sendOrderReceivedEmail } = require('../utils/notification');
 
 
@@ -42,6 +43,40 @@ router.get('/Order', verifyToken, requireRole('service'), async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+router.post('/hew', verifyToken, requireRole('service'), (req, res) => {
+  const { post_id, order_price, order_service_fee, delivery_address, delivery_time } = req.body;
+  const rider_id = req.user.id; // ผู้กด HEW
+
+  // 1️⃣ สร้าง order ใหม่
+  const insertSql = `
+    INSERT INTO orders
+    (post_id, customer_id, rider_id, status_id, order_price, order_service_fee, delivery_address, delivery_time)
+    SELECT id, user_id, ?, 2, ?, ?, ?, ?
+    FROM posts
+    WHERE id = ?
+  `;
+  db.query(
+    insertSql,
+    [rider_id, order_price, order_service_fee, delivery_address, delivery_time, post_id],
+    (err, result) => {
+      if (err) {
+        console.error('DB error (insert orders):', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      // 2️⃣ อัปเดต status ของโพสต์เป็น "Rider Received" (status_id = 2)
+      const updateSql = `UPDATE posts SET status_id = 2 WHERE id = ?`;
+      db.query(updateSql, [post_id], (err2) => {
+        if (err2) {
+          console.error('DB error (update posts):', err2);
+          return res.status(500).json({ error: err2.message });
+        }
+
+        res.json({ success: true, order_id: result.insertId });
+      });
+    }
+  );
+});
 router.put('/orders/:id', verifyToken, requireRole('service'), async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -66,6 +101,19 @@ router.put('/orders/:id', verifyToken, requireRole('service'), async (req, res) 
     res.status(500).json({ success: false, message: err.message });
   }
 });
+// GET /service/history
+router.get('/history', verifyToken, async (req, res) => {
+  try {
+    const riderId = req.user.id; // ดึง rider id จาก token
+    const orders = await OrderHistory.getByRider(riderId);
+
+    res.json(orders);
+  } catch (err) {
+    console.error("Failed to fetch order history:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 router.get('/orderingstatus', verifyToken, requireRole('service'), async (req, res) => {
   try {
     const userId = req.user.id; // ดึง user ปัจจุบัน
