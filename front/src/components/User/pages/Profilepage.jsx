@@ -191,7 +191,19 @@ export default function ProfilePage() {
     }
   };
 
-  const currentImg = resolveImg(editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture);
+    const newRole = data.role_name;
+    localStorage.setItem("role", newRole);
+
+    const switchPath = newRole === "service" ? "/service/profile" : "/user/profile";
+    navigate(switchPath, { replace: true });
+  } catch (err) {
+    console.error("Switch role failed:", err);
+    alert("ไม่สามารถเปลี่ยน role ได้");
+  }
+};
+
+  const rawImg = editMode ? (avatarPreview || editUser.picture || user.picture) : user.picture;
+  const currentImg = resolveImg(rawImg);
   const hasImg = Boolean(currentImg && currentImg.trim() !== "");
 
   return (
@@ -214,6 +226,7 @@ export default function ProfilePage() {
             )}
           </div>
 
+<<<<<<< HEAD
           <div className="lg:col-span-2">
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
@@ -229,6 +242,25 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 ))}
+=======
+        <div className="flex-1 mb-10">
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+            <div className="space-y-4">
+              {["nickname", "fullName", "phone", "address"].map((field) => (
+                <div className="flex items-center" key={field}>
+                  <label className="text-black w-45 mr-2">{field}</label>
+                  {editMode ? (
+                    <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white text-black border border-black" />
+                  ) : (
+                    <div className="text-black">{user[field]}</div>
+                  )}
+                </div>
+              ))}
+
+              <div className="flex items-center">
+                <label className="text-black w-45 mr-2">Email :</label>
+                <div className="text-black">{user.email}</div>
+>>>>>>> feature/chat
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
@@ -262,6 +294,7 @@ export default function ProfilePage() {
                 </label>
                 <div className="sm:col-span-2 space-y-2">
                   {editMode ? (
+<<<<<<< HEAD
                     <>
                       <input
                         type="file"
@@ -306,6 +339,9 @@ export default function ProfilePage() {
                         )}
                       </div>
                     </>
+=======
+                    <input name={field} value={editUser[field] || ""} onChange={handleChange} className="input input-bordered w-full bg-white text-black border border-black" />
+>>>>>>> feature/chat
                   ) : (
                     <>
                       {user.identityFile ? (

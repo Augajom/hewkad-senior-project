@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
-import serviceNavbar from "../../serviceprovider/components/navbar";
-import customerNavbar from "../components/navbar";
+import serviceNavbar from "./navbar";
+import customerNavbar from "../../User/components/navbar";
 
 const socket = io("http://localhost:3001");
 
