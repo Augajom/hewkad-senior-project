@@ -183,7 +183,7 @@ export default function ProfilePage() {
       if (!res.ok) throw new Error(data?.message || "Switch role failed");
       const newRole = data.role_name;
       localStorage.setItem("role", newRole);
-      const switchPath = newRole === "service" ? "/provider/profile" : "/user/profile";
+      const switchPath = newRole === "service" ? "/service/profile" : "/user/profile";
       navigate(switchPath, { replace: true });
     } catch (err) {
       console.error("Switch role failed:", err);
