@@ -1,6 +1,7 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../models/userModel");
+const db = require("../config/db");
 require("dotenv").config();
 
 passport.use(
@@ -26,6 +27,18 @@ passport.use(
           try {
             await User.updateBasicProfile(user.id, { fullName: displayName, picture });
           } catch {}
+        }
+
+        const [rows] = await db.promise().query(
+          'SELECT id FROM profile WHERE user_id = ? LIMIT 1',
+          [user.id]
+        );
+
+        if (!rows.length) {
+          await db.promise().query(
+            'INSERT INTO profile (user_id, name, email, picture) VALUES (?, ?, ?, ?)',
+            [user.id, displayName, email, picture]
+          );
         }
 
         return done(null, {

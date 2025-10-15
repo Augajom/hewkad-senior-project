@@ -85,7 +85,11 @@ const User = {
             'INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
             [userId, customerRole.id],
             (err) => {
-              if (err) return rejectRoleInsert(err);
+              if (err) {
+                console.error('❌ Insert user_roles error:', err);
+                return rejectRoleInsert(err);
+              }
+              console.log('✅ User role inserted successfully');
               resolveRoleInsert();
             }
           );
@@ -103,7 +107,7 @@ const User = {
    *  OAuth Register (Google)
    *  =============================
    */
-  createOAuth: async (email, name) => {
+  createOAuth: async (email, name, picture) => {
     try {
       const userId = await new Promise((resolve, reject) => {
         db.query(

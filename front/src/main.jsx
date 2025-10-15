@@ -20,6 +20,7 @@ import Ordering from './components/User/pages/Ordering.jsx'
 import Main from './components/serviceprovider/page/User Main.jsx'
 import ServiceProfile from './components/serviceprovider/serviceProfile.jsx'
 import SP_History from './components/serviceprovider/page/SP_History.jsx'
+import Chat from './components/User/pages/chat.jsx'
 
 const router = createBrowserRouter([
   {
@@ -70,6 +71,10 @@ const router = createBrowserRouter([
   {
     path: "Main",
     element: <Main />
+  },
+  {
+    path: "Chat",
+    element: <Chat />
   },
   // Service Provider
   {
