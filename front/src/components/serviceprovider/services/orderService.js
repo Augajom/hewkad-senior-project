@@ -5,8 +5,9 @@ const API_BASE = import.meta.env?.VITE_API_URL || "http://localhost:5000";
  * ดึงรายการออเดอร์จาก API จริง
  * @param {string} status เช่น "Available" | "Waiting" | "Ordering"
  */
-export async function getOrders(status = "Available") {
-  const url = `${API_BASE}/service/kad`;
+export async function getOrders(status = "Available,Rider Received,Ordering,Order Received,Reported") {
+  const url = `${API_BASE}/service/order?status=${encodeURIComponent(status)}`;
+  
 
   const res = await fetch(url, {
     method: "GET",

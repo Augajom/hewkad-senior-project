@@ -1,49 +1,23 @@
 import React, { useState } from "react";
-
 import Navbar from "../components/navbar.jsx";
-import FoodCardList from "../components/Order.jsx";
-import SP_OrderStatus from "../components/SP_OrderStatus.jsx";
+import OrderingList from "./orderingpage.jsx";
 import HistoryPage from "./SP_History.jsx";
+import Home from "./home.jsx";
 import ChatPage from "../components/ChatPage.jsx";
+import { useOrders } from "../hooks/useOrder"; // ✅ ดึง hook
 import "../DaisyUI.css";
-import OrderStatus from "../components/OrderStatus.jsx";
-import ConfirmModal from "../components/ConfirmModal.jsx";
 
-function userMain() {
+function UserMain() {
   const [currentPage, setCurrentPage] = useState("home");
-  const [orderingList, setOrderingList] = useState([]);
-  const [historyList, setHistoryList] = useState([]);
 
-  // กด HEW → สร้าง order ใหม่ status เป็น Waiting
+  // ✅ ดึงออเดอร์ Rider Received
+  const { orders: riderOrders } = useOrders("Rider Received");
+  const orderingCount = riderOrders.length; // จำนวนออเดอร์ที่ยังดำเนินการอยู่
+
+  // 🔹 เมื่อกด HEW แล้วรับออเดอร์สำเร็จ
   const handleOrder = (order) => {
-    setOrderingList((prev) => [
-      ...prev,
-      { ...order, status: "Waiting", proof: null },
-    ]);
-  };
-
-  // Confirm Payment → เปลี่ยนจาก Waiting → Ordering
-  const handleConfirmPayment = (orderId) => {
-    setOrderingList((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: "Ordering" } : order
-      )
-    );
-  };
-
-  // แนบหลักฐาน → เปลี่ยนเป็น Complete แล้วย้ายไป History
-  const handleCompleteOrder = (orderId, file) => {
-    const completedOrder = orderingList.find((order) => order.id === orderId);
-    if (completedOrder) {
-      const updatedOrder = {
-        ...completedOrder,
-        status: "Complete",
-        proof: file,
-      };
-
-      setOrderingList((prev) => prev.filter((order) => order.id !== orderId));
-      setHistoryList((prev) => [...prev, updatedOrder]);
-    }
+    console.log("Rider accepted order:", order);
+     // ไปหน้าดูออเดอร์ที่รับแล้ว
   };
 
   return (
@@ -51,7 +25,7 @@ function userMain() {
       <Navbar
         currentPage={currentPage}
         onNavigate={setCurrentPage}
-        orderingCount={orderingList.length}
+        orderingCount={orderingCount} // ✅ ส่งจำนวนจริง
       />
 
       {currentPage === "home" && (
@@ -66,26 +40,13 @@ function userMain() {
       )}
 
       <div className="p-4">
-        {currentPage === "home" && (
-          <FoodCardList onConfirmOrder={handleOrder} />
-        )}
-
-        {currentPage === "ordering" && (
-          <SP_OrderStatus
-            orderingList={orderingList}
-            onConfirmPayment={handleConfirmPayment}
-            onComplete={handleCompleteOrder}
-          />
-        )}
-
-        {currentPage === "history" && <HistoryPage historyList={historyList} />}
-
-        {currentPage === "chat" && (
-          <ChatPage historyList={historyList} orderingList={orderingList} />
-        )}
+        {currentPage === "home" && <Home onConfirmOrder={handleOrder} />}
+        {currentPage === "ordering" && <OrderingList />}
+        {currentPage === "history" && <HistoryPage />}
+        {currentPage === "chat" && <ChatPage />}
       </div>
     </div>
   );
 }
 
-export default userMain;
+export default UserMain;
