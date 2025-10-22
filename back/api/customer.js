@@ -183,6 +183,7 @@ router.get('/ordering', verifyToken, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 // router.put('/orders/:id', async (req, res) => {
 //   const orderId = req.params.id;
 
@@ -203,6 +204,20 @@ router.get('/ordering', verifyToken, async (req, res) => {
 //     res.status(500).json({ success: false, message: err.message });
 //   }
 // });
+router.put('/confirmorder/:id', async (req, res) => {
+  const orderId = req.params.id;
+
+  try {
+    const result = await Ordering.updateStatus(orderId, 'Complete');
+    res.json({ success: true, message: 'Order confirmed', data: result });
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('not found')) {
+      return res.status(404).json({ success: false, message: err.message });
+    }
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 
 // GET /customer/payment/qr/:orderId
@@ -267,10 +282,10 @@ router.post('/reports', verifyToken, async (req, res) => {
     // สร้าง report
     await Report.create(post_id, reporter_id, reason_id, detail);
 
-    // อัปเดตสถานะโพสต์เป็น Reported
-    await Report.updatePostStatusToReported(post_id);
+    // อัปเดตสถานะโพสต์และ order เป็น Reported
+    const result = await Ordering.updateStatus(post_id, 'Reported');
 
-    res.json({ success: true, message: 'Report submitted and status updated' });
+    res.json({ success: true, message: 'Report submitted and status updated', data: result });
   } catch (err) {
     console.error("Report error:", err);
     res.status(500).json({ message: err.message });

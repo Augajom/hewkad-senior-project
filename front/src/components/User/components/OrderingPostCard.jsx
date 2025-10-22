@@ -1,5 +1,6 @@
 // src/components/OrderingPostCard.jsx
 import React, { useState, useEffect } from "react";
+
 import Swal from "sweetalert2";
 import "../DaisyUI.css";
 
@@ -8,6 +9,7 @@ const OrderingPostCard = ({ post }) => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showSlipModal, setShowSlipModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showProofModal, setShowProofModal] = useState(false);
   const [qrCode, setQrCode] = useState(null);
   const [reportReasons, setReportReasons] = useState([]);
 
@@ -15,6 +17,7 @@ const OrderingPostCard = ({ post }) => {
   const [slipOkData, setSlipOkData] = useState([]);
   const [slipFile, setSlipFile] = useState("");
   const [slipError, setSlipError] = useState("");
+  const proofImageUrl = post.proofImageUrl || "/mnt/data/79ba7201-e945-40c2-a787-64cb098fdb86.png";
 
   const [reportForm, setReportForm] = useState({
     report: "",
@@ -74,7 +77,7 @@ const OrderingPostCard = ({ post }) => {
       // ตรวจสอบจำนวนเงิน
       if (parseFloat(data.data.amount) !== Number(total)) {
         setSlipError("จำนวนเงินไม่ถูกต้อง");
-      } else if (data.success === false){
+      } else if (data.success === false) {
         setSlipError("สลิปไม่ถูกต้อง");
       } else {
         setSlipError("");
@@ -95,7 +98,7 @@ const OrderingPostCard = ({ post }) => {
       icon: 'success',
       timer: 3000,
       showConfirmButton: false,
-    }).then (() => {
+    }).then(() => {
       handleConfirmPayment();
     })
   }
@@ -189,7 +192,7 @@ const OrderingPostCard = ({ post }) => {
   const handleConfirmOrder = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/customer/orders/${post.id}`,
+        `http://localhost:5000/customer/confirmorder/${post.id}`,
         {
           method: "PUT",
           credentials: "include",
@@ -215,7 +218,7 @@ const OrderingPostCard = ({ post }) => {
   };
 
   return (
-    <div className="card w-full bg-white shadow-lg rounded-xl border border-gray-200 p-4 text-black">
+    <div className="card w-full md:w-[500px] lg:w-[600px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
@@ -237,13 +240,12 @@ const OrderingPostCard = ({ post }) => {
         <div className="flex flex-col items-end gap-2 max-w-full">
           {status && (
             <div
-              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${
-                status === "Ordering"
-                  ? "badge-info"
-                  : status === "Complete"
+              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${status === "Ordering"
+                ? "badge-info"
+                : status === "Complete"
                   ? "badge-success"
                   : "badge-warning"
-              }`}
+                }`}
             >
               {status}
             </div>
@@ -294,20 +296,49 @@ const OrderingPostCard = ({ post }) => {
           </button>
         )}
         {status === "Order Received" && (
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <button
+                onClick={handleConfirmOrder}
+                className="btn btn-success text-white"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="btn btn-error text-white"
+              >
+                Report
+              </button>
+            </div>
+
             <button
-              onClick={handleConfirmOrder}
-              className="btn btn-success text-white"
+              className="btn btn-link text-blue-600 underline self-start"
+              onClick={() => setShowProofModal(true)}
             >
-              Confirm
-            </button>
-            <button
-              onClick={() => setShowReportModal(true)}
-              className="btn btn-error text-white"
-            >
-              Report
+              View Proof Of Delivery
             </button>
           </div>
+        )}
+        {showProofModal && (
+          <dialog className="modal modal-open">
+            <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
+              <h3 className="font-bold text-lg text-center mb-4">Proof</h3>
+
+              <div className="flex justify-center mb-6">
+                <img src={proofImageUrl} alt="Proof" className="max-w-full max-h-80 object-contain" />
+              </div>
+
+              <div className="flex justify-center">
+                <button
+                  className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white"
+                  onClick={() => setShowProofModal(false)}
+                >
+                  ปิด
+                </button>
+              </div>
+            </div>
+          </dialog>
         )}
         {status === "Ordering" && (
           <button

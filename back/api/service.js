@@ -33,7 +33,7 @@ router.get('/kad', async (req, res) => {
 // GET all orders
 router.get('/Order', verifyToken, requireRole('service'), async (req, res) => {
   try {
-   
+
     const status = req.query.status || 'Available';
     const ordersList = await Order.getAll();
     const filtered = ordersList.filter(o => status.split(',').includes(o.status_name));
@@ -43,9 +43,12 @@ router.get('/Order', verifyToken, requireRole('service'), async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 router.post('/hew', verifyToken, requireRole('service'), (req, res) => {
   const { post_id, order_price, order_service_fee, delivery_address, delivery_time } = req.body;
-  const rider_id = req.user.id; // ผู้กด HEW
+  const rider_id = req.user.id;
+
+  console.log("HEW payload:", req.body, "Rider ID:", rider_id);
 
   // 1️⃣ สร้าง order ใหม่
   const insertSql = `
@@ -77,7 +80,8 @@ router.post('/hew', verifyToken, requireRole('service'), (req, res) => {
     }
   );
 });
-router.put('/orders/:id', verifyToken, requireRole('service'), async (req, res) => {
+
+router.put('/orders/:id/notification', verifyToken, requireRole('service'), async (req, res) => {
   try {
     const orderId = req.params.id;
     const senderEmail = req.user.email; // ✅ จาก verifyToken
@@ -94,7 +98,7 @@ router.put('/orders/:id', verifyToken, requireRole('service'), async (req, res) 
     res.json({
       success: true,
       message: 'Order updated and email sent',
-      
+
     });
   } catch (err) {
     console.error(err);

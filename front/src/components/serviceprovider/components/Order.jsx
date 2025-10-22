@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from "react";
 import ConfirmModal from "./ConfirmModal";
 import { useOrders } from "../hooks/useOrder";
+import dayjs from "dayjs";
 import "../DaisyUI.css";
 
 
@@ -32,11 +33,10 @@ const FoodCard = ({ order, onRequestConfirm }) => {
 
         <div className="flex flex-col items-end">
           <div
-            className={`badge ${
-              order.status_name === "Available"
-                ? "badge-success"
-                : "badge-info"
-            }`}
+            className={`badge ${order.status_name === "Available"
+              ? "badge-success"
+              : "badge-info"
+              }`}
           >
             {order.status_name || order.status || ""}
           </div>
@@ -102,37 +102,54 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
     setSelectedOrder(order);
     setModalVisible(true);
   };
-  
+
 
   const handleConfirm = async () => {
-    
-    try {
-      // เรียก backend เพื่ออัปเดตสถานะและส่งอีเมล
-      const res = await fetch(`http://localhost:5000/service/orders/${selectedOrder.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        // ไม่ต้องใส่ Authorization เพราะ token อยู่ใน cookie
-      },
-      credentials: 'include', // ส่ง cookies ไปด้วย
-      body: JSON.stringify({})
+  if (!selectedOrder) return;
+
+  try {
+    // ✅ 1. สร้างคำสั่งซื้อ (orders table)
+    const res1 = await fetch("http://localhost:5000/service/hew", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        post_id: selectedOrder.id,
+        order_price: selectedOrder.price,
+        order_service_fee: selectedOrder.service_fee,
+        delivery_address: selectedOrder.delivery || selectedOrder.kad_name,
+        delivery_time: dayjs().format("YYYY-MM-DD") + " " + selectedOrder.delivery_at,
+      }),
     });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result = await res.json();
-      console.log('Order updated:', result);
+    if (!res1.ok) throw new Error(`Create order failed: HTTP ${res1.status}`);
 
-      // อัปเดต UI
-      const newOrder = { ...selectedOrder, status_name: "Rider Received" };
-      onConfirmOrder(newOrder);
-      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
-    } catch (err) {
-      console.error("Failed to confirm order:", err);
-    } finally {
-      setModalVisible(false);
-      setSelectedOrder(null);
-    }
-  };
+    // ✅ 2. ส่งอีเมล + เปลี่ยน status ของโพสต์
+    const res2 = await fetch(
+      `http://localhost:5000/service/orders/${selectedOrder.id}/notification`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      }
+    );
+
+    if (!res2.ok) throw new Error(`Notification failed: HTTP ${res2.status}`);
+
+    console.log("Order created + Notification sent");
+
+    // ✅ 3. อัปเดต UI
+    const newOrder = { ...selectedOrder, status_name: "Rider Received" };
+    onConfirmOrder(newOrder);
+    setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+  } catch (err) {
+    console.error("Error:", err);
+  } finally {
+    setModalVisible(false);
+    setSelectedOrder(null);
+  }
+};
+
 
   return (
     <>
