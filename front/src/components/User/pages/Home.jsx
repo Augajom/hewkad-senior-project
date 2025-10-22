@@ -3,7 +3,13 @@ import Navbar from '../components/navbar';
 import CreatePostBox from '../components/CreatePostBox';
 import PostCard from '../components/Postcard';
 import KadDropdown from '../components/Kaddropdown';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { renderTimeViewClock } from '@mui/x-date-pickers/timeViewRenderers';
+import dayjs from 'dayjs';
 import '../DaisyUI.css';
+
 
 export default function Home({ }) {
   const [posts, setPosts] = useState([]);
@@ -13,6 +19,12 @@ export default function Home({ }) {
   const [currentPage, setCurrentPage] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPosts, setFilteredPosts] = useState([]);
+  const [deliveryTime, setDeliveryTime] = useState(dayjs());
+  const [minTime, setMinTime] = useState(dayjs()); // ✅ เวลาต่ำสุดที่เลือกได้
+  const now = dayjs();
+
+
+
   const [orderingCount, setOrderingCount] = useState(0); // ✅ นับจำนวน orderings
 
   const handleNavigate = (page) => setCurrentPage(page);
@@ -75,20 +87,30 @@ export default function Home({ }) {
     fetchKadOptions();
   },
     []);
+  const getCurrentDateTimeLocal = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // ✅ Fix timezone
+    return now.toISOString().slice(0, 16); // ✅ format: YYYY-MM-DDTHH:mm
+  };
 
   // ---------------- CREATE POST ----------------
   const createPost = async () => {
-    if (!formData.kadId) return alert('กรุณาเลือก Kad');
+    const { kadId, storeName, product, serviceFee, price, delivery } = formData;
+
+    if (!kadId || !storeName || !product || !serviceFee || !price || !delivery || !formData.delivery_at) {
+      return alert('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+    }
+
     try {
       const payload = {
-        kad_id: formData.kadId,
-        store_name: formData.storeName,
-        product: formData.product,
-        service_fee: Number(formData.serviceFee),
-        price: Number(formData.price),
+        kad_id: kadId,
+        store_name: storeName,
+        product,
+        service_fee: Number(serviceFee),
+        price: Number(price),
         status_id: 1,
-        delivery: formData.delivery,
-        delivery_at: formData.delivery_at,
+        delivery,
+        delivery_at: formData.delivery_at, // ✅ เช่น "2025-01-12 15:45"
       };
 
       const res = await fetch('http://localhost:5000/customer/posts', {
@@ -100,15 +122,13 @@ export default function Home({ }) {
 
       if (res.ok) {
         await fetchPosts();
-        resetForm();
+        resetForm(); // ✅ รีเซ็ตค่าหลังสร้าง
       } else {
         const errData = await res.json();
-        console.error('Create post error:', errData);
         alert(errData.message || 'Create failed');
       }
     } catch (err) {
       console.error('Create post failed:', err);
-      alert('เกิดข้อผิดพลาดขณะสร้างโพสต์');
     }
   };
 
@@ -176,8 +196,19 @@ export default function Home({ }) {
       delivery_at: post.delivery_at,
     });
     setEditingPostId(post.id);
+    const now = dayjs();
+    setMinTime(now);                     // ✅ จำกัดเวลาไม่ให้ย้อนหลัง
+    setDeliveryTime(dayjs());            // ✅ หรือ set เป็น post.delivery_at ถ้าต้องการให้แสดงเวลาเดิม
     setShowFormModal(true);
   };
+  const handleOpenForm = () => {
+    resetForm();
+    const now = dayjs();
+    setMinTime(now);        // ✅ อัปเดตเวลาต่ำสุดเป็นเวลาปัจจุบัน
+    setDeliveryTime(now);   // ✅ เวลาเริ่มต้นใน TimePicker
+    setShowFormModal(true);
+  };
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -204,7 +235,7 @@ export default function Home({ }) {
     else createPost();
   };
 
-  
+
   // ---------------- SEARCH ----------------
   const handleSearchSubmit = (value) => {
     setSearchQuery(value);
@@ -233,7 +264,7 @@ export default function Home({ }) {
 
 
   // ---------------- FILTER ----------------
-  
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -253,7 +284,7 @@ export default function Home({ }) {
           <p className="text-center text-red-500">{error}</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <CreatePostBox onClick={() => setShowFormModal(true)} />
+            <CreatePostBox onClick={handleOpenForm} />
             {filteredPosts.map((post) => (
               <PostCard
                 key={post.id}
@@ -287,12 +318,81 @@ export default function Home({ }) {
                 ))}
               </select>
 
-              <input type="text" placeholder="Store Name" name="storeName" className="input input-bordered w-full text-black border border-black bg-white" value={formData.storeName} onChange={handleInputChange} />
-              <input type="text" placeholder="Product" name="product" className="input input-bordered w-full text-black border border-black bg-white" value={formData.product} onChange={handleInputChange} />
-              <input type="text" placeholder="Service Fee" name="serviceFee" className="input input-bordered w-full text-black border border-black bg-white" value={formData.serviceFee} onChange={handleInputChange} />
-              <input type="text" placeholder="Price" name="price" className="input input-bordered w-full text-black border border-black bg-white" value={formData.price} onChange={handleInputChange} />
-              <input type="text" placeholder="Delivery" name="delivery" className="input input-bordered w-full text-black border border-black bg-white" value={formData.delivery} onChange={handleInputChange} />
-              <input type="text" placeholder="Receiving Time" name="delivery_at" className="input input-bordered w-full text-black border border-black bg-white" value={formData.delivery_at} onChange={handleInputChange} />
+              <input
+                type="text"
+                placeholder="Store Name"
+                name="storeName"
+                className="input input-bordered w-full text-black border border-black bg-white"
+                value={formData.storeName}
+                onChange={handleInputChange}
+                autoComplete="off"
+              />
+
+              <input
+                type="text"
+                placeholder="Product"
+                name="product"
+                className="input input-bordered w-full text-black border border-black bg-white"
+                value={formData.product}
+                onChange={handleInputChange}
+                autoComplete="off"
+              />
+
+              <input
+                type="text"
+                placeholder="Service Fee"
+                name="serviceFee"
+                className="input input-bordered w-full text-black border border-black bg-white"
+                value={formData.serviceFee}
+                onChange={handleInputChange}
+                autoComplete="off"
+              />
+
+              <input
+                type="text"
+                placeholder="Price"
+                name="price"
+                className="input input-bordered w-full text-black border border-black bg-white"
+                value={formData.price}
+                onChange={handleInputChange}
+                autoComplete="off"
+              />
+
+              <input
+                type="text"
+                placeholder="Delivery"
+                name="delivery"
+                className="input input-bordered w-full text-black border border-black bg-white"
+                value={formData.delivery}
+                onChange={handleInputChange}
+                autoComplete="off"
+              />
+
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <TimePicker
+                  label="Select Delivery Time"
+                  className=" text-black border border-black bg-white"
+                  
+                  value={deliveryTime}
+                  onChange={(newValue) => {
+                    if (newValue && newValue.isAfter(minTime)) {
+                      setDeliveryTime(newValue);
+                      setFormData((prev) => ({
+                        ...prev,
+                        delivery_at: newValue.format('HH:mm'),
+                      }));
+                    }
+                  }}
+                  minTime={minTime}
+                  viewRenderers={{
+                    hours: renderTimeViewClock,
+                    minutes: renderTimeViewClock,
+                    seconds: renderTimeViewClock,
+                  }}
+                  ampm={false}
+                />
+              </LocalizationProvider>
+
 
               <div className="modal-action flex justify-center gap-3 mt-8">
                 <button type="button" className="btn btn-ghost px-8 py-3 rounded-full bg-red-500 text-white" onClick={resetForm}>Cancel</button>

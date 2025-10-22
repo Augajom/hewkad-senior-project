@@ -10,10 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.3.4",
+    "@mui/x-date-pickers": "^8.14.1",
     "@tailwindcss/vite": "^4.1.4",
     "axios": "^1.12.2",
     "daisyui": "^5.0.50",
     "date-fns": "^4.1.0",
+    "dayjs": "^1.11.18",
     "lucide-react": "^0.541.0",
     "react": "^19.0.0",
     "react-datepicker": "^8.3.0",

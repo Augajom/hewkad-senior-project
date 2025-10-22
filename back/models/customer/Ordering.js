@@ -52,24 +52,49 @@ const Ordering = {
 
   // เพิ่ม method update status
   updateStatus: (orderId, newStatus) => {
-    return new Promise((resolve, reject) => {
-      const sql = `
-        UPDATE posts p
-        JOIN status s ON p.status_id = s.id
-        SET p.status_id = (
-          SELECT id FROM status WHERE status_name = ?
-        )
-        WHERE p.id = ?
-      `;
-      db.query(sql, [newStatus, orderId], (err, result) => {
-        if (err) return reject(err);
-        if (result.affectedRows === 0) {
-          return reject(new Error('Order not found'));
+  return new Promise((resolve, reject) => {
+    db.getConnection((err, connection) => {
+      if (err) return reject(err);
+
+      connection.beginTransaction((err) => {
+        if (err) {
+          connection.release();
+          return reject(err);
         }
-        resolve({ success: true, message: 'Order status updated' });
+
+        // อัปเดต posts
+        const updatePosts = `
+          UPDATE posts
+          SET status_id = (SELECT id FROM status WHERE status_name = ?)
+          WHERE id = ?
+        `;
+        connection.query(updatePosts, [newStatus, orderId], (err, result) => {
+          if (err) return connection.rollback(() => { connection.release(); reject(err); });
+
+          if (result.affectedRows === 0) {
+            return connection.rollback(() => { connection.release(); reject(new Error('Order not found')); });
+          }
+
+          // อัปเดต orders
+          const updateOrders = `
+            UPDATE orders
+            SET status_id = (SELECT id FROM status WHERE status_name = ?)
+            WHERE post_id = ?
+          `;
+          connection.query(updateOrders, [newStatus, orderId], (err, result2) => {
+            if (err) return connection.rollback(() => { connection.release(); reject(err); });
+
+            connection.commit((err) => {
+              if (err) return connection.rollback(() => { connection.release(); reject(err); });
+              connection.release();
+              resolve({ success: true, message: `Order status updated to ${newStatus} for posts and orders` });
+            });
+          });
+        });
       });
     });
-  },
+  });
+},
   getOwnerEmail: (orderId) => {
     return new Promise((resolve, reject) => {
       const sql = `

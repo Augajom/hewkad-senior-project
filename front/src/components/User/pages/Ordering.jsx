@@ -11,33 +11,33 @@ export default function Ordering({ currentUser }) {
     const [error, setError] = useState(null);
 
     const fetchPosts = async (status = null) => {
-    setLoading(true);
-    setError(null);
-    try {
-        // ส่ง status เป็น query parameter ถ้ามี
-        const url = status
-            ? `http://localhost:5000/customer/ordering?status=${encodeURIComponent(status)}`
-            : `http://localhost:5000/customer/ordering`;
+        setLoading(true);
+        setError(null);
+        try {
+            // ส่ง status เป็น query parameter ถ้ามี
+            const url = status
+                ? `http://localhost:5000/customer/ordering?status=${encodeURIComponent(status)}`
+                : `http://localhost:5000/customer/ordering`;
 
-        const res = await fetch(url, {
-            method: 'GET',
-            credentials: 'include',
-        });
+            const res = await fetch(url, {
+                method: 'GET',
+                credentials: 'include',
+            });
 
-        if (!res.ok) {
-            if (res.status === 401) throw new Error("Unauthorized: Please login");
-            throw new Error("Failed to fetch posts");
+            if (!res.ok) {
+                if (res.status === 401) throw new Error("Unauthorized: Please login");
+                throw new Error("Failed to fetch posts");
+            }
+
+            const data = await res.json();
+            setPosts(data);
+        } catch (err) {
+            console.error(err);
+            setError(err.message || "Something went wrong");
+        } finally {
+            setLoading(false);
         }
-
-        const data = await res.json();
-        setPosts(data);
-    } catch (err) {
-        console.error(err);
-        setError(err.message || "Something went wrong");
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
 
     // เรียก fetch ตอน component mount
@@ -80,9 +80,9 @@ export default function Ordering({ currentUser }) {
                 ) : posts.length === 0 ? (
                     <p className="text-center text-gray-500">ยังไม่มีรายการ</p>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div className="flex flex-wrap gap-4 justify-start">
                         {posts.map(post => (
-                            <OrderingPostCard key={post.id} post={post} currentUser={currentUser} />
+                            <OrderingPostCard key={post.id} post={post} />
                         ))}
                     </div>
                 )}
