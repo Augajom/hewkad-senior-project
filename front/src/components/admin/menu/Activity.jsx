@@ -1,5 +1,8 @@
-import { React, useState } from "react";
+import { React, useState, useEffect } from "react";
 import Nav from "../nav";
+import { CiSearch } from "react-icons/ci";
+import axios from "axios";
+
 // SweetAlert2
 import {
   showUserSlip,
@@ -8,10 +11,40 @@ import {
   confirmResolve,
 } from "./features/SweetAlertUser";
 // Icon
-import { CiSearch } from "react-icons/ci";
 
 function Activity() {
   const [pageType, setPageType] = useState("History");
+  const [search, setSearch] = useState("");
+  const [orders, setOrders] = useState([]);
+
+  // ดึงข้อมูล History (status_id = 7 หรือ 8)
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const { data } = await axios.get(
+          "http://localhost:5000/admin/payment/history",
+          {
+            withCredentials: true,
+          }
+        );
+
+        console.log("Fetched orders:", data.orders);
+
+        setOrders(data.orders);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  // กรองตาม search input
+  const filteredOrders = orders.filter(
+    (order) =>
+      order.customer_username.toLowerCase().includes(search.toLowerCase()) ||
+      (order.rider_username &&
+        order.rider_username.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <>
@@ -22,7 +55,9 @@ function Activity() {
             <div className="filter-con flex gap-2">
               {/* Pages */}
               <div className="page-con relative w-full">
-                <p className="absolute top-2 left-5 text-[#807a7a] text-sm">Page</p>
+                <p className="absolute top-2 left-5 text-[#807a7a] text-sm">
+                  Page
+                </p>
                 <select
                   className="rounded px-4 pb-2 pt-7 w-full bg-white shadow-xl"
                   value={pageType}
@@ -33,11 +68,13 @@ function Activity() {
                 </select>
               </div>
 
-              <div className="searh-con relative">
+              <div className="search-con relative">
                 <input
                   type="text"
                   placeholder="Search here..."
                   className="w-120 h-[60px] bg-white shadow-2xl rounded-md pl-6 font-medium text-xl"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
                 <CiSearch className="absolute size-6 right-4 top-[18px]" />
               </div>
@@ -84,75 +121,67 @@ function Activity() {
                 </thead>
                 <tbody>
                   {pageType === "History" ? (
-                    <>
-                      {/* ข้อมูล History */}
+                    filteredOrders.length > 0 ? (
+                      filteredOrders.map((order) => (
+                        <tr key={order.order_id}>
+                          <td className="px-4 py-2">{order.order_id}</td>
+                          <td className="px-4 py-2">
+                            {new Date(order.ordered_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-2">
+                            {order.customer_username}
+                            <br />
+                            (@{order.customer_username})
+                          </td>
+                          <td className="px-4 py-2">
+                            {order.rider_username || "-"}
+                            <br />
+                            (@{order.rider_username || "-"})
+                          </td>
+                          <td className="text-green-600 px-4 py-2">
+                            {order.status_name}
+                          </td>
+                          <td className="px-4 py-2">
+                            {order.order_price} Baht
+                          </td>
+                          <td className="px-4 py-2">
+                            {order.order_service_fee} Baht
+                          </td>
+                          <td
+                            className={`px-4 py-2 font-semibold ${
+                              order.status_payment === "reject"
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {order.status_payment === "reject"
+                              ? "Reject"
+                              : "Completed"}
+                          </td>
+                          <td className="text-blue-600 underline decoration-2 px-4 py-2 cursor-pointer">
+                            {order.slip_filename ? (
+                              <a
+                                onClick={() =>
+                                  showUserSlip(
+                                    `http://localhost:5000/Files/Payment/${order.slip_filename}`
+                                  )
+                                }
+                              >
+                                View Slip
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
-                        <td className="px-4 py-2">1</td>
-                        <td className="px-4 py-2">21 / 02 / 2025</td>
-                        <td className="px-4 py-2">
-                          Customer 1<br />
-                          (@User1)
-                        </td>
-                        <td className="px-4 py-2">
-                          Oomsin
-                          <br />
-                          (@User2)
-                        </td>
-                        <td className="text-green-600 px-4 py-2">Completed</td>
-                        <td className="px-4 py-2">200 Baht</td>
-                        <td className="px-4 py-2">50 Baht</td>
-                        <td className="text-green-600 px-4 py-2">Completed</td>
-                        <td className="text-blue-600 underline decoration-2 px-4 py-2">
-                          <a onClick={showUserSlip} className="cursor-pointer">
-                            IMG.PNG
-                          </a>
+                        <td colSpan="9" className="text-xl font-semibold py-4">
+                          No orders found.
                         </td>
                       </tr>
-                      <tr>
-                        <td className="px-4 py-2">2</td>
-                        <td className="px-4 py-2">21 / 02 / 2025</td>
-                        <td className="px-4 py-2">
-                          Customer 3<br />
-                          (@User3)
-                        </td>
-                        <td className="px-4 py-2">
-                          Kaw
-                          <br />
-                          (@User4)
-                        </td>
-                        <td className="text-green-600 px-4 py-2">Completed</td>
-                        <td className="px-4 py-2">200 Baht</td>
-                        <td className="px-4 py-2">50 Baht</td>
-                        <td className="text-green-600 px-4 py-2">Completed</td>
-                        <td className="text-blue-600 underline decoration-2 px-4 py-2">
-                          <a onClick={showUserSlip} className="cursor-pointer">
-                            IMG.PNG
-                          </a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-2">3</td>
-                        <td className="px-4 py-2">21 / 02 / 2025</td>
-                        <td className="px-4 py-2">
-                          Customer 3<br />
-                          (@User3)
-                        </td>
-                        <td className="px-4 py-2">
-                          Au
-                          <br />
-                          (@User5)
-                        </td>
-                        <td className="text-green-600 px-4 py-2">Completed</td>
-                        <td className="px-4 py-2">200 Baht</td>
-                        <td className="px-4 py-2">50 Baht</td>
-                        <td className="text-green-600 px-4 py-2">Completed</td>
-                        <td className="text-blue-600 underline decoration-2 px-4 py-2">
-                          <a onClick={showUserSlip} className="cursor-pointer">
-                            IMG.PNG
-                          </a>
-                        </td>
-                      </tr>
-                    </>
+                    )
                   ) : (
                     <>
                       {/* ข้อมูล Report */}

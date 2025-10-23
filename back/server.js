@@ -13,6 +13,7 @@ const customerRoute = require('./api/customer.js');
 const serviceRoute = require('./api/service.js');
 const profileRoute = require('./routes/profile.js');
 const uploadRoute = require('./routes/upload.js');
+const loginRoute = require('./routes/login.js');
 const verifyToken = require('./utils/verifyToken.js');
 const requireRole = require('./utils/requireRole.js');
 
@@ -35,6 +36,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(passport.initialize());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/Files", express.static("Files"));
 
 app.use('/auth', authRoute);
 app.use('/admin', verifyToken, requireRole('admin'), adminRoute);
@@ -42,6 +44,7 @@ app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
 app.use('/profile', verifyToken, profileRoute);
 app.use('/upload', verifyToken, uploadRoute);
+app.use('/login', loginRoute);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
