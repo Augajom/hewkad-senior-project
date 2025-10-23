@@ -215,10 +215,20 @@ const User = {
         resolve(results.map(r => r.role_name));
       });
     });
+  },
+
+  /** =============================
+   *  Compare Password
+   *  =============================
+   */
+  comparePassword: async (hashedPassword, plainPassword) => {
+    try {
+      return await bcrypt.compare(plainPassword, hashedPassword);
+    } catch (err) {
+      throw err;
+    }
   }
 };
-
-
 
 
 module.exports = User;
