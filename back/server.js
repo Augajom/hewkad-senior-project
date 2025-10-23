@@ -36,6 +36,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(passport.initialize());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/Files", express.static("Files"));
 
 app.use('/auth', authRoute);
 app.use('/admin', verifyToken, requireRole('admin'), adminRoute);

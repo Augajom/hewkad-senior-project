@@ -90,6 +90,7 @@ router.get('/payment/:id', async (req, res) => {
   }
 });
 
+// Reject Payment
 router.put('/payment/reject/:orderId', async (req, res) => {
   try {
     // ตรวจสอบว่า user มี role 'admin'
@@ -107,6 +108,7 @@ router.put('/payment/reject/:orderId', async (req, res) => {
   }
 });
 
+// Approve Payment
 router.put('/payment/approve/:orderId', async (req, res) => {
   try {
     if (!req.user.roles.includes('admin')) {
@@ -120,6 +122,91 @@ router.put('/payment/approve/:orderId', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Multer setup for file uploads
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+
+// 💡 แก้ encoding ของชื่อไฟล์
+Buffer.prototype.toString = (function (original) {
+  return function (...args) {
+    if (this instanceof Buffer && args[0] === "latin1") {
+      return original.call(this, "utf8");
+    }
+    return original.apply(this, args);
+  };
+})(Buffer.prototype.toString);
+
+// 🧩 สร้างโฟลเดอร์ /Files/Payment ถ้ายังไม่มี
+const uploadDir = path.join(__dirname, "../Files/Payment");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// 🎯 กำหนด storage สำหรับ multer
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // ✅ แปลงชื่อไฟล์จาก latin1 → utf8
+    let originalName = Buffer.from(file.originalname, "latin1").toString("utf8");
+
+    // 💡 ป้องกันอักขระพิเศษหรือช่องว่างในชื่อไฟล์
+    originalName = originalName.replace(/[<>:"/\\|?*\s]/g, "_");
+
+    cb(null, originalName);
+  },
+});
+
+// ✅ ตรวจสอบชนิดไฟล์และขนาด (อนุญาตเฉพาะภาพ)
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+  ];
+
+  if (!allowedTypes.includes(file.mimetype)) {
+    return cb(new Error("Invalid file type. Only image files allowed."), false);
+  }
+  cb(null, true);
+};
+
+// ✅ ตั้งค่า multer
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+});
+
+// 📤 Upload endpoint
+router.post("/upload/:orderId", upload.single("file"), async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const filename = req.file.filename;
+
+    // บันทึกลง DB
+    await Payment.updateSlipFilename(orderId, filename);
+
+    res.json({
+      success: true,
+      message: "Slip uploaded successfully",
+      file: filename,
+    });
+  } catch (error) {
+    console.error("Upload error:", error);
+    res.status(500).json({ success: false, message: "Slip upload failed" });
   }
 });
 

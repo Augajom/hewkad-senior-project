@@ -158,8 +158,20 @@ function Activity() {
                               ? "Reject"
                               : "Completed"}
                           </td>
-                          <td className="text-blue-600 underline decoration-2 px-4 py-2">
-                            -
+                          <td className="text-blue-600 underline decoration-2 px-4 py-2 cursor-pointer">
+                            {order.slip_filename ? (
+                              <a
+                                onClick={() =>
+                                  showUserSlip(
+                                    `http://localhost:5000/Files/Payment/${order.slip_filename}`
+                                  )
+                                }
+                              >
+                                View Slip
+                              </a>
+                            ) : (
+                              "-"
+                            )}
                           </td>
                         </tr>
                       ))

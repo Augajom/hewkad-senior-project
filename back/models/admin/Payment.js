@@ -87,7 +87,8 @@ getHistory: () => {
         o.order_service_fee,
         o.ordered_at,
         o.status_id,
-        o.status_payment  -- เพิ่มตรงนี้
+        o.status_payment,
+        o.slip_file AS slip_filename
       FROM orders o
       JOIN users c ON o.customer_id = c.id
       LEFT JOIN users r ON o.rider_id = r.id
@@ -101,8 +102,6 @@ getHistory: () => {
     });
   });
 },
-
-
 
   /** =============================
  *  อัปเดต status_id ของ order
@@ -120,8 +119,19 @@ getHistory: () => {
         resolve(results);
       });
     });
-  }
+  },
 
+  // อัปเดตชื่อไฟล์ slip ใน order
+
+  updateSlipFilename: (orderId, filename) => {
+  return new Promise((resolve, reject) => {
+    const query = "UPDATE orders SET slip_file = ? WHERE id = ?";
+    db.query(query, [filename, orderId], (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+  });
+},
 
 };
 
