@@ -24,9 +24,10 @@ const OrderingPostCard = ({ post }) => {
     details: "",
   });
 
-  const total = (
+  // เปลี่ยนจาก .toFixed(2) → ใช้ Math.round() หรือ parseInt()
+  const total = Math.round(
     parseFloat(post.price || 0) + parseFloat(post.service_fee || 0)
-  ).toFixed(2);
+  );
 
   // โหลดเหตุผลจาก DB
   useEffect(() => {
@@ -218,7 +219,7 @@ const OrderingPostCard = ({ post }) => {
   };
 
   return (
-    <div className="card w-full md:w-[500px] lg:w-[600px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black">
+    <div className="card w-full sm:w-[450px] md:w-[400px] lg:w-[450px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
@@ -331,7 +332,7 @@ const OrderingPostCard = ({ post }) => {
 
               <div className="flex justify-center">
                 <button
-                  className="btn btn-ghost px-8 py-3 rounded-full text-red-500 bg-white"
+                  className="btn btn-error text-white px-8 py-3 rounded-full  "
                   onClick={() => setShowProofModal(false)}
                 >
                   ปิด

@@ -9,14 +9,14 @@ export default function History() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    
+
     const fetchPosts = async (status = "Complete") => {
         setLoading(true);
         setError(null);
         try {
             const res = await fetch(`http://localhost:5000/customer/history/${status}`, {
                 method: 'GET',
-                credentials: 'include', 
+                credentials: 'include',
             });
 
             if (!res.ok) {
@@ -76,8 +76,8 @@ export default function History() {
                 ) : posts.length === 0 ? (
                     <p className="text-center text-gray-500">ยังไม่มีรายการ</p>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {posts.map(post => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+                        {posts.map((post) => (
                             <HistoryPostCard key={post.id} post={post} />
                         ))}
                     </div>
