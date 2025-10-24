@@ -43,6 +43,7 @@ export default function Ordering({ currentUser }) {
     // เรียก fetch ตอน component mount
     useEffect(() => {
         fetchPosts();
+        
     }, []);
 
 
@@ -80,8 +81,8 @@ export default function Ordering({ currentUser }) {
                 ) : posts.length === 0 ? (
                     <p className="text-center text-gray-500">ยังไม่มีรายการ</p>
                 ) : (
-                    <div className="flex flex-wrap gap-4 justify-start">
-                        {posts.map(post => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+                        {posts.map((post) => (
                             <OrderingPostCard key={post.id} post={post} />
                         ))}
                     </div>

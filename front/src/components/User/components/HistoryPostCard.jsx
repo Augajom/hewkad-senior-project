@@ -6,8 +6,9 @@ const HistoryPostCard = ({ post }) => {
     const [reportReasons, setReportReasons] = useState([]);
     const [reportForm, setReportForm] = useState({ report: "", details: "" });
     const [status, setStatus] = useState(post.status);
-
+    const [showProofModal, setShowProofModal] = useState(false);
     const total = (post.price || 0) + (post.service_fee || 0);
+    const proofImageUrl = post.proofImageUrl || "/mnt/data/79ba7201-e945-40c2-a787-64cb098fdb86.png";
 
     // ดึงเหตุผลจาก backend
     useEffect(() => {
@@ -68,7 +69,7 @@ const HistoryPostCard = ({ post }) => {
     };
 
     return (
-        <div className="relative card w-full bg-white shadow-lg rounded-xl border border-gray-200 p-4 text-black">
+        <div className="card w-full sm:w-[450px] md:w-[400px] lg:w-[450px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black">
             {/* Header */}
             <div className="flex justify-between items-start">
                 <div className="flex gap-3">
@@ -106,16 +107,46 @@ const HistoryPostCard = ({ post }) => {
                 <div className="text-gray-800 text-xl font-bold">
                     <span className="font-semibold">Total :</span> {total} ฿
                 </div>
-                {/* ปุ่ม Report */}
-                <div className="mt-4 flex flex-col gap-2">
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2 justify-end items-end">
+                    <div className="flex gap-2">
+                        {/* ปุ่ม Report */}
+                        <button
+                            className="btn btn-error text-white"
+                            onClick={() => setShowReportModal(true)}
+                        >
+                            Report
+                        </button>
+                    </div>
                     <button
-                        className="btn btn-error text-white"
-                        onClick={() => setShowReportModal(true)}
+                        className="btn btn-link text-blue-600 underline self-start"
+                        onClick={() => setShowProofModal(true)}
                     >
-                        Report
+                        View Proof Of Delivery
                     </button>
                 </div>
             </div>
+            {showProofModal && (
+                <dialog className="modal modal-open">
+                    <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
+                        <h3 className="font-bold text-lg text-center mb-4">Proof</h3>
+
+                        <div className="flex justify-center mb-6">
+                            <img src={proofImageUrl} alt="Proof" className="max-w-full max-h-80 object-contain" />
+                        </div>
+
+                        <div className="flex justify-center">
+                            <button
+                                className="btn btn-error text-white px-8 py-3 rounded-full  "
+                                onClick={() => setShowProofModal(false)}
+                            >
+                                ปิด
+                            </button>
+                        </div>
+                    </div>
+                </dialog>
+            )}
 
 
             {/* Report Modal */}
