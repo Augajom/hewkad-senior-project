@@ -7,33 +7,35 @@ const Ordering = {
       if (!Array.isArray(statuses)) statuses = [statuses];
 
       if (statuses.length === 0) {
-        return resolve([]); 
+        return resolve([]);
       }
 
       const placeholders = statuses.map(() => '?').join(',');
       const params = [...statuses];
 
       let sql = `
-        SELECT 
-          p.id,
-          pr.name AS nickname,
-          u.username,
-          p.store_name,
-          p.product,
-          p.service_fee,
-          p.price,
-          p.delivery AS deliveryLocation,
-          p.delivery_at AS receivingTime,
-          k.kad_name AS kadName,
-          s.status_name AS status,
-          pr.picture AS avatar
-        FROM posts p
-        JOIN profile pr ON p.profile_id = pr.id
-        JOIN users u ON p.user_id = u.id
-        LEFT JOIN kad k ON p.kad_id = k.id
-        LEFT JOIN status s ON p.status_id = s.id
-        WHERE s.status_name IN (${placeholders})
-      `;
+  SELECT 
+    p.id,
+    pr.name AS nickname,
+    u.username,
+    p.store_name,
+    p.product,
+    p.service_fee,
+    p.price,
+    p.delivery AS deliveryLocation,
+    p.delivery_at AS receivingTime,
+    k.kad_name AS kadName,
+    s.status_name AS status,
+    pr.picture AS avatar,
+    o.proof_url
+  FROM posts p
+  JOIN profile pr ON p.profile_id = pr.id
+  JOIN users u ON p.user_id = u.id
+  LEFT JOIN kad k ON p.kad_id = k.id
+  LEFT JOIN status s ON p.status_id = s.id
+  LEFT JOIN orders o ON o.post_id = p.id
+  WHERE s.status_name IN (${placeholders})
+`;
 
       if (userId !== null) {
         sql += ' AND p.user_id = ?';
@@ -48,53 +50,53 @@ const Ordering = {
       });
     });
   },
-  
+
 
   // เพิ่ม method update status
   updateStatus: (orderId, newStatus) => {
-  return new Promise((resolve, reject) => {
-    db.getConnection((err, connection) => {
-      if (err) return reject(err);
+    return new Promise((resolve, reject) => {
+      db.getConnection((err, connection) => {
+        if (err) return reject(err);
 
-      connection.beginTransaction((err) => {
-        if (err) {
-          connection.release();
-          return reject(err);
-        }
+        connection.beginTransaction((err) => {
+          if (err) {
+            connection.release();
+            return reject(err);
+          }
 
-        // อัปเดต posts
-        const updatePosts = `
+          // อัปเดต posts
+          const updatePosts = `
           UPDATE posts
           SET status_id = (SELECT id FROM status WHERE status_name = ?)
           WHERE id = ?
         `;
-        connection.query(updatePosts, [newStatus, orderId], (err, result) => {
-          if (err) return connection.rollback(() => { connection.release(); reject(err); });
+          connection.query(updatePosts, [newStatus, orderId], (err, result) => {
+            if (err) return connection.rollback(() => { connection.release(); reject(err); });
 
-          if (result.affectedRows === 0) {
-            return connection.rollback(() => { connection.release(); reject(new Error('Order not found')); });
-          }
+            if (result.affectedRows === 0) {
+              return connection.rollback(() => { connection.release(); reject(new Error('Order not found')); });
+            }
 
-          // อัปเดต orders
-          const updateOrders = `
+            // อัปเดต orders
+            const updateOrders = `
             UPDATE orders
             SET status_id = (SELECT id FROM status WHERE status_name = ?)
             WHERE post_id = ?
           `;
-          connection.query(updateOrders, [newStatus, orderId], (err, result2) => {
-            if (err) return connection.rollback(() => { connection.release(); reject(err); });
-
-            connection.commit((err) => {
+            connection.query(updateOrders, [newStatus, orderId], (err, result2) => {
               if (err) return connection.rollback(() => { connection.release(); reject(err); });
-              connection.release();
-              resolve({ success: true, message: `Order status updated to ${newStatus} for posts and orders` });
+
+              connection.commit((err) => {
+                if (err) return connection.rollback(() => { connection.release(); reject(err); });
+                connection.release();
+                resolve({ success: true, message: `Order status updated to ${newStatus} for posts and orders` });
+              });
             });
           });
         });
       });
     });
-  });
-},
+  },
   getOwnerEmail: (orderId) => {
     return new Promise((resolve, reject) => {
       const sql = `
@@ -115,8 +117,8 @@ const Ordering = {
       });
     });
   }
-  
-  
+
+
 };
 
 module.exports = Ordering;

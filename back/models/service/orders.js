@@ -34,17 +34,21 @@ const Orders = {
 
   // ดึง order ของ SP
   getByRider: (rider_id) => {
-    return new Promise((resolve, reject) => {
-      db.query(
-        `SELECT * FROM orders WHERE rider_id = ? ORDER BY ordered_at DESC`,
-        [rider_id],
-        (err, results) => {
-          if (err) return reject(err);
-          resolve(results);
-        }
-      );
-    });
-  }
+  return new Promise((resolve, reject) => {
+    db.query(
+      `SELECT o.*, p.proof_url
+       FROM orders o
+       LEFT JOIN posts p ON o.post_id = p.id
+       WHERE o.rider_id = ?
+       ORDER BY o.ordered_at DESC`,
+      [rider_id],
+      (err, results) => {
+        if (err) return reject(err);
+        resolve(results);
+      }
+    );
+  });
+}
 };
 
 module.exports = Orders;
