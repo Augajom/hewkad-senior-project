@@ -162,7 +162,9 @@ router.get('/history/:status', verifyToken, async (req, res) => {
     const status = req.params.status;
     const userId = req.user.id;
 
+    // เรียก method ใหม่ที่ join proof_url
     const posts = await History.getByStatus(status, userId);
+
     res.json(posts);
 
   } catch (err) {

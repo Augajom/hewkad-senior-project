@@ -8,7 +8,7 @@ const HistoryPostCard = ({ post }) => {
     const [status, setStatus] = useState(post.status);
     const [showProofModal, setShowProofModal] = useState(false);
     const total = (post.price || 0) + (post.service_fee || 0);
-    const proofImageUrl = post.proofImageUrl || "/mnt/data/79ba7201-e945-40c2-a787-64cb098fdb86.png";
+    const proofImageUrl = post.proof_url || "/mnt/data/default-proof.png";
 
     // ดึงเหตุผลจาก backend
     useEffect(() => {
@@ -74,7 +74,13 @@ const HistoryPostCard = ({ post }) => {
             <div className="flex justify-between items-start">
                 <div className="flex gap-3">
                     <img
-                        src={post.avatar ? `http://localhost:5000/uploads/${post.avatar}` : 'https://i.pravatar.cc/150'}
+                        src={
+                            post.avatar
+                                ? post.avatar.startsWith("http")
+                                    ? post.avatar             // ถ้าเป็น URL เต็ม
+                                    : `http://localhost:5000${post.avatar}` // ถ้าเป็น path local
+                                : 'https://i.pravatar.cc/150' // default avatar
+                        }
                         alt="avatar"
                         className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
                     />
@@ -133,7 +139,7 @@ const HistoryPostCard = ({ post }) => {
                         <h3 className="font-bold text-lg text-center mb-4">Proof</h3>
 
                         <div className="flex justify-center mb-6">
-                            <img src={proofImageUrl} alt="Proof" className="max-w-full max-h-80 object-contain" />
+                            <img src={`http://localhost:5000/uploads/${post.proof_url}`} alt="Proof" />
                         </div>
 
                         <div className="flex justify-center">
