@@ -225,16 +225,16 @@ const OrderingPostCard = ({ post }) => {
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
           <img
-  src={
-    post.avatar
-      ? post.avatar.startsWith("http")
-        ? post.avatar             // ถ้าเป็น URL เต็ม
-        : `http://localhost:5000${post.avatar}` // ถ้าเป็น path local
-      : 'https://i.pravatar.cc/150' // default avatar
-  }
-  alt="avatar"
-  className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
-/>
+            src={
+              post.avatar
+                ? post.avatar.startsWith("http")
+                  ? post.avatar             // ถ้าเป็น URL เต็ม
+                  : `http://localhost:5000${post.avatar}` // ถ้าเป็น path local
+                : 'https://i.pravatar.cc/150' // default avatar
+            }
+            alt="avatar"
+            className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
+          />
           <div>
             <div className="font-bold text-base">
               {post.nickname || "ไม่ระบุชื่อ"}
@@ -328,18 +328,22 @@ const OrderingPostCard = ({ post }) => {
             </button>
           </div>
         )}
-        {showProofModal && (
+        {showProofModal && post.proof_url && (
           <dialog className="modal modal-open">
             <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
               <h3 className="font-bold text-lg text-center mb-4">Proof</h3>
 
               <div className="flex justify-center mb-6">
-                <img src={`http://localhost:5000/uploads/${post.proof_url}`} alt="Proof" />
+                <img
+                  src={`http://localhost:5000${post.proof_url}`} // ✅ proof_url มี /uploads/proofs/xxx
+                  alt="Proof"
+                  className="max-w-full max-h-[400px] object-contain rounded"
+                />
               </div>
 
               <div className="flex justify-center">
                 <button
-                  className="btn btn-error text-white px-8 py-3 rounded-full  "
+                  className="btn btn-error text-white px-8 py-3 rounded-full"
                   onClick={() => setShowProofModal(false)}
                 >
                   ปิด
@@ -348,6 +352,7 @@ const OrderingPostCard = ({ post }) => {
             </div>
           </dialog>
         )}
+
         {status === "Ordering" && (
           <button
             onClick={() => setShowReportModal(true)}
