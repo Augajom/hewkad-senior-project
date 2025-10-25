@@ -101,7 +101,7 @@ const HistoryPostCard = ({ post }) => {
             {/* ข้อมูลสินค้า */}
             <div className="mt-4 text-sm space-y-1">
                 <p><span className="font-semibold">สถานที่ส่ง</span> : {post.deliveryLocation || '-'}</p>
-                <p><span className="font-semibold">ชื่อร้าน</span> : {post.storeName || '-'}</p>
+                <p><span className="font-semibold">ชื่อร้าน</span> : {post.store_name || '-'}</p>
                 <p><span className="font-semibold">หิ้ว</span> : {post.product || '-'}</p>
                 <p><span className="font-semibold">ราคา</span> : {post.price ? `${post.price} บาท` : '-'}</p>
                 <p><span className="font-semibold">ตลาด</span> : {post.kadName || '-'}</p>
@@ -133,18 +133,22 @@ const HistoryPostCard = ({ post }) => {
                     </button>
                 </div>
             </div>
-            {showProofModal && (
+            {showProofModal && post.proof_url && (
                 <dialog className="modal modal-open">
                     <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
                         <h3 className="font-bold text-lg text-center mb-4">Proof</h3>
 
                         <div className="flex justify-center mb-6">
-                            <img src={`http://localhost:5000/uploads/${post.proof_url}`} alt="Proof" />
+                            <img
+                                src={`http://localhost:5000${post.proof_url}`} // ✅ proof_url มี /uploads/proofs/xxx
+                                alt="Proof"
+                                className="max-w-full max-h-[400px] object-contain rounded"
+                            />
                         </div>
 
                         <div className="flex justify-center">
                             <button
-                                className="btn btn-error text-white px-8 py-3 rounded-full  "
+                                className="btn btn-error text-white px-8 py-3 rounded-full"
                                 onClick={() => setShowProofModal(false)}
                             >
                                 ปิด
@@ -153,7 +157,6 @@ const HistoryPostCard = ({ post }) => {
                     </div>
                 </dialog>
             )}
-
 
             {/* Report Modal */}
             {showReportModal && (
