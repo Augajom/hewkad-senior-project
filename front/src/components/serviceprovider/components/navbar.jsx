@@ -1,17 +1,17 @@
-import React from "react";
-import { ShoppingCart, Search, CreditCard, User } from "lucide-react";
+import React, { useState } from "react";
+import { ShoppingCart, Search, CreditCard, MessageCircle, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import "../DaisyUI.css";
+import '../DaisyUI.css';
 
-function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
+function Navbar({ onSearchSubmit, orderingCount }) {
+  const [searchValue, setSearchValue] = useState('');
   const baseBtnClass = "text-base transition-colors";
   const activeClass = "text-cyan-500 font-bold";
   const inactiveClass = "text-black hover:text-cyan-500";
 
-  // ฟังก์ชันเมื่อกด Enter ใน search input
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      onSearchSubmit(e.target.value); // ส่งค่าไป parent (Home)
+    if (e.key === 'Enter' && onSearchSubmit) {
+      onSearchSubmit(searchValue);
     }
   };
 
@@ -24,27 +24,23 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
       {/* Top Navbar */}
       <div className="navbar bg-gray-100 px-4 shadow-sm">
         <div className="flex items-center gap-2">
-          <img
-            src="/src/assets/logo.png"
-            alt="Logo"
-            className="w-30 h-20 object-cover"
-          />
+          <img src="/src/assets/logo.png" alt="Logo" className="w-30 h-20 object-cover" />
         </div>
 
-        {/* Search Box */}
-        <div className="flex-1 mx-4 flex justify-center text-base-content text-black">
-          <div className="relative w-full max-w-md text-base-content text-black">
+        <div className="flex-1 mx-4 flex justify-center">
+          <div className="relative w-full max-w-md">
             <input
               type="text"
               placeholder="Search here..."
-              className=" input input-bordered w-full max-w-md placeholder-gray-500 bg-white text-black"
-              onKeyDown={handleKeyDown} // ✅ Enter key
+              className="w-full bg-gray-200 rounded-full px-5 py-2 pr-12 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 text-black"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
-            <Search className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2" />
+            <Search className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2 text-black" />
           </div>
         </div>
 
-        {/* Right Buttons */}
         <div className="flex items-center gap-3">
           <Link to="/service/ordering">
             <button className="btn btn-ghost relative">
@@ -56,13 +52,31 @@ function Navbar({ currentPage, onNavigate, orderingCount, onSearchSubmit }) {
             </button>
           </Link>
 
-          <Link to="/service/profile" className="btn btn-ghost btn-circle">
-            <User className="w-5 h-5 text-black" />
+          <button className="btn btn-ghost relative">
+            <CreditCard className="w-5 h-5 text-black" /> {/* เปลี่ยนไอคอนเป็น CreditCard */}
+            <span className="ml-1 font-semibold text-black">Payment</span> {/* เปลี่ยนข้อความ */}
+            {orderingCount > 0 && (
+              <div className="badge badge-info badge-sm absolute top-0 right-0">{orderingCount}</div>
+            )}
+          </button>
+
+
+
+
+
+          <button className="btn btn-ghost btn-circle">
+            <MessageCircle className="w-5 h-5 text-black" />
+          </button>
+
+          <Link to="/service/profile">
+            <button className="btn btn-ghost btn-circle">
+              <User className="w-5 h-5 text-black" />
+            </button>
           </Link>
         </div>
       </div>
 
-      {/* Bottom Navbar (Navigation) */}
+      {/* Bottom Navbar */}
       <div className="navbar bg-white shadow-md border-t">
         <div className="flex justify-center items-center w-full gap-8">
           <Link to="/service/main" className={`${baseBtnClass} ${currentPath === "/service/main" ? activeClass : inactiveClass}`}>Home</Link>

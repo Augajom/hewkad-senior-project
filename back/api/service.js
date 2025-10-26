@@ -8,6 +8,7 @@ const Order = require('../models/service/order');
 const Ordering = require('../models/customer/Ordering');
 const OrderHistory = require('../models/service/History');
 const Proof = require('../models/service/Proof');
+const Orderingnoti = require('../models/customer/Orderingnoti');
 const { sendOrderReceivedEmail } = require('../utils/notification');
 const multer = require('multer');
 const path = require('path'); // ✅ ต้องมีบรรทัดนี้
@@ -86,27 +87,35 @@ router.post('/hew', verifyToken, requireRole('service'), (req, res) => {
 router.put('/orders/:id/notification', verifyToken, requireRole('service'), async (req, res) => {
   try {
     const orderId = req.params.id;
-    const senderEmail = req.user.email; // ✅ จาก verifyToken
 
-    // ✅ 1. อัปเดตสถานะ
-    await Ordering.updateStatus(orderId, 'Rider Received');
+    // 1️⃣ ดึง postId และเจ้าของโพสต์
+    const postId = await Orderingnoti.getPostIdByOrderId(orderId);
+    const ownerInfo = await Orderingnoti.getOwnerEmailByPostId(postId);
 
-    // ✅ 2. ดึงข้อมูลอีเมลเจ้าของร้าน
-    const { email: receiverEmail, nickname, product, store_name } = await Ordering.getOwnerEmail(orderId);
+    console.log("Notification for order ID:", orderId);
 
-    // ✅ 3. ส่งอีเมล พร้อมระบุผู้ส่ง
-    await sendOrderReceivedEmail(receiverEmail, nickname, product, store_name, senderEmail);
+    // 2️⃣ อัปเดต status ของ order & post
+    await Orderingnoti.updateStatus(orderId, 'Rider Received');
+    console.log("Status updated");
 
-    res.json({
-      success: true,
-      message: 'Order updated and email sent',
+    // 3️⃣ ส่งอีเมลแจ้งเจ้าของ
+    await sendOrderReceivedEmail(
+      ownerInfo.email,
+      ownerInfo.nickname,
+      ownerInfo.product,
+      ownerInfo.store_name,
+      req.user.email
+    );
+    console.log("Email sent");
 
-    });
+    res.json({ success: true, message: 'Order updated and email sent' });
   } catch (err) {
-    console.error(err);
+    console.error("Notification error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+
 // GET /service/history
 router.get('/history', verifyToken, async (req, res) => {
   try {
