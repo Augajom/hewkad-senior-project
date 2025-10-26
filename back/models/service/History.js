@@ -1,7 +1,7 @@
 const db = require('../../config/db');
 
 const OrderHistory = {
-  // ดึง order ของ SP คนปัจจุบัน (rider_id) ที่ status = Complete หรือ Reported
+  // ดึง order ของ rider ปัจจุบันที่ status = Complete
   getByRider: (riderId) => {
     return new Promise((resolve, reject) => {
       db.query(
@@ -32,8 +32,10 @@ const OrderHistory = {
          JOIN profile pr ON p.profile_id = pr.id
          JOIN kad k ON p.kad_id = k.id
          WHERE o.rider_id = ? 
-           AND s.status_name IN ('Complete', 'Reported')
-         ORDER BY o.completed_at DESC`,
+           AND LOWER(s.status_name) = 'complete'
+         ORDER BY 
+           CASE WHEN o.completed_at IS NULL THEN 1 ELSE 0 END, 
+           o.completed_at DESC`,
         [riderId],
         (err, results) => {
           if (err) return reject(err);
