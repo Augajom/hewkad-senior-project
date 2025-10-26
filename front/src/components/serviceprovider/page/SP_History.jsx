@@ -40,7 +40,7 @@ const HistoryPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-amber-50">
+    <div className="min-h-screen bg-white">
       <Navbar currentPage="history" />
       <div className="p-4">
         <h2 className="text-lg text-black font-bold mb-4">ประวัติการสั่งซื้อ</h2>

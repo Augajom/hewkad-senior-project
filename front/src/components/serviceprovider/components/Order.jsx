@@ -87,10 +87,11 @@ const FoodCard = ({ order, onRequestConfirm }) => {
   );
 };
 
-const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
+const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searchQuery }) => {
   const { orders, loading, error, setOrders } = useOrders(status);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
 
   const emptyText = useMemo(() => {
     if (loading) return "กำลังโหลดออเดอร์...";
@@ -102,63 +103,107 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
     setSelectedOrder(order);
     setModalVisible(true);
   };
+  // ✅ FILTER: กรอง Orders ตาม Kad ที่เลือก
+  const filteredOrders = useMemo(() => {
+    let tempOrders = [...orders];
 
+    // Filter by Kad
+    if (selectedKad && selectedKad.length > 0) {
+      tempOrders = tempOrders.filter(order => selectedKad.includes(order.kad_name));
+    }
+
+    // Dynamic search: เช็คทุก field ของ order
+    if (searchQuery && searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+
+      const matchesSearch = (obj) => {
+        return Object.values(obj).some(value => {
+          if (value == null) return false;
+          // ถ้าเป็น object ให้ search recursive
+          if (typeof value === "object") return matchesSearch(value);
+          return value.toString().toLowerCase().includes(query);
+        });
+      };
+
+      tempOrders = tempOrders.filter(order => matchesSearch(order));
+    }
+
+    return tempOrders;
+  }, [orders, selectedKad, searchQuery]);
 
   const handleConfirm = async () => {
-  if (!selectedOrder) return;
+    if (!selectedOrder) return;
 
-  try {
-    // ✅ 1. สร้างคำสั่งซื้อ (orders table)
-    const res1 = await fetch("http://localhost:5000/service/hew", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        post_id: selectedOrder.id,
-        order_price: selectedOrder.price,
-        order_service_fee: selectedOrder.service_fee,
-        delivery_address: selectedOrder.delivery || selectedOrder.kad_name,
-        delivery_time: dayjs().format("YYYY-MM-DD") + " " + selectedOrder.delivery_at,
-      }),
-    });
-
-    if (!res1.ok) throw new Error(`Create order failed: HTTP ${res1.status}`);
-
-    // ✅ 2. ส่งอีเมล + เปลี่ยน status ของโพสต์
-    const res2 = await fetch(
-      `http://localhost:5000/service/orders/${selectedOrder.id}/notification`,
-      {
-        method: "PUT",
+    try {
+      // 1️⃣ สร้างคำสั่งซื้อ (Step 1)
+      const res1 = await fetch("http://localhost:5000/service/hew", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        // ... (headers, credentials, body)
+        body: JSON.stringify({
+          post_id: selectedOrder.id,
+          order_price: selectedOrder.price,
+          order_service_fee: selectedOrder.service_fee,
+          delivery_address: selectedOrder.delivery || selectedOrder.kad_name,
+          delivery_time: dayjs().format("YYYY-MM-DD") + " " + selectedOrder.delivery_at,
+        }),
+      });
+
+      if (!res1.ok) throw new Error(`Create order failed: HTTP ${res1.status}`);
+
+      // ********** 🛑 FIX: ใช้ order_id แทน id **********
+      const orderData = await res1.json();
+      const newOrderId = orderData.order_id;
+      // ************************************************
+
+      // ทดสอบ: console.log("Correct Order ID:", newOrderId); 
+
+
+      // 2️⃣ ส่งอีเมล + เปลี่ยน status ของโพสต์ (Step 2)
+      try {
+        const res2 = await fetch(
+          `http://localhost:5000/service/orders/${newOrderId}/notification`, // <-- ใช้ Order ID ที่ถูกต้อง
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }
+        );
+
+        if (!res2.ok) {
+          console.warn(`Notification request returned HTTP ${res2.status}`);
+        } else {
+          console.log("Notification sent successfully");
+        }
+      } catch (notifErr) {
+        console.warn("Notification fetch failed:", notifErr);
       }
-    );
 
-    if (!res2.ok) throw new Error(`Notification failed: HTTP ${res2.status}`);
+      // 3️⃣ อัปเดต UI
+      const newOrder = { ...selectedOrder, status_name: "Rider Received" };
+      onConfirmOrder(newOrder);
+      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
 
-    console.log("Order created + Notification sent");
+    } catch (err) {
+      console.error("Error creating order:", err);
+    } finally {
+      setModalVisible(false);
+      setSelectedOrder(null);
+    }
+  };
 
-    // ✅ 3. อัปเดต UI
-    const newOrder = { ...selectedOrder, status_name: "Rider Received" };
-    onConfirmOrder(newOrder);
-    setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
-  } catch (err) {
-    console.error("Error:", err);
-  } finally {
-    setModalVisible(false);
-    setSelectedOrder(null);
-  }
-};
 
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full px-4">
+
         {loading && [...Array(4)].map((_, i) => (
           <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-xl" />
         ))}
 
-        {!loading && orders.map((order) => (
+        {!loading && filteredOrders.map(order => (
           <FoodCard
             key={order.id}
             order={order}
@@ -166,8 +211,10 @@ const FoodCardList = ({ onConfirmOrder, status = "Available" }) => {
           />
         ))}
 
-        {!loading && orders.length === 0 && (
-          <p className="text-gray-500 w-full text-left mt-10">{emptyText}</p>
+        {!loading && filteredOrders.length === 0 && (
+          <p className="text-gray-500 w-full text-left mt-10">
+            {error ? `เกิดข้อผิดพลาด: ${error}` : "ไม่มีออเดอร์ในตลาดนี้"}
+          </p>
         )}
       </div>
 

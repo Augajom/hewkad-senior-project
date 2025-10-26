@@ -243,25 +243,26 @@ export default function Home({ }) {
   };
 
   useEffect(() => {
-    let tempPosts = [...posts];
+  let tempPosts = [...posts];
 
-    // Filter by Kad
-    if (selectedKad.length > 0) {
-      tempPosts = tempPosts.filter(post => selectedKad.includes(post.kad_name));
-    }
+  // Filter by Kad
+  if (selectedKad.length > 0) {
+    tempPosts = tempPosts.filter(post => selectedKad.includes(post.kad_name));
+  }
 
-    // Filter by search query
-    if (searchQuery.trim() !== '') {
-      tempPosts = tempPosts.filter(post =>
-        post.store_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.product?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.kad_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.delivery?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+  // Dynamic search: search ทุก field ของ post
+  if (searchQuery.trim() !== '') {
+    const query = searchQuery.toLowerCase();
+    tempPosts = tempPosts.filter(post =>
+      Object.values(post).some(value =>
+        value &&
+        value.toString().toLowerCase().includes(query)
+      )
+    );
+  }
 
-    setFilteredPosts(tempPosts);
-  }, [posts, selectedKad, searchQuery]);
+  setFilteredPosts(tempPosts);
+}, [posts, selectedKad, searchQuery]);
 
 
   // ---------------- FILTER ----------------
