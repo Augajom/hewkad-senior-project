@@ -8,6 +8,7 @@ const Order = require('../models/service/order');
 const Ordering = require('../models/customer/Ordering');
 const OrderHistory = require('../models/service/History');
 const Proof = require('../models/service/Proof');
+const Orderingnoti = require('../models/customer/Orderingnoti');
 const { sendOrderReceivedEmail } = require('../utils/notification');
 const multer = require('multer');
 const path = require('path'); // ✅ ต้องมีบรรทัดนี้
@@ -87,19 +88,17 @@ router.put('/orders/:id/notification', verifyToken, requireRole('service'), asyn
   try {
     const orderId = req.params.id;
 
-    // 1️⃣ หา postId ของ order
-    const postId = await Ordering.getPostIdByOrderId(orderId);
-
-    // 2️⃣ ดึงข้อมูลเจ้าของโพสต์
-    const ownerInfo = await Ordering.getOwnerEmailByPostId(postId);
+    // 1️⃣ ดึง postId และเจ้าของโพสต์
+    const postId = await Orderingnoti.getPostIdByOrderId(orderId);
+    const ownerInfo = await Orderingnoti.getOwnerEmailByPostId(postId);
 
     console.log("Notification for order ID:", orderId);
 
-    // 3️⃣ อัปเดต status ของ order & post
-    await Ordering.updateStatus(orderId, 'Rider Received');
+    // 2️⃣ อัปเดต status ของ order & post
+    await Orderingnoti.updateStatus(orderId, 'Rider Received');
     console.log("Status updated");
 
-    // 4️⃣ ส่งอีเมล
+    // 3️⃣ ส่งอีเมลแจ้งเจ้าของ
     await sendOrderReceivedEmail(
       ownerInfo.email,
       ownerInfo.nickname,
@@ -110,12 +109,13 @@ router.put('/orders/:id/notification', verifyToken, requireRole('service'), asyn
     console.log("Email sent");
 
     res.json({ success: true, message: 'Order updated and email sent' });
-
   } catch (err) {
     console.error("Notification error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+
 // GET /service/history
 router.get('/history', verifyToken, async (req, res) => {
   try {
