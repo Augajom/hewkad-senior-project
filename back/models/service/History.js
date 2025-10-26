@@ -16,6 +16,7 @@ const OrderHistory = {
            o.completed_at,
            s.status_name AS order_status,
            o.status_payment,
+           o.slip_file AS slip_filename,
            p.store_name,
            p.product,
            p.price AS post_price,
@@ -32,7 +33,6 @@ const OrderHistory = {
          JOIN profile pr ON p.profile_id = pr.id
          JOIN kad k ON p.kad_id = k.id
          WHERE o.rider_id = ? 
-           AND LOWER(s.status_name) = 'complete'
          ORDER BY 
            CASE WHEN o.completed_at IS NULL THEN 1 ELSE 0 END, 
            o.completed_at DESC`,

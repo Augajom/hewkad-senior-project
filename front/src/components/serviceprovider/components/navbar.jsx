@@ -51,14 +51,14 @@ function Navbar({ onSearchSubmit, orderingCount }) {
               )}
             </button>
           </Link>
-
-          <button className="btn btn-ghost relative">
-            <CreditCard className="w-5 h-5 text-black" /> {/* เปลี่ยนไอคอนเป็น CreditCard */}
-            <span className="ml-1 font-semibold text-black">Payment</span> {/* เปลี่ยนข้อความ */}
-            {/* {orderingCount > 0 && (
-              <div className="badge badge-info badge-sm absolute top-0 right-0">{orderingCount}</div>
-            )} */}
-          </button>
+          <Link to="/service/payment">
+            <button className="btn btn-ghost relative">
+              <ShoppingCart className="w-5 h-5 text-black" />
+              <span className="ml-1 font-semibold text-black">Payment</span>
+              
+            </button>
+          </Link>
+          
 
 
 
