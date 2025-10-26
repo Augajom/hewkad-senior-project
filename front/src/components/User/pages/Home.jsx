@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '../components/navbar';
 import CreatePostBox from '../components/CreatePostBox';
 import PostCard from '../components/Postcard';
-import KadDropdown from '../components/Kaddropdown';
+import KadDropdown from '../components/KadDropdown';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -243,26 +243,26 @@ export default function Home({ }) {
   };
 
   useEffect(() => {
-  let tempPosts = [...posts];
+    let tempPosts = [...posts];
 
-  // Filter by Kad
-  if (selectedKad.length > 0) {
-    tempPosts = tempPosts.filter(post => selectedKad.includes(post.kad_name));
-  }
+    // Filter by Kad
+    if (selectedKad.length > 0) {
+      tempPosts = tempPosts.filter(post => selectedKad.includes(post.kad_name));
+    }
 
-  // Dynamic search: search ทุก field ของ post
-  if (searchQuery.trim() !== '') {
-    const query = searchQuery.toLowerCase();
-    tempPosts = tempPosts.filter(post =>
-      Object.values(post).some(value =>
-        value &&
-        value.toString().toLowerCase().includes(query)
-      )
-    );
-  }
+    // Dynamic search: search ทุก field ของ post
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      tempPosts = tempPosts.filter(post =>
+        Object.values(post).some(value =>
+          value &&
+          value.toString().toLowerCase().includes(query)
+        )
+      );
+    }
 
-  setFilteredPosts(tempPosts);
-}, [posts, selectedKad, searchQuery]);
+    setFilteredPosts(tempPosts);
+  }, [posts, selectedKad, searchQuery]);
 
 
   // ---------------- FILTER ----------------
