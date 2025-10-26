@@ -17,6 +17,8 @@ const HistoryPage = () => {
   // ฟังก์ชันช่วยกำหนดสีตาม status
   const getOrderStatusClass = (status) => {
     switch (status) {
+      case 'Successfully':
+        return 'font-extrabold text-green-500';
       case 'Complete':
         return 'font-extrabold text-green-500';
       case 'Reported':
@@ -51,7 +53,6 @@ const HistoryPage = () => {
               <th>Product</th>
               <th>Total Price</th>
               <th>Status Order</th>
-              <th>Status Payment</th>
               <th>Customer</th>
               <th>Date</th>
             </tr>
@@ -66,9 +67,7 @@ const HistoryPage = () => {
                   <td className={getOrderStatusClass(order.order_status)}>
                     {order.order_status || '-'}
                   </td>
-                  <td className={getPaymentStatusClass(order.status_payment)}>
-                    {order.status_payment || 'Waiting '}
-                  </td>
+                 
                   <td>
                     {order.customer_name || '-'}
                     <div className="text-gray-400 text-xs">{order.customer_username || '-'}</div>
