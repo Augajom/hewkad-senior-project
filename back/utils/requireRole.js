@@ -1,16 +1,16 @@
 function requireRole(roleName) {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ message: 'Not logged in' });
+      return res.status(498).json({ message: "Not logged in" });
     }
 
-    const roles = req.user.roles || []; // ควรเป็น array เช่น ['customer','admin']
+    const roles = req.user.roles || [];
 
     if (!roles.includes(roleName)) {
-      return res.status(403).json({ message: "Don't have permission" });
+      return res.status(499).json({ message: "No permission" });
     }
 
-    next(); // ผ่าน → ไปต่อ
+    next();
   };
 }
 
