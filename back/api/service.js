@@ -120,14 +120,15 @@ router.put('/orders/:id/notification', verifyToken, requireRole('service'), asyn
 router.get('/history', verifyToken, async (req, res) => {
   try {
     const riderId = req.user.id; // ดึง rider id จาก token
-    const orders = await OrderHistory.getByRider(riderId);
+    const orders = await OrderHistory.getByRider(riderId); // ใช้ฟังก์ชันตัวเดียวกับ model
 
     res.json(orders);
   } catch (err) {
-    console.error("Failed to fetch order history:", err);
+    console.error("Failed to fetch complete order history:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
 
 router.get('/orderingstatus', verifyToken, requireRole('service'), async (req, res) => {
   try {

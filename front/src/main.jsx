@@ -22,6 +22,7 @@ import ServiceOrdering from './components/serviceprovider/page/orderingpage.jsx'
 import ServiceHome from './components/serviceprovider/page/home.jsx'
 import ServiceProfile from './components/serviceprovider/serviceProfile.jsx'
 import SP_History from './components/serviceprovider/page/SP_History.jsx'
+import Paymentpage from './components/serviceprovider/page/Paymentpage.jsx'
 import UserChat from './components/User/pages/Chat.jsx';
 import ServiceChat from './components/serviceprovider/components/Chat.jsx';
 
@@ -100,6 +101,11 @@ const router = createBrowserRouter([
   {
     path: "service/chat",
     element: <ServiceChat />
+  },
+  
+  {
+    path: "service/payment",
+    element: <Paymentpage />
   },
 ])
 

@@ -348,6 +348,18 @@ export default function Home({ }) {
                   autoComplete="off"
                 />
               </div>
+              <div>
+                <label className="block mb-1 font-semibold text-black">Price <span className="text-red-500">*</span></label>
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="กรอกราคา ขั้นต่ำ 1"
+                  className="input input-bordered w-full text-black border border-black bg-white no-spinner"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
 
               <div>
                 <label className="block mb-1 font-semibold text-black">Service Fee <span className="text-red-500">*</span></label>
@@ -362,18 +374,7 @@ export default function Home({ }) {
                 />
               </div>
 
-              <div>
-                <label className="block mb-1 font-semibold text-black">Price <span className="text-red-500">*</span></label>
-                <input
-                  type="number"
-                  name="price"
-                  placeholder="กรอกราคา ขั้นต่ำ 1"
-                  className="input input-bordered w-full text-black border border-black bg-white no-spinner"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  autoComplete="off"
-                />
-              </div>
+              
 
 
               <div>
