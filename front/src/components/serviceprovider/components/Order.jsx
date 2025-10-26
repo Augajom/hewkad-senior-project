@@ -132,66 +132,65 @@ const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searc
   }, [orders, selectedKad, searchQuery]);
 
   const handleConfirm = async () => {
-    if (!selectedOrder) return;
+  if (!selectedOrder) return;
 
+  try {
+    // 1️⃣ สร้างคำสั่งซื้อ (Step 1)
+    const res1 = await fetch("http://localhost:5000/service/hew", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        post_id: selectedOrder.id,
+        order_price: selectedOrder.price,
+        order_service_fee: selectedOrder.service_fee,
+        delivery_address: selectedOrder.delivery || selectedOrder.kad_name,
+        delivery_time: dayjs().format("YYYY-MM-DD") + " " + selectedOrder.delivery_at,
+      }),
+    });
+
+    if (!res1.ok) throw new Error(`Create order failed: HTTP ${res1.status}`);
+
+    const orderData = await res1.json();
+    const newOrderId = orderData.order_id;
+    if (!newOrderId) throw new Error("Invalid order ID");
+
+    console.log("Order created:", orderData);
+
+    // เพิ่ม delay เล็กน้อยให้ DB commit เสร็จ
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    // 2️⃣ ส่งอีเมล + เปลี่ยน status ของโพสต์ (Step 2)
     try {
-      // 1️⃣ สร้างคำสั่งซื้อ (Step 1)
-      const res1 = await fetch("http://localhost:5000/service/hew", {
-        method: "POST",
+      const res2 = await fetch(`http://localhost:5000/service/orders/${newOrderId}/notification`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        // ... (headers, credentials, body)
-        body: JSON.stringify({
-          post_id: selectedOrder.id,
-          order_price: selectedOrder.price,
-          order_service_fee: selectedOrder.service_fee,
-          delivery_address: selectedOrder.delivery || selectedOrder.kad_name,
-          delivery_time: dayjs().format("YYYY-MM-DD") + " " + selectedOrder.delivery_at,
-        }),
       });
 
-      if (!res1.ok) throw new Error(`Create order failed: HTTP ${res1.status}`);
-
-      // ********** 🛑 FIX: ใช้ order_id แทน id **********
-      const orderData = await res1.json();
-      const newOrderId = orderData.order_id;
-      // ************************************************
-
-      // ทดสอบ: console.log("Correct Order ID:", newOrderId); 
-
-
-      // 2️⃣ ส่งอีเมล + เปลี่ยน status ของโพสต์ (Step 2)
-      try {
-        const res2 = await fetch(
-          `http://localhost:5000/service/orders/${newOrderId}/notification`, // <-- ใช้ Order ID ที่ถูกต้อง
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
-
-        if (!res2.ok) {
-          console.warn(`Notification request returned HTTP ${res2.status}`);
-        } else {
-          console.log("Notification sent successfully");
-        }
-      } catch (notifErr) {
-        console.warn("Notification fetch failed:", notifErr);
+      if (!res2.ok) {
+        console.warn(`Notification request returned HTTP ${res2.status}`);
+        const text = await res2.text();
+        console.warn("Response:", text);
+      } else {
+        console.log("Notification sent successfully");
       }
-
-      // 3️⃣ อัปเดต UI
-      const newOrder = { ...selectedOrder, status_name: "Rider Received" };
-      onConfirmOrder(newOrder);
-      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
-
-    } catch (err) {
-      console.error("Error creating order:", err);
-    } finally {
-      setModalVisible(false);
-      setSelectedOrder(null);
+    } catch (notifErr) {
+      console.warn("Notification fetch failed:", notifErr);
     }
-  };
+
+    // 3️⃣ อัปเดต UI
+    const newOrder = { ...selectedOrder, status_name: "Rider Received" };
+    onConfirmOrder(newOrder);
+    setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+
+  } catch (err) {
+    console.error("Error creating order:", err);
+  } finally {
+    setModalVisible(false);
+    setSelectedOrder(null);
+  }
+};
 
 
 

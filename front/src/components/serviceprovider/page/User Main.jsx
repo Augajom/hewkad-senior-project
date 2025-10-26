@@ -4,8 +4,8 @@ import OrderingList from "./orderingpage.jsx";
 import HistoryPage from "./SP_History.jsx";
 import Home from "./home.jsx";
 import ChatPage from "../components/ChatPage.jsx";
-import { useOrders } from "../hooks/useOrder"; // ✅ ดึง hook
-import KadDropdown from "../components/Kaddropdown.jsx"; // ✅ นำ dropdown มาใช้
+import { useOrders } from "../hooks/useOrder"; // :white_check_mark: ดึง hook
+import KadDropdown from "../components/Kaddropdown.jsx"; // :white_check_mark: นำ dropdown มาใช้
 import "../DaisyUI.css";
 
 function UserMain() {
@@ -14,7 +14,7 @@ function UserMain() {
   const [selectedKad, setSelectedKad] = useState([]);
   const [searchQuery, setSearchQuery] = useState(""); // สถานที่ค้นหา
 
-  // ✅ ดึงออเดอร์ Rider Received
+  // :white_check_mark: ดึงออเดอร์ Rider Received
   const { orders: riderOrders } = useOrders("Rider Received");
    const handleSearchSubmit = (value) => {
     setSearchQuery(value);
@@ -27,12 +27,12 @@ function UserMain() {
 };
   const orderingCount = riderOrders.length; // จำนวนออเดอร์ที่ยังดำเนินการอยู่
 
-  // 🔹 เมื่อกด HEW แล้วรับออเดอร์สำเร็จ
+  // :small_blue_diamond: เมื่อกด HEW แล้วรับออเดอร์สำเร็จ
   const handleOrder = (order) => {
     console.log("Rider accepted order:", order);
   };
 
-  // ✅ fetch kad options เมื่อโหลดหน้า
+  // :white_check_mark: fetch kad options เมื่อโหลดหน้า
   React.useEffect(() => {
     const fetchKadOptions = async () => {
       try {
@@ -58,7 +58,7 @@ function UserMain() {
         onSearchSubmit={handleSearchSubmit}
       />
 
-      {/* ✅ Filter Kad สำหรับหน้า ordering */}
+      {/* :white_check_mark: Filter Kad สำหรับหน้า ordering */}
       {currentPage === "home" && (
         <div className="p-4">
           <div className="mb-4 w-60">

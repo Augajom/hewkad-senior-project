@@ -86,24 +86,33 @@ router.post('/hew', verifyToken, requireRole('service'), (req, res) => {
 router.put('/orders/:id/notification', verifyToken, requireRole('service'), async (req, res) => {
   try {
     const orderId = req.params.id;
-    const senderEmail = req.user.email; // ✅ จาก verifyToken
 
-    // ✅ 1. อัปเดตสถานะ
+    // 1️⃣ หา postId ของ order
+    const postId = await Ordering.getPostIdByOrderId(orderId);
+
+    // 2️⃣ ดึงข้อมูลเจ้าของโพสต์
+    const ownerInfo = await Ordering.getOwnerEmailByPostId(postId);
+
+    console.log("Notification for order ID:", orderId);
+
+    // 3️⃣ อัปเดต status ของ order & post
     await Ordering.updateStatus(orderId, 'Rider Received');
+    console.log("Status updated");
 
-    // ✅ 2. ดึงข้อมูลอีเมลเจ้าของร้าน
-    const { email: receiverEmail, nickname, product, store_name } = await Ordering.getOwnerEmail(orderId);
+    // 4️⃣ ส่งอีเมล
+    await sendOrderReceivedEmail(
+      ownerInfo.email,
+      ownerInfo.nickname,
+      ownerInfo.product,
+      ownerInfo.store_name,
+      req.user.email
+    );
+    console.log("Email sent");
 
-    // ✅ 3. ส่งอีเมล พร้อมระบุผู้ส่ง
-    await sendOrderReceivedEmail(receiverEmail, nickname, product, store_name, senderEmail);
+    res.json({ success: true, message: 'Order updated and email sent' });
 
-    res.json({
-      success: true,
-      message: 'Order updated and email sent',
-
-    });
   } catch (err) {
-    console.error(err);
+    console.error("Notification error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
