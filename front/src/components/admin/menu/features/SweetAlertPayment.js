@@ -240,14 +240,3 @@ export const showRejectPayment = async (order) => {
     }
   }
 };
-
-export const showUserSlip = (imageUrl) => {
-  Swal.fire({
-    title: "Payment Slip",
-    imageUrl: imageUrl,
-    imageAlt: "Payment Slip",
-    imageWidth: 400,
-    imageHeight: 400,
-    confirmButtonColor: "#3085d6",
-  });
-};

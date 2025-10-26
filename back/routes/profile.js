@@ -85,8 +85,6 @@ router.get('/', async (req, res) => {
     const picture = normalizePicture(firstNonEmpty(row.picture, req.user?.picture));
     const identityFile = row.identityFile ? normalizePath(row.identityFile) : null;
 
-    console.log('GET /profile -> identityFile =', identityFile);
-
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.json({ ...row, ...base, picture, identityFile });
   } catch (e) {

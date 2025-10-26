@@ -109,6 +109,21 @@ const router = createBrowserRouter([
   },
 ])
 
+// Validate Login, Token
+import axios from "axios";
+import { handleUnauthorized } from "./utils/handleUnauthorized";
+
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response) {
+      const status = error.response.status;
+      await handleUnauthorized(status);
+    }
+    return Promise.reject(error);
+  }
+);
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RouterProvider router={router} />

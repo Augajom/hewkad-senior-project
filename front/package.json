@@ -19,6 +19,7 @@
     "daisyui": "^5.0.50",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.541.0",
     "react": "^19.0.0",
     "react-datepicker": "^8.3.0",

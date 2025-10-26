@@ -1,7 +1,21 @@
-import React from 'react'
-
+import React, {useEffect} from 'react'
+import axios from "axios";
 
 function Login() {
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/auth/check", { withCredentials: true })
+      .then(res => {
+        if (res.data.valid) {
+          window.location.href = "/user/home";
+        }
+      })
+      .catch(() => {
+        console.log("❌ Not logged in");
+      });
+  }, []);
+
   return (
     <div className="set-center min-h-screen bg-white">
       <div id="container mx-auto">
