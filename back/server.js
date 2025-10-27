@@ -14,6 +14,7 @@ const serviceRoute = require('./api/service.js');
 const profileRoute = require('./routes/profile.js');
 const uploadRoute = require('./routes/upload.js');
 const loginRoute = require('./routes/login.js');
+const logoutRoute = require('./routes/logout.js')
 const verifyToken = require('./utils/verifyToken.js');
 const requireRole = require('./utils/requireRole.js');
 
@@ -44,7 +45,10 @@ app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
 app.use('/profile', verifyToken, profileRoute);
 app.use('/upload', verifyToken, uploadRoute);
+
+// Admin
 app.use('/login', loginRoute);
+app.use('/logout', logoutRoute)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 // SweetAlert2
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -12,12 +12,26 @@ import { FaRegFileAlt } from "react-icons/fa";
 import { MdOutlineLogout } from "react-icons/md";
 import { BsDiamondHalf } from "react-icons/bs";
 
+const API_BASE = import.meta.env?.VITE_API_URL || "http://localhost:5000";
+
 function Nav() {
   const MySwal = withReactContent(Swal);
+  const navigate = useNavigate();
 
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isOn, setIsOn] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_BASE}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {}
+    navigate("/Admin", { replace: true });
+  };
 
   // toggle
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
@@ -244,16 +258,41 @@ function Nav() {
               </div>
 
               <div className="logout-con mb-6 ">
-                <Link
-                  to="/Admin"
+                <button
+                  onClick={() => setShowLogoutModal(true)}
                   className="flex items-center mb-4 space-x-4 hover:text-red-500 transition duration-300"
                 >
                   <div className="size-14 rounded-full border flex items-center justify-center">
                     <MdOutlineLogout className="size-10" />
                   </div>
                   <p className="text-2xl font-semibold">LOGOUT</p>
-                </Link>
+                </button>
               </div>
+
+    {showLogoutModal && (
+        <dialog className="modal modal-open">
+          <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black max-w-sm mx-auto">
+            <h3 className="font-bold text-lg text-center mb-4">
+              Confirm Logout
+            </h3>
+            <p className="text-center mb-6">You sure to logout?</p>
+            <div className="modal-action flex flex-col sm:flex-row justify-center gap-4">
+              <button
+                className="btn btn-ghost w-full sm:w-auto px-8 text-red-500 bg-white"
+                onClick={() => setShowLogoutModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-success w-full sm:w-auto px-8 text-black"
+                onClick={handleLogout}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
 
             </div>
           </div>

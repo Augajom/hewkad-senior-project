@@ -29,6 +29,8 @@ router.post('/', async (req, res) => {
       httpOnly: true,
       sameSite: 'lax',
       secure: false,
+      path: '/',
+      domain: 'localhost',
       maxAge: 24 * 60 * 60 * 1000,
     });
 
