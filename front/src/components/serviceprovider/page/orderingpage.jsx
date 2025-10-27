@@ -68,7 +68,7 @@ const OrderingCard = ({ order, onStatusUpdate }) => {
         </div>
 
         <div className="flex flex-col items-end">
-          <div className={`badge ${statusColors[order.status_name] || "badge-info"}`}>
+          <div className={`badge w-32 ${statusColors[order.status_name] || "badge-info"}`}>
             {order.status_name || ""}
           </div>
           <div className="text-red-600 font-bold text-xl mt-1">{order.service_fee || 0} ฿</div>
@@ -137,7 +137,7 @@ const OrderingList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-amber-50">
+    <div className="min-h-screen bg-white">
       <Navbar orderingCount={orderingCount} onNavigate={handleNavigate} />
 
       <div className="w-full px-4 pt-4">

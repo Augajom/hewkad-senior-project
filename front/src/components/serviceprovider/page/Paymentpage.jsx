@@ -79,7 +79,7 @@ const HistoryPage = () => {
                                         {order.order_status || '-'}
                                     </td>
                                     <td className={getPaymentStatusClass(order.status_payment)}>
-                                        {order.status_payment || '-'}
+                                        {order.status_payment || 'waiting'}
                                     </td>
                                     <td>
                                         {order.customer_name || '-'}
