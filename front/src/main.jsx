@@ -9,6 +9,7 @@ import Postlist from './components/admin/menu/Postlist.jsx'
 import Payment from './components/admin/menu/Payment.jsx'
 import Activity from './components/admin/menu/Activity.jsx'
 import LoginAdmin from './components/admin/LoginAdmin.jsx'
+import ReportPage from './components/admin/menu/ReportPage.jsx'
 
 //User Oomsin
 import UserProfile from './components/User/pages/Profilepage.jsx'
@@ -55,6 +56,11 @@ const router = createBrowserRouter([
     path: "Activity",
     element: <Activity />
   },
+  {
+    path: "Report",
+    element: <ReportPage />
+  },
+
   //User
   {
     path: "user/profile",
@@ -112,6 +118,7 @@ const router = createBrowserRouter([
 // Validate Login, Token
 import axios from "axios";
 import { handleUnauthorized } from "./utils/handleUnauthorized";
+
 
 axios.interceptors.response.use(
   (response) => response,

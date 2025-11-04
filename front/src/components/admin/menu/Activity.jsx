@@ -1,50 +1,73 @@
-import { React, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Nav from "../nav";
 import { CiSearch } from "react-icons/ci";
 import axios from "axios";
-
-// SweetAlert2
-import {
-  showUserSlip,
-  showUserReportDetail,
-  showResolvedDetail,
-  confirmResolve,
-} from "./features/SweetAlertUser";
-// Icon
 
 function Activity() {
   const [pageType, setPageType] = useState("History");
   const [search, setSearch] = useState("");
   const [orders, setOrders] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedSlip, setSelectedSlip] = useState(null);
 
-  // ดึงข้อมูล History (status_id = 7 หรือ 8)
+  // ดึงข้อมูลตามหน้า (History / Report)
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const { data } = await axios.get(
-          "http://localhost:5000/admin/payment/history",
-          {
-            withCredentials: true,
-          }
-        );
-
-        console.log("Fetched orders:", data.orders);
-
+        const url =
+          pageType === "History"
+            ? "http://localhost:5000/admin/history"
+            : "http://localhost:5000/admin/report"; // ✅ endpoint report
+        const { data } = await axios.get(url, { withCredentials: true });
         setOrders(data.orders);
       } catch (err) {
         console.error("Error fetching orders:", err);
       }
     };
     fetchOrders();
-  }, []);
+  }, [pageType]); // ✅ ดึงใหม่เมื่อเปลี่ยนหน้า
 
-  // กรองตาม search input
+  // ฟังก์ชันเปิด/ปิด modal
+  const openSlipModal = (url) => {
+    setSelectedSlip(url);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedSlip(null);
+  };
+
+  // Filter ตาม search
   const filteredOrders = orders.filter(
     (order) =>
-      order.customer_username.toLowerCase().includes(search.toLowerCase()) ||
-      (order.rider_username &&
-        order.rider_username.toLowerCase().includes(search.toLowerCase()))
+      order.customer_username?.toLowerCase().includes(search.toLowerCase()) ||
+      order.rider_username?.toLowerCase().includes(search.toLowerCase())
   );
+
+  // สี status
+  const getOrderStatusClass = (status) => {
+    if (!status) return "text-gray-600";
+    const s = status.toLowerCase();
+
+    if (s.includes("complete") || s.includes("successfully"))
+      return "text-green-600 font-semibold"; // ✅ เขียว
+    if (s.includes("reported")) return "text-red-600 font-semibold"; // 🔴 แดง
+    if (s.includes("ordering")) return "text-orange-500 font-semibold"; // 🟠 ส้ม
+    if (s.includes("rider received")) return "text-sky-500 font-semibold"; // 🔵 ฟ้า
+    if (s.includes("order received")) return "text-blue-600 font-semibold"; // 🔷 น้ำเงิน
+
+    return "text-gray-600";
+  };
+
+  // สีสถานะ payment
+  const getPaymentStatusClass = (status) => {
+    if (!status) return "text-gray-500";
+    const s = status.toLowerCase();
+    if (s === "completed") return "text-green-600 font-semibold";
+    if (s === "reject") return "text-red-600 font-semibold";
+    return "text-gray-500";
+  };
 
   return (
     <>
@@ -52,8 +75,8 @@ function Activity() {
       <div className="min-h-screen flex items-start justify-center bg-[#F1F1F1] text-black">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto set-center flex-col ">
-            <div className="filter-con flex gap-2">
-              {/* Pages */}
+            {/* Filter */}
+            <div className="filter-con flex gap-2 mb-6">
               <div className="page-con relative w-full">
                 <p className="absolute top-2 left-5 text-[#807a7a] text-sm">
                   Page
@@ -80,181 +103,112 @@ function Activity() {
               </div>
             </div>
 
-            <div className="text-con my-6">
-              <table className="table-auto w-full text-center shadow-2xl border-separate border-spacing-x-0.5 border-spacing-y-1">
-                <thead>
-                  <tr>
-                    {pageType === "History" ? (
-                      <>
-                        <th className="bg-gray-300 px-4 py-2">Order ID</th>
-                        <th className="bg-gray-300 px-4 py-2">Date</th>
-                        <th className="bg-gray-300 px-4 py-2">Customer</th>
-                        <th className="bg-gray-300 px-4 py-2">
-                          Service Provider
-                        </th>
-                        <th className="bg-gray-300 px-4 py-2">Order Status</th>
-                        <th className="bg-gray-300 px-4 py-2">Amount</th>
-                        <th className="bg-gray-300 px-4 py-2">Fee</th>
-                        <th className="bg-gray-300 px-4 py-2">
-                          Status Payment
-                        </th>
-                        <th className="bg-gray-300 px-4 py-2">Slip File</th>
-                      </>
-                    ) : (
-                      // Report Head
-                      <>
-                        <th className="bg-gray-300 px-4 py-2">Order ID</th>
-                        <th className="bg-gray-300 px-4 py-2">Date</th>
-                        <th className="bg-gray-300 px-4 py-2">Reported By</th>
-                        <th className="bg-gray-300 px-4 py-2">Reported User</th>
-                        <th className="bg-gray-300 px-4 py-2">
-                          Report Details
-                        </th>
-                        <th className="bg-gray-300 px-4 py-2">
-                          Resolved Details
-                        </th>
-                        <th className="bg-gray-300 px-4 py-2">Status Report</th>
-                        <th className="bg-gray-300 px-4 py-2">Resolve Issue</th>
-                      </>
-                    )}
+            {/* ตาราง History / Report */}
+            <div className="overflow-x-auto bg-white shadow-2xl rounded-lg p-6">
+              <table className="w-full text-sm text-center text-black">
+                <thead className="bg-gray-200 text-black uppercase text-sm">
+                  <tr className="border-b">
+                    <th className="px-10 py-3">Order ID</th>
+                    <th className="px-10 py-3">Date</th>
+                    <th className="px-10 py-3">Customer</th>
+                    <th className="px-10 py-3">Rider (Service Provider)</th>
+                    <th className="px-10 py-3">Order Status</th>
+                    <th className="px-10 py-3">Price</th>
+                    <th className="px-10 py-3">Service Fee</th>
+                    <th className="px-10 py-3">Revenue</th>
+                    <th className="px-10 py-3">Status Payment</th>
+                    <th className="px-10 py-3">Slip File</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pageType === "History" ? (
-                    filteredOrders.length > 0 ? (
-                      filteredOrders.map((order) => (
-                        <tr key={order.order_id}>
-                          <td className="px-4 py-2">{order.order_id}</td>
-                          <td className="px-4 py-2">
-                            {new Date(order.ordered_at).toLocaleDateString()}
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => {
+                      const fee = parseFloat(order.order_service_fee || 0);
+                      const revenue = fee * 0.3; // ✅ Revenue 30%
+                      const afterDeduct = fee - revenue; // ✅ Rider เหลือ 70%
+
+                      return (
+                        <tr key={order.order_id} className="border-b">
+                          <td>{order.order_id}</td>
+                          <td>{order.ordered_date}</td>
+                          <td>
+                            {order.customer_name || "-"}
+                            <div className="text-gray-400 text-xs">
+                              {order.customer_email || "-"}
+                            </div>
                           </td>
-                          <td className="px-4 py-2">
-                            {order.customer_username}
-                            <br />
-                            (@{order.customer_username})
+                          <td>
+                            {order.rider_name || "-"}
+                            <div className="text-gray-400 text-xs">
+                              {order.rider_email || "-"}
+                            </div>
                           </td>
-                          <td className="px-4 py-2">
-                            {order.rider_username || "-"}
-                            <br />
-                            (@{order.rider_username || "-"})
+                          <td className={getOrderStatusClass(order.status_name)}>
+                            {order.status_name || "-"}
                           </td>
-                          <td className="text-green-600 px-4 py-2">
-                            {order.status_name}
+                          <td>{order.order_price || 0} ฿</td>
+                          <td>{fee.toFixed(2)} ฿</td>
+                          <td>
+                            <div className="font-semibold text-green-700">
+                              {revenue.toFixed(2)} ฿
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              หลังหักให้ Rider {afterDeduct.toFixed(2)} ฿
+                            </div>
                           </td>
-                          <td className="px-4 py-2">
-                            {order.order_price} Baht
+                          <td className={getPaymentStatusClass(order.status_payment)}>
+                            {order.status_payment || "-"}
                           </td>
-                          <td className="px-4 py-2">
-                            {order.order_service_fee} Baht
-                          </td>
-                          <td
-                            className={`px-4 py-2 font-semibold ${
-                              order.status_payment === "reject"
-                                ? "text-red-600"
-                                : "text-green-600"
-                            }`}
-                          >
-                            {order.status_payment === "reject"
-                              ? "Reject"
-                              : "Completed"}
-                          </td>
-                          <td className="text-blue-600 underline decoration-2 px-4 py-2 cursor-pointer">
+                          <td>
                             {order.slip_filename ? (
-                              <a
+                              <button
+                                className="text-blue-600 underline decoration-2 px-2 py-1 cursor-pointer"
                                 onClick={() =>
-                                  showUserSlip(
+                                  openSlipModal(
                                     `http://localhost:5000/Files/Payment/${order.slip_filename}`
                                   )
                                 }
                               >
                                 View Slip
-                              </a>
+                              </button>
                             ) : (
                               "-"
                             )}
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="9" className="text-xl font-semibold py-4">
-                          No orders found.
-                        </td>
-                      </tr>
-                    )
+                      );
+                    })
                   ) : (
-                    <>
-                      {/* ข้อมูล Report */}
-                      <tr>
-                        <td className="px-4 py-2">3</td>
-                        <td className="px-4 py-2">21 / 02 / 2025</td>
-                        <td className="px-4 py-2">
-                          Customer 3<br />
-                          (@User3)
-                        </td>
-                        <td className="px-4 py-2">
-                          Au
-                          <br />
-                          (@User5)
-                        </td>
-                        <td className="text-blue-600 underline decoration-2 px-4 py-2">
-                          <a
-                            onClick={showUserReportDetail}
-                            className="cursor-pointer"
-                          >
-                            Details
-                          </a>
-                        </td>
-                        <td className="text-blue-600 px-4 py-2">
-                          <a href="">-</a>
-                        </td>
-                        <td className="text-red-600 px-4 py-2">Unresolved</td>
-                        <td>
-                          <button
-                            onClick={confirmResolve}
-                            className="bg-green-500 text-white rounded-3xl px-6 py-2 m-2 cursor-pointer"
-                          >
-                            Confirm
-                          </button>
-                        </td>
-                      </tr>
-
-                      <tr>
-                        <td className="px-4 py-2">1</td>
-                        <td className="px-4 py-2">21 / 02 / 2025</td>
-                        <td className="px-4 py-2">
-                          Customer 3<br />
-                          (@User3)
-                        </td>
-                        <td className="px-4 py-2">
-                          Au
-                          <br />
-                          (@User5)
-                        </td>
-                        <td className="text-blue-600 underline decoration-2 px-4 py-2">
-                          <a
-                            onClick={showUserReportDetail}
-                            className="cursor-pointer"
-                          >
-                            Details
-                          </a>
-                        </td>
-                        <td className="text-blue-600 underline decoration-2 px-4 py-2">
-                          <a
-                            onClick={showResolvedDetail}
-                            className="cursor-pointer"
-                          >
-                            Details
-                          </a>
-                        </td>
-                        <td className="text-green-600 px-4 py-2">Resolved</td>
-                        <td className="text-green-600 px-4 py-2">-</td>
-                      </tr>
-                    </>
+                    <tr>
+                      <td colSpan="10" className="text-gray-500 py-10">
+                        ไม่มีข้อมูลในหน้านี้
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
             </div>
+
+            {/* Modal Popup */}
+            {modalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-4 rounded-lg max-w-xl w-full relative">
+                  <button
+                    className="absolute top-2 right-2 text-red-500 font-bold text-xl"
+                    onClick={closeModal}
+                  >
+                    &times;
+                  </button>
+                  {selectedSlip && (
+                    <img
+                      src={selectedSlip}
+                      alt="Slip"
+                      className="max-h-[80vh] w-auto mx-auto"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
