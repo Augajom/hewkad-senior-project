@@ -58,12 +58,21 @@ function ReportPage() {
     }
   };
 
-  const filteredReports = reports.filter(
-    (r) =>
-      r.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
-      r.rider_name?.toLowerCase().includes(search.toLowerCase()) ||
-      r.order_id?.toString().includes(search)
+  const filteredReports = reports.filter((r) => {
+  const query = search.toLowerCase();
+  return (
+    r.customer_name?.toLowerCase().includes(query) ||
+    r.customer_email?.toLowerCase().includes(query) ||
+    r.rider_name?.toLowerCase().includes(query) ||
+    r.rider_email?.toLowerCase().includes(query) ||
+    r.report_detail?.toLowerCase().includes(query) ||
+    r.resolved_detail?.toLowerCase().includes(query) ||
+    r.order_id?.toString().includes(query) ||
+    (r.status_id === 5 && "resolved".includes(query)) ||
+    ((r.status_id === 6 || r.status_id === 8 || r.status_id === 9 || r.status_id === 10) &&
+      "unresolved".includes(query))
   );
+});
 
   const getStatusClass = (status) => {
     if (status === 5 || status === 8)

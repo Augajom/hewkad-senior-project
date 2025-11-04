@@ -39,12 +39,25 @@ function Activity() {
   };
 
   // Filter ตาม search
-  const filteredOrders = orders.filter(
-    (order) =>
-      order.customer_username?.toLowerCase().includes(search.toLowerCase()) ||
-      order.rider_username?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOrders = orders.filter((order) => {
+    const query = search.toLowerCase();
 
+    // แปลงค่าต่างๆ เป็น string และ lowercase ก่อนตรวจ
+    return (
+      order.order_id?.toString().toLowerCase().includes(query) ||
+      order.customer_name?.toLowerCase().includes(query) ||
+      order.customer_username?.toLowerCase().includes(query) ||
+      order.customer_email?.toLowerCase().includes(query) ||
+      order.rider_name?.toLowerCase().includes(query) ||
+      order.rider_username?.toLowerCase().includes(query) ||
+      order.rider_email?.toLowerCase().includes(query) ||
+      order.status_name?.toLowerCase().includes(query) ||
+      order.status_payment?.toLowerCase().includes(query) ||
+      order.order_price?.toString().toLowerCase().includes(query) ||
+      order.order_service_fee?.toString().toLowerCase().includes(query) ||
+      order.slip_filename?.toLowerCase().includes(query)
+    );
+  });
   // สี status
   const getOrderStatusClass = (status) => {
     if (!status) return "text-gray-600";
@@ -76,31 +89,18 @@ function Activity() {
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto set-center flex-col ">
             {/* Filter */}
-            <div className="filter-con flex gap-2 mb-6">
-              <div className="page-con relative w-full">
-                <p className="absolute top-2 left-5 text-[#807a7a] text-sm">
-                  Page
-                </p>
-                <div
-                  className="rounded px-4 pb-2 pt-7 w-full bg-white shadow-xl"
-                  value={pageType}
-                  onChange={(e) => setPageType(e.target.value)}
-                >
-                  <option value="History">History</option>
-                  
-                </div>
-              </div>
+            <h1 className="text-3xl font-bold mb-6 text-center">History</h1>
 
-              <div className="search-con relative">
-                <input
-                  type="text"
-                  placeholder="Search here..."
-                  className="w-120 h-[60px] bg-white shadow-2xl rounded-md pl-6 font-medium text-xl"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <CiSearch className="absolute size-6 right-4 top-[18px]" />
-              </div>
+            {/* Search */}
+            <div className="search-con relative mb-6 flex justify-end">
+              <input
+                type="text"
+                placeholder="Search by name or order ID..."
+                className="w-120 h-[60px] bg-white shadow-2xl rounded-md pl-6 font-medium text-xl"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <CiSearch className="absolute size-6 right-4 top-[18px]" />
             </div>
 
             {/* ตาราง History / Report */}
