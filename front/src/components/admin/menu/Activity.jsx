@@ -81,14 +81,14 @@ function Activity() {
                 <p className="absolute top-2 left-5 text-[#807a7a] text-sm">
                   Page
                 </p>
-                <select
+                <div
                   className="rounded px-4 pb-2 pt-7 w-full bg-white shadow-xl"
                   value={pageType}
                   onChange={(e) => setPageType(e.target.value)}
                 >
                   <option value="History">History</option>
-                  <option value="Report">Report</option>
-                </select>
+                  
+                </div>
               </div>
 
               <div className="search-con relative">
