@@ -224,6 +224,7 @@ router.get("/history", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error." });
   }
 });
+
 router.get("/report", async (req, res) => {
   try {
     const reports = await historyadmin.getReportedHistory();
@@ -235,10 +236,25 @@ router.get("/report", async (req, res) => {
 });
 
 
-router.put("/report/:orderId/resolve", upload.single("file"), async (req, res) => {
+const resolvedDir = path.join(__dirname, "../Files/Resolved");
+if (!fs.existsSync(resolvedDir)) {
+  fs.mkdirSync(resolvedDir, { recursive: true });
+}
+
+const resolvedStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, resolvedDir),
+  filename: (req, file, cb) => {
+    const safeName =
+      Date.now() + "_" + file.originalname.replace(/[<>:"/\\|?*\s]/g, "_");
+    cb(null, safeName);
+  },
+});
+const resolvedUpload = multer({ storage: resolvedStorage });
+
+router.put("/report/:orderId/resolve", resolvedUpload.single("file"), async (req, res) => {
   const { orderId } = req.params;
   const { resolved_detail } = req.body;
-  const filePath = req.file ? `/uploads/resolved/${req.file.filename}` : null;
+  const filePath = req.file ? `/Files/Resolved/${req.file.filename}` : null;
 
   try {
     await Report.resolveReport(orderId, resolved_detail, filePath);

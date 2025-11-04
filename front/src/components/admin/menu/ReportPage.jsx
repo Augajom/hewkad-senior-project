@@ -105,7 +105,7 @@ function ReportPage() {
                     <th className="px-10 py-3">Report Detail</th>
                     <th className="px-10 py-3">Resolved Detail</th>
                     <th className="px-10 py-3">Status</th>
-                    <th className="px-10 py-3">Action</th> {/* ✅ เพิ่ม Action */}
+                    <th className="px-10 py-3">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -115,10 +115,10 @@ function ReportPage() {
                         <td>{report.order_id}</td>
                         <td>{report.date || "-"}</td>
                         <td>
-                          {report.customer_name || "-"}
-                          <div className="text-gray-400 text-xs">
-                            {report.customer_email || "-"}
-                          </div>
+                          <>
+                            {report.customer_name || "-"}
+                            <div className="text-gray-400 text-xs">{report.customer_email || "-"}</div>
+                          </>
                         </td>
                         <td>
                           {report.rider_name || "-"}
@@ -143,10 +143,19 @@ function ReportPage() {
                           {report.status_id === 6 ? (
                             <button
                               onClick={() => handleOpenModal(report)}
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+                              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer"
                             >
-                              แก้ไข
+                              Resolve
                             </button>
+                          ) : report.resolved_file ? (
+                            <a
+                              href={`http://localhost:5000${report.resolved_file}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 underline hover:text-blue-800"
+                            >
+                              ดูรูปภาพ
+                            </a>
                           ) : (
                             "-"
                           )}
@@ -169,33 +178,40 @@ function ReportPage() {
 
       {/* ✅ Modal สำหรับแก้ไข Report */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg w-[500px] shadow-lg">
-            <h2 className="text-2xl font-bold mb-4">แก้ไขรายงาน #{selectedReport.order_id}</h2>
-            <form onSubmit={handleSubmit}>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="bg-white/90 backdrop-blur-lg border border-white/40 p-8 rounded-2xl shadow-2xl w-[500px] relative">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+              Resovled Report Order {selectedReport.order_id}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <textarea
                 rows="4"
-                className="w-full border border-gray-300 rounded-md p-2 mb-4"
-                placeholder="รายละเอียดการแก้ไข..."
+                className="w-full border text-black border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none rounded-lg p-3 transition-all"
+                placeholder="Detail of resolution..."
                 value={resolvedDetail}
                 onChange={(e) => setResolvedDetail(e.target.value)}
               />
+
               <input
                 type="file"
-                className="mb-4"
+                className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 
+                     file:rounded-lg file:border-0 file:text-sm file:font-semibold 
+                     file:bg-green-100 file:text-green-700 hover:file:bg-green-200 cursor-pointer"
                 onChange={(e) => setFile(e.target.files[0])}
               />
-              <div className="flex justify-end gap-4">
+
+              <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 bg-gray-300 rounded-md"
+                  className="px-5 py-2 rounded-lg bg-red-500 hover:bg-red-300 transition-all cursor-pointer text-black  font-medium shadow-md "
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded-md"
+                  className="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium shadow-md transition-all cursor-pointer "
                 >
                   บันทึก
                 </button>

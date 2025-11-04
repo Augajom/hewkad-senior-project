@@ -55,7 +55,7 @@ ORDER BY o.ordered_at DESC;
   },
 
   // 🚨 ดึงเฉพาะสถานะ Reported
-  getReportedHistory: () => {
+ getReportedHistory: () => {
   return new Promise((resolve, reject) => {
     const query = `
 SELECT 
@@ -78,7 +78,8 @@ SELECT
   rr.title AS reason_title,
   rp.detail AS report_detail,
   rp.\`Resloved detail\` AS resolved_detail,
-  
+  rp.resolved_file, -- ✅ เพิ่มตรงนี้
+
   -- Order & Status info
   o.status_id,
   s.status_name
@@ -115,6 +116,7 @@ ORDER BY rp.created_at DESC;
     });
   });
 },
+
 };
 
 
