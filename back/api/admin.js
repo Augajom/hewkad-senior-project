@@ -5,6 +5,10 @@ const jwt = require('jsonwebtoken');
 // models
 const User = require('../models/userModel');
 const Payment = require('../models/admin/Payment');
+const historyadmin = require('../models/admin/historyadmin');
+const Report = require("../models/admin/Report");
+
+
 
 router.get('/', (req, res) => {
   res.json({ message: 'Admin route working' });
@@ -209,6 +213,59 @@ router.post("/upload/:orderId", upload.single("file"), async (req, res) => {
     res.status(500).json({ success: false, message: "Slip upload failed" });
   }
 });
+
+//history admin
+router.get("/history", async (req, res) => {
+  try {
+    const orders = await historyadmin.getAllHistory();
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    console.error("❌ Error fetching history:", error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+});
+
+router.get("/report", async (req, res) => {
+  try {
+    const reports = await historyadmin.getReportedHistory();
+    res.json({ reports }); // ✅ เปลี่ยนจาก orders → reports
+  } catch (error) {
+    console.error("Error fetching reported history:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+const resolvedDir = path.join(__dirname, "../Files/Resolved");
+if (!fs.existsSync(resolvedDir)) {
+  fs.mkdirSync(resolvedDir, { recursive: true });
+}
+
+const resolvedStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, resolvedDir),
+  filename: (req, file, cb) => {
+    const safeName =
+      Date.now() + "_" + file.originalname.replace(/[<>:"/\\|?*\s]/g, "_");
+    cb(null, safeName);
+  },
+});
+const resolvedUpload = multer({ storage: resolvedStorage });
+
+router.put("/report/:orderId/resolve", resolvedUpload.single("file"), async (req, res) => {
+  const { orderId } = req.params;
+  const { resolved_detail } = req.body;
+  const filePath = req.file ? `/Files/Resolved/${req.file.filename}` : null;
+
+  try {
+    await Report.resolveReport(orderId, resolved_detail, filePath);
+    res.json({ message: "Report updated successfully" });
+  } catch (err) {
+    console.error("❌ Error resolving report:", err);
+    res.status(500).json({ error: "Failed to update report" });
+  }
+});
+
+
 
 // Logout
 router.post('/logout', (req, res) => {
