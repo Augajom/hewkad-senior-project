@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const express = require('express');
+const banksModel = require('../models/customer/bank'); // โมเดล banks สำหรับดึง bank list
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -48,8 +49,10 @@ router.get('/', async (req, res) => {
   try {
     if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user.id;
+    const conn = db.promise();
 
-    const [rows] = await db.promise().query(
+    // ดึง profile + bank account ของผู้ใช้
+    const [profileRows] = await conn.query(
       `
       SELECT
         p.id            AS profileId,
@@ -74,26 +77,34 @@ router.get('/', async (req, res) => {
       [userId]
     );
 
-    const row = rows?.[0] || {};
+    const row = profileRows?.[0] || {};
     const base = {
       id: userId,
       email: row.email || req.user.email || null,
       fullName: row.fullName || req.user.fullName || null,
       roles: req.user.roles || []
     };
-
     const picture = normalizePicture(firstNonEmpty(row.picture, req.user?.picture));
     const identityFile = row.identityFile ? normalizePath(row.identityFile) : null;
 
+    // ดึง bank list จากโมเดล
+    const banks = await banksModel.getAll();
+
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.json({ ...row, ...base, picture, identityFile });
+    res.json({
+      ...row,
+      ...base,
+      picture,
+      identityFile,
+      banks
+    });
   } catch (e) {
     console.error('GET /profile error:', e);
     res.status(500).json({ error: 'Failed to load profile' });
   }
 });
 
-// ---------- PUT /profile (ข้อมูลโปรไฟล์ + avatar) ----------
+// ---------- PUT /profile (ข้อมูลโปรไฟล์ + avatar + bank) ----------
 const maybeUpload = (req, res, next) => {
   const ct = (req.headers['content-type'] || '').toLowerCase();
   if (ct.startsWith('multipart/form-data')) {
@@ -111,90 +122,68 @@ router.put('/', maybeUpload, async (req, res) => {
 
     const conn = db.promise();
     const [pRows] = await conn.query(
-      'SELECT id, email, nickname, name, phone_num, address, picture FROM profile WHERE user_id = ? LIMIT 1',
+      'SELECT id, picture FROM profile WHERE user_id = ? LIMIT 1',
       [userId]
     );
 
     const exists = !!pRows.length;
     const current = pRows[0] || {};
-    const currentPicture = current.picture ?? '';
+    let newAvatarUrl = req.file?.filename ? `/uploads/${req.file.filename}` : null;
 
-    let newAvatarUrl = null;
-    if (req.file && req.file.filename) newAvatarUrl = `/uploads/${req.file.filename}`;
+    const pictureToSave = normalizePicture(firstNonEmpty(newAvatarUrl, picture, current.picture, req.user.picture));
 
-    const pictureToSave = normalizePicture(firstNonEmpty(newAvatarUrl, picture, currentPicture, req.user.picture));
-
-    const fields = [];
-    const params = [];
-    const addIfProvided = (column, incoming) => {
-      if (incoming === undefined) return;
-      fields.push(`${column} = ?`);
-      params.push(nonEmpty(incoming));
-    };
-
-    addIfProvided('nickname', nickname);
-    addIfProvided('name', fullName);
-    addIfProvided('phone_num', phone);
-    addIfProvided('address', address);
-
-    if (newAvatarUrl !== null || picture !== undefined) {
-      fields.push('picture = ?');
-      params.push(pictureToSave);
-    }
-
+    // --- update / insert profile ---
     let profileId;
     if (!exists) {
-      const insertCols = ['user_id', 'nickname', 'name', 'email', 'phone_num', 'address', 'picture'];
-      const insertVals = [
-        userId,
-        nonEmpty(nickname) ?? null,
-        nonEmpty(fullName) ?? null,
-        req.user.email || null,
-        nonEmpty(phone) ?? null,
-        nonEmpty(address) ?? null,
-        pictureToSave
-      ];
-      const placeholders = insertCols.map(() => '?').join(', ');
       const [ins] = await conn.query(
-        `INSERT INTO profile (${insertCols.join(', ')}) VALUES (${placeholders})`,
-        insertVals
+        `INSERT INTO profile (user_id, nickname, name, email, phone_num, address, picture)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          nonEmpty(nickname),
+          nonEmpty(fullName),
+          req.user.email || null,
+          nonEmpty(phone),
+          nonEmpty(address),
+          pictureToSave
+        ]
       );
       profileId = ins.insertId;
     } else {
+      const fields = [];
+      const params = [];
+      if (nickname !== undefined) { fields.push('nickname=?'); params.push(nonEmpty(nickname)); }
+      if (fullName !== undefined) { fields.push('name=?'); params.push(nonEmpty(fullName)); }
+      if (phone !== undefined) { fields.push('phone_num=?'); params.push(nonEmpty(phone)); }
+      if (address !== undefined) { fields.push('address=?'); params.push(nonEmpty(address)); }
+      if (newAvatarUrl !== null || picture !== undefined) { fields.push('picture=?'); params.push(pictureToSave); }
+
       if (fields.length) {
-        await conn.query(`UPDATE profile SET ${fields.join(', ')} WHERE id = ?`, [...params, current.id]);
+        await conn.query(`UPDATE profile SET ${fields.join(', ')} WHERE id=?`, [...params, current.id]);
       }
       profileId = current.id;
     }
 
-    // ธนาคาร (ถ้าส่งมา)
-    const wantUpdateBank =
-      bank !== undefined || accountNumber !== undefined || accountOwner !== undefined;
-
+    // --- update / insert bank account ---
+    const wantUpdateBank = bank !== undefined || accountNumber !== undefined || accountOwner !== undefined;
     if (wantUpdateBank) {
-      const bankName = (bank || '').trim();
+      const bankIdVal = nonEmpty(bank); // bank dropdown ส่งเป็น id
       const [existingAcc] = await conn.query(
         'SELECT id FROM profile_bank_accounts WHERE profile_id = ? LIMIT 1',
         [profileId]
       );
 
-      if (!bankName) {
+      if (!bankIdVal) {
+        // ไม่เลือก bank → ลบ record ถ้ามี
         if (existingAcc.length) {
-          await conn.query('DELETE FROM profile_bank_accounts WHERE id = ?', [existingAcc[0].id]);
+          await conn.query('DELETE FROM profile_bank_accounts WHERE id=?', [existingAcc[0].id]);
         }
       } else {
-        const [bRows] = await conn.query('SELECT id FROM bank WHERE bank_name = ? LIMIT 1', [bankName]);
-        let bankIdVal = bRows.length ? bRows[0].id : null;
-        if (!bankIdVal) {
-          const [insB] = await conn.query('INSERT INTO bank (bank_name) VALUES (?)', [bankName]);
-          bankIdVal = insB.insertId;
-        }
-
         if (existingAcc.length) {
           await conn.query(
             `UPDATE profile_bank_accounts
-             SET bank_id = ?, acc_number = ?, acc_owner = ?
-             WHERE id = ?`,
+             SET bank_id=?, acc_number=?, acc_owner=?
+             WHERE id=?`,
             [bankIdVal, nonEmpty(accountNumber), nonEmpty(accountOwner), existingAcc[0].id]
           );
         } else {
@@ -207,7 +196,7 @@ router.put('/', maybeUpload, async (req, res) => {
       }
     }
 
-    // โหลดกลับ
+    // โหลดกลับ profile + bank
     const [rows] = await conn.query(
       `SELECT
          p.id            AS profileId,
@@ -241,7 +230,7 @@ router.put('/', maybeUpload, async (req, res) => {
   }
 });
 
-// ---------- PUT /profile/identity (อัปโหลดทันที) ----------
+// ---------- PUT /profile/identity ----------
 const maybeIdentityUpload = (req, res, next) => {
   const ct = (req.headers['content-type'] || '').toLowerCase();
   if (ct.startsWith('multipart/form-data')) {
@@ -266,7 +255,6 @@ router.put('/identity', maybeIdentityUpload, async (req, res) => {
     let newIdentityUrl = null;
     if (req.file?.filename) {
       newIdentityUrl = `/uploads/${req.file.filename}`;
-      console.log('UPLOAD identity ->', newIdentityUrl);
     }
 
     const bodyIdentity = (req.body?.identity ?? '').trim() || null;
@@ -308,7 +296,6 @@ router.put('/identity', maybeIdentityUpload, async (req, res) => {
       [userId]
     );
     const saved = rows?.[0]?.identityFile || null;
-    console.log('SAVED identity_file ->', saved);
 
     return res.json({ ok: true, profile: { identityFile: saved } });
   } catch (e) {
