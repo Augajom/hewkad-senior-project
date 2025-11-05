@@ -11,6 +11,7 @@ const Ordering = require('../models/customer/Ordering');
 const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
 const QRCode = require("qrcode");
+const Rating = require('../models/customer/rating');
 const { sendOrderReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
 const getName = require('../models/getName');
@@ -165,6 +166,8 @@ router.get('/history/:status', verifyToken, async (req, res) => {
     // เรียก method ใหม่ที่ join proof_url
     const posts = await History.getByStatus(status, userId);
 
+    console.log(posts); // ตรวจสอบว่า proof_url มาเรียบร้อย
+
     res.json(posts);
 
   } catch (err) {
@@ -270,7 +273,21 @@ router.post("/upload-slip", upload.single("files"), async (req, res) => {
   }
 });
 
+//rating
+router.post('/rate', verifyToken, async (req, res) => {
+    const userId = req.user.id;  // จาก token
+    const { orderId, rating, comment } = req.body;
 
+    if (!orderId || !rating) return res.status(400).json({ message: "Missing data" });
+
+    try {
+        const result = await Rating.create(userId, orderId, rating, comment);
+        res.json({ success: true, data: result });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message }); // ส่ง error จริงกลับไป
+    }
+});
 // POST /customer/reports
 router.post('/reports', verifyToken, async (req, res) => {
   try {
