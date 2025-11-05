@@ -382,29 +382,29 @@ router.get('/name', verifyToken, async (req, res) => {
 cron.schedule('*/10 * * * *', async () => {
   console.log('🕐 Checking for orders older than 3 hours...');
   const sql = `
-    SELECT p.id, s.status_name, p.created_at
-    FROM posts p
-    JOIN status s ON p.status_id = s.id
-    WHERE s.status_name != 'Complete'
-      AND TIMESTAMPDIFF(HOUR, p.created_at, NOW()) >= 3
+    SELECT o.post_id, s.status_name, o.completed_at
+    FROM orders o
+    JOIN status s ON o.status_id = s.id
+    WHERE s.status_name = 'Order Received'
+      AND TIMESTAMPDIFF(HOUR, o.completed_at, NOW()) >= 3
   `;
-
+  
   db.query(sql, async (err, results) => {
     if (err) {
       console.error('❌ Error checking orders:', err);
       return;
     }
-
+    
     if (results.length === 0) return; // ไม่มีออเดอร์ครบเวลา
-
+    
     console.log(`🔄 Found ${results.length} orders to auto-complete...`);
-
+    
     for (const order of results) {
       try {
-        await Ordering.updateStatus(order.id, 'Complete');
-        console.log(`✅ Order #${order.id} set to Complete`);
+        await Ordering.updateStatus(order.post_id, 'Complete');
+        console.log(`✅ Order #${order.post_id} set to Complete`);
       } catch (error) {
-        console.error(`❌ Failed to update order #${order.id}:`, error.message);
+        console.error(`❌ Failed to update order #${order.post_id}:`, error.message);
       }
     }
   });

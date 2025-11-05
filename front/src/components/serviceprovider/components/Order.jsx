@@ -15,8 +15,10 @@ const FoodCard = ({ order, onRequestConfirm }) => {
           <img
             src={
               order.avatar
-                ? `http://localhost:5000/uploads/${order.avatar}`
-                : order.profileImg || "https://i.pravatar.cc/150"
+                ? order.avatar.startsWith("http")
+                  ? order.avatar
+                  : `http://localhost:5000${order.avatar}`
+                : "https://i.pravatar.cc/150"
             }
             alt="avatar"
             className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
