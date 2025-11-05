@@ -25,8 +25,8 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
             className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
           />
           <div>
-            <div className="font-bold text-base">{post.nickname || 'ไม่ระบุชื่อ'}</div>
-            <div className="text-sm text-gray-500">{post.username || '@username'}</div>
+            <div className="font-bold text-lg">{post.nickname || 'ไม่ระบุชื่อ'}</div>
+            <div className="text-xs text-gray-500">{post.username || '@username'}</div>
           </div>
         </div>
 

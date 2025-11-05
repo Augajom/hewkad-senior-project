@@ -25,7 +25,7 @@ const FoodCard = ({ order, onRequestConfirm }) => {
             <div className="font-bold text-base">
               {order.nickname || order.name || "ไม่ระบุชื่อ"}
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs text-gray-500">
               {order.username || "@username"}
             </div>
           </div>

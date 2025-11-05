@@ -202,25 +202,6 @@ export default function ProfilePage() {
     }
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
-  const handleSwitchRole = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/customer/switch-role`, {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Switch role failed");
-      const newRole = data.role_name;
-      localStorage.setItem("role", newRole);
-      const switchPath =
-        newRole === "service" ? "/service/profile" : "/user/profile";
-      navigate(switchPath, { replace: true });
-    } catch (err) {
-      console.error("Switch role failed:", err);
-      alert("ไม่สามารถเปลี่ยน role ได้");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -472,7 +453,7 @@ export default function ProfilePage() {
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                     <button
-                      onClick={() => handleSwitchRole()}
+                      onClick={[]}
                       className="btn bg-green-500 hover:bg-green-600 text-black font-semibold w-full sm:w-auto"
                     >
                       Switch/Role

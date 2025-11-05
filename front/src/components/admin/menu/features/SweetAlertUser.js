@@ -3,17 +3,27 @@ import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
-export const showUserInfo = () => {
+const API_BASE = import.meta.env?.VITE_API_URL || "http://localhost:5000";
+
+function resolveImg(src) {
+  if (!src) return "";
+  if (src.startsWith("data:") || src.startsWith("http")) return src;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_BASE}${path}`;
+}
+
+
+export const showUserInfo = (user) => {
   MySwal.fire({
     title: '<div style="font-size:32px; font-weight:bold; color:#333;">INFORMATION</div>',
     html: `
       <div style="display: flex; flex-direction: column; gap: 12px; font-size: 22px; color: #807a7a; text-align: left; padding-left: 4rem;">
-        <div><b>Name:</b> Name (@XXXXX)</div>
-        <div><b>Address:</b> ........</div>
-        <div><b>Mobile Number:</b> 083-.....</div>
-        <div><b>Bank:</b> Siam Commercial</div>
-        <div><b>Account Number:</b> ........</div>
-        <div><b>Name Number:</b> .............</div>
+        <div><b>Name:</b> ${user.name}</div>
+        <div><b>Address:</b> ${user.address || '-'}</div>
+        <div><b>Mobile Number:</b> ${user.phone_num || '-'}</div>
+        <div><b>Bank:</b> ${user.bank_name || '-'}</div>
+        <div><b>Account Number:</b> ${user.acc_number || '-'}</div>
+        <div><b>Account Owner:</b> ${user.acc_owner || '-'}</div>
       </div>
     `,
     background: '#ffffff',
@@ -29,35 +39,40 @@ export const showUserInfo = () => {
   });
 };
 
-export const showUserLicense = () => {
-  MySwal.fire({
-    title: '<div style="font-size:32px; font-weight:bold; color:#333;">LICENSE</div>',
-    html: `
-      <div style="display: flex; text-align: center; justify-content: center;">
-        <img src="/src/assets/license.jpg" alt="" />
-      </div>
-    `,
-    background: '#ffffff',
+
+export const showUserLicense = (identityFile) => {
+  const imageUrl = resolveImg(identityFile);
+
+  Swal.fire({
+    title: '<div style="font-size:28px; font-weight:bold; color:#333;">IDENTIFICATION</div>',
+    html: imageUrl
+      ? `
+        <div style="display:flex; justify-content:center; align-items:center;">
+          <img src="${imageUrl}" alt="User ID" style="max-width:100%; max-height:400px; border-radius:12px; border:1px solid #ccc;" />
+        </div>
+      `
+      : `<div style="color:#888; font-size:16px;">No identification uploaded</div>`,
+    background: "#fff",
     width: 600,
-    padding: '1em',
+    padding: "1em",
     backdrop: true,
-    confirmButtonColor: '#00c950',
-    confirmButtonText: 'Close',
+    confirmButtonColor: "#00c950",
+    confirmButtonText: "Close",
     customClass: {
-      popup: 'rounded-2xl shadow-lg',
-      container: 'backdrop-blur',
+      popup: "rounded-2xl shadow-lg",
+      container: "backdrop-blur",
     },
   });
 };
 
-export const showUserDelete = () => {
-  MySwal.fire({
+export const showUserDelete = (user) => {
+  return MySwal.fire({
     html: `
       <div style="display: flex; text-align: center; justify-content: center;">
         <div>
           <p style="color:black; font-size: 24px; font-weight: bold;">Confirm Account Deletion</p>
           <p style="color:#807a7a; font-size: 28px; font-weight: 400; margin-top: 10px;">Are you sure you want <br />to delete the account?</p>
-          <p style="color:#807a7a; font-size: 22px; font-weight: 400;">Name(@XXXXX)?</p>
+          <p style="color:#807a7a; font-size: 22px; font-weight: 400;">Name(${user.name})?</p>
         </div>
       </div>
     `,
@@ -74,23 +89,9 @@ export const showUserDelete = () => {
       container: 'backdrop-blur',
     },
     backdrop: true,
-  }).then((result) => {
-    if (result.isConfirmed) {
-      MySwal.fire({
-        title: '<span style="color:#333;">User Deleted</span>',
-        text: 'The User Has Been Successfully Removed.',
-        icon: 'error',
-        confirmButtonColor: 'red',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          container: 'backdrop-blur',
-        },
-        backdrop: true,
-      });
-    }
   });
 };
+
 
 export const showAllowPermitUser = () => {
   return MySwal.fire({
@@ -148,86 +149,92 @@ export const showDisablePermitUser = () => {
 
 // Request page
 
-export const showConfirmVerify = () => {
-  MySwal.fire({
+export const showConfirmVerify = async (userId, username) => {
+  Swal.fire({
     html: `
-      <div style="display: flex; text-align: center; justify-content: center;">
-        <div>
-          <p style="color:black; font-size: 24px; font-weight: bold;">Confirm User Verification</p>
-          <p style="color:#807a7a; font-size: 28px; font-weight: 400; margin-top: 10px;">Are you sure you want to verify</p>
-          <p style="color:#807a7a; font-size: 22px; font-weight: 400;">@User2?</p>
-        </div>
+      <div style="text-align:center;">
+        <p style="color:black; font-size: 24px; font-weight: bold;">Confirm User Verification</p>
+        <p style="color:#807a7a; font-size: 22px; font-weight: 400; margin-top: 10px;">Are you sure you want to verify <b>@${username}</b>?</p>
       </div>
     `,
-    icon: 'warning',
+    icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: '#00c950',
-    cancelButtonColor: 'gray',
-    cancelButtonText: 'Cancel',
-    confirmButtonText: 'Confirm',
+    confirmButtonColor: "#00c950",
+    cancelButtonColor: "gray",
+    cancelButtonText: "Cancel",
+    confirmButtonText: "Confirm",
     reverseButtons: true,
-    background: '#ffffff',
-    customClass: {
-      popup: 'rounded-xl shadow-lg',
-      container: 'backdrop-blur',
-    },
-    backdrop: true,
-  }).then((result) => {
+    background: "#ffffff",
+  }).then(async (result) => {
     if (result.isConfirmed) {
-      MySwal.fire({
-        title: '<span style="color:#333;">User Verified</span>',
-        text: 'The User Has Been Successfully Verified.',
-        icon: 'success',
-        confirmButtonColor: '#00c950',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          container: 'backdrop-blur',
-        },
-        backdrop: true,
-      });
+      try {
+        const res = await fetch(`${API_BASE}/admin/users/request/update/${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ isActive: 1 }),
+        });
+
+        if (!res.ok) throw new Error("Failed to verify user");
+
+        Swal.fire({
+          title: '<span style="color:#333;">User Verified</span>',
+          text: "The user has been successfully verified.",
+          icon: "success",
+          confirmButtonColor: "#00c950",
+          background: "#fff",
+        }).then(() => {
+          window.location.reload();
+        });
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Failed to verify user", "error");
+      }
     }
   });
 };
 
-export const showRejectVerify = () => {
-  MySwal.fire({
+export const showRejectVerify = async (userId, username) => {
+  Swal.fire({
     html: `
-      <div style="display: flex; text-align: center; justify-content: center;">
-        <div>
-          <p style="color:black; font-size: 24px; font-weight: bold;">Confirm Rejection</p>
-          <p style="color:#807a7a; font-size: 28px; font-weight: 400; margin-top: 10px;">Are you sure you want to reject  </p>
-          <p style="color:#807a7a; font-size: 22px; font-weight: 400;">@User2?</p>
-        </div>
+      <div style="text-align:center;">
+        <p style="color:black; font-size: 24px; font-weight: bold;">Confirm Rejection</p>
+        <p style="color:#807a7a; font-size: 22px; font-weight: 400; margin-top: 10px;">Are you sure you want to reject <b>@${username}</b>?</p>
       </div>
     `,
-    icon: 'warning',
+    icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: 'red',
-    cancelButtonColor: 'gray',
-    cancelButtonText: 'Cancel',
-    confirmButtonText: 'Confirm',
+    confirmButtonColor: "red",
+    cancelButtonColor: "gray",
+    cancelButtonText: "Cancel",
+    confirmButtonText: "Confirm",
     reverseButtons: true,
-    background: '#ffffff',
-    customClass: {
-      popup: 'rounded-xl shadow-lg',
-      container: 'backdrop-blur',
-    },
-    backdrop: true,
-  }).then((result) => {
+    background: "#ffffff",
+  }).then(async (result) => {
     if (result.isConfirmed) {
-      MySwal.fire({
-        title: '<span style="color:#333;">User Rejected </span>',
-        text: 'The User Has Been Successfully Declined.',
-        icon: 'error',
-        confirmButtonColor: 'red',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          container: 'backdrop-blur',
-        },
-        backdrop: true,
-      });
+      try {
+        const res = await fetch(`${API_BASE}/admin/users/request/update/${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ isActive: 0 }),
+        });
+
+        if (!res.ok) throw new Error("Failed to reject user");
+
+        Swal.fire({
+          title: '<span style="color:#333;">User Rejected</span>',
+          text: "The user has been successfully declined.",
+          icon: "error",
+          confirmButtonColor: "red",
+          background: "#fff",
+        }).then(() => {
+          window.location.reload();
+        });
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Failed to reject user", "error");
+      }
     }
   });
 };

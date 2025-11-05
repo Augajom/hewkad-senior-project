@@ -7,7 +7,8 @@ const User = require('../models/userModel');
 const Payment = require('../models/admin/Payment');
 const historyadmin = require('../models/admin/historyadmin');
 const Report = require("../models/admin/Report");
-
+const manageUser = require('../models/admin/manageUser');
+const getPost = require('../models/admin/getPost');
 
 
 router.get('/', (req, res) => {
@@ -265,12 +266,79 @@ router.put("/report/:orderId/resolve", resolvedUpload.single("file"), async (req
   }
 });
 
+router.get("/users", async (req, res) => {
+  try {
+    const users = await manageUser.getAllInfo();
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
 
+router.put("/users/work-permit/:id", async (req, res) => {
+  const userId = req.params.id;
+  const { isActive } = req.body;
 
-// Logout
-router.post('/logout', (req, res) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'lax', path: '/' });
-  res.json({ message: 'Logged out successfully' });
+  try {
+    const result = await manageUser.toggleWorkPermit(userId, isActive ? 1 : 0);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to toggle work permit" });
+  }
+});
+
+router.delete("/users/delete/:id", async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const result = await manageUser.deleteUser(userId);
+    res.json({ success: true, message: result.message });
+  } catch (error) {
+    console.error("❌ Error deleting user:", error);
+    res.status(500).json({ success: false, message: "Failed to delete user" });
+  }
+});
+
+router.get("/users/request", async (req, res) => {
+  try {
+    const users = await manageUser.getRequest();
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+router.put("/users/request/update/:id", async (req, res) => {
+  const userId = req.params.id;
+  const { isActive } = req.body;
+
+  try {
+    const result = await manageUser.updateRequestActive(userId, isActive);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update isActive" });
+  }
+});
+
+router.get('/posts', async (req, res) => {
+  try {
+    const status = req.query.status || 'Available';
+    
+    // เรียกจาก model
+    const postsList = await getPost.getAll();
+
+    // กรองตาม status ถ้าต้องการ
+    const filtered = postsList.filter(p => p.status_name === status);
+
+    res.json(filtered);
+  } catch (err) {
+    console.error('Failed to get posts:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 module.exports = router;

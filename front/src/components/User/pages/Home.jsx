@@ -382,7 +382,7 @@ export default function Home({ }) {
                 <input
                   type="text"
                   name="delivery"
-                  placeholder="กรอกวิธีจัดส่ง"
+                  placeholder="สถานที่จัดส่ง"
                   className="input input-bordered w-full text-black border border-black bg-white"
                   value={formData.delivery}
                   onChange={handleInputChange}

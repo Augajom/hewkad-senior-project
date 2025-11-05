@@ -317,36 +317,6 @@ router.get('/report-reasons', async (req, res) => {
   }
 });
 
-router.post("/switch-role", verifyToken, (req, res) => {
-  const userId = req.user.id;
-
-  UserRole.getCurrentRole(userId, (err, currentRoleRows) => {
-    if (err) return res.status(500).json({ message: "DB error" });
-    if (!currentRoleRows || currentRoleRows.length === 0)
-      return res.status(404).json({ message: "User role not found" });
-
-    const activeRole = currentRoleRows[0].role_name;
-    const newRoleName = activeRole === "service" ? "customer" : "service";
-
-    UserRole.getRoleByName(newRoleName, (err, newRoleRows) => {
-      if (err) return res.status(500).json({ message: "DB error" });
-      if (!newRoleRows || newRoleRows.length === 0)
-        return res.status(404).json({ message: "New role not found" });
-
-      const newRoleId = newRoleRows[0].id;
-
-      UserRole.deactivateCurrentRole(userId, (err) => {
-        if (err) return res.status(500).json({ message: "DB error" });
-
-        UserRole.activateRole(userId, newRoleId, (err) => {
-          if (err) return res.status(500).json({ message: "DB error" });
-          res.json({ role_name: newRoleName });
-        });
-      });
-    });
-  });
-});
-
 // GET Name by userId
 router.get('/name', verifyToken, async (req, res) => {
   try {
