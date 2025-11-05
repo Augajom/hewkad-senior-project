@@ -1,13 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Camera,
-  LogOut,
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  CreditCard,
-} from "lucide-react";
+
+import { Camera, LogOut, Edit3, Save, X, Upload, Check, User, Phone, Mail, MapPin, CreditCard, FileText, RefreshCw } from "lucide-react";
+
 import Navbar from "../components/navbar";
 
 const API_BASE = "http://localhost:5000";
@@ -24,6 +18,7 @@ export default function ProfilePage() {
   const [loaded, setLoaded] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [user, setUser] = useState({
     picture: "",
@@ -74,9 +69,7 @@ export default function ProfilePage() {
   const loadProfile = useCallback(async () => {
     setLoaded(false);
     try {
-      const res = await fetch(`${API_BASE}/profile?t=${Date.now()}`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE}/profile?t=${Date.now()}`, { credentials: "include" });
       if (res.status === 401) return;
       if (!res.ok) throw new Error("Failed to load profile");
       const d = await res.json();
@@ -106,8 +99,7 @@ export default function ProfilePage() {
   }, [loadProfile]);
 
   const handleEdit = () => setEditMode(true);
-  const handleChange = (e) =>
-    setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
+  const handleChange = (e) => setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
   const handleCancel = () => {
     setEditUser(user);
     setEditMode(false);
@@ -164,6 +156,8 @@ export default function ProfilePage() {
         credentials: "include",
         body: form,
       });
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) throw new Error("Bad response from server");
       const data = await res.json();
       if (!res.ok || !data?.ok || !data?.url) throw new Error("Upload failed");
       setEditUser((p) => ({ ...p, picture: data.url }));
@@ -175,6 +169,7 @@ export default function ProfilePage() {
   const handleSave = useCallback(async () => {
     if (isSaving) return;
     setIsSaving(true);
+    setSaveSuccess(false);
     try {
       const payload = {
         nickname: editUser.nickname || null,
@@ -193,11 +188,19 @@ export default function ProfilePage() {
         credentials: "include",
         body: JSON.stringify(payload),
       });
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
+      }
       const data = await res.json();
       if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
-
       await loadProfile();
-      setEditMode(false);
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setEditMode(false);
+        setSaveSuccess(false);
+      }, 1000);
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
       setAvatarPreview("");
     } catch (err) {
@@ -217,103 +220,210 @@ export default function ProfilePage() {
       if (!res.ok) throw new Error(data?.message || "Switch role failed");
       const newRole = data.role_name;
       window.location.href = newRole === "service" ? "/service/profile" : "/user/profile";
-    } catch {
+    } catch (err) {
       alert("ไม่สามารถเปลี่ยน role ได้");
     }
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:gap-8 lg:gap-12">
-          {/* Avatar */}
-          <div className="flex flex-col items-center mb-8 md:mb-0 md:w-1/3">
-            <div className="avatar relative mb-4">
-              <div className="w-32 sm:w-40 md:w-48 h-32 sm:h-40 md:h-48 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center">
-                <img
-                  src={avatarPreview || resolveImg(editUser.picture) || resolveImg(user.picture)}
-                  className="w-full h-full object-cover"
-                />
-                {editMode && (
-                  <label
-                    htmlFor="profileUpload"
-                    className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center cursor-pointer hover:bg-opacity-60 transition rounded-full"
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+     <Navbar />
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-slate-200/50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                  Profile
+                </h1>
+                <p className="text-xs text-slate-500">Manage your account</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSwitchRole}
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Switch Role
+              </button>
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105 transition-all duration-300"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+  
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+          <div className="lg:col-span-4">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8 sticky top-24">
+              <div className="flex flex-col items-center">
+                {/* Avatar */}
+                <div className="relative group mb-6">
+                  <div className="w-40 h-40 rounded-full bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 p-1 shadow-2xl shadow-indigo-500/40">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                      {(editMode ? avatarPreview || editUser.picture || user.picture : user.picture) ? (
+                        <img
+                          src={
+                            editMode
+                              ? avatarPreview || resolveImg(editUser.picture || user.picture)
+                              : resolveImg(user.picture)
+                          }
+                          alt="avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                          <User className="w-16 h-16 text-slate-400" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {editMode && (
+                    <label htmlFor="profileUpload" className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer flex items-center justify-center">
+                      <Camera className="w-8 h-8 text-white" />
+                    </label>
+                  )}
+                  <input
+                    type="file"
+                    id="profileUpload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files && e.target.files[0];
+                      if (!file) return;
+                      onUploadAvatar(file);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </div>
+
+                
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2 text-center">
+                  {user.fullName || "No Name"}
+                </h2>
+                <p className="text-slate-500 text-sm mb-6 text-center">{user.email || "No Email"}</p>
+
+                
+                {!editMode ? (
+                  <button
+                    onClick={handleEdit}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300"
                   >
-                    <Camera className="w-8 h-8 text-white" />
-                  </label>
+                    <Edit3 className="w-4 h-4" />
+                    Edit Profile
+                  </button>
+                ) : (
+                  <div className="w-full space-y-2">
+                    <button
+                      onClick={handleSave}
+                      disabled={!loaded || isSaving}
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      {isSaving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Saving...
+                        </>
+                      ) : saveSuccess ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Saved!
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all duration-300"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                  </div>
                 )}
               </div>
-              <input
-                type="file"
-                id="profileUpload"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  onUploadAvatar(file);
-                  e.currentTarget.value = "";
-                }}
-              />
             </div>
-            {!editMode && (
-              <button onClick={handleEdit} className="btn btn-link mt-2 text-primary">
-                Edit Profile
-              </button>
-            )}
           </div>
 
-          {/* Profile Form */}
-          <div className="flex-1 md:w-2/3 space-y-6">
-            <InfoField
-              icon={<User className="w-5 h-5" />}
-              label="Nickname"
-              name="nickname"
-              value={editUser.nickname}
-              displayValue={user.nickname}
-              editMode={editMode}
-              onChange={handleChange}
-            />
-            <InfoField
-              icon={<User className="w-5 h-5" />}
-              label="Full Name"
-              name="fullName"
-              value={editUser.fullName}
-              displayValue={user.fullName}
-              editMode={editMode}
-              onChange={handleChange}
-            />
-            <InfoField
-              icon={<Phone className="w-5 h-5" />}
-              label="Phone Number"
-              name="phone"
-              value={editUser.phone}
-              displayValue={user.phone}
-              editMode={editMode}
-              onChange={handleChange}
-            />
-            <InfoField
-              icon={<Mail className="w-5 h-5" />}
-              label="Email Address"
-              name="email"
-              value={user.email}
-              displayValue={user.email}
-              editMode={false}
-              readonly
-            />
-            <InfoField
-              icon={<MapPin className="w-5 h-5" />}
-              label="Address"
-              name="address"
-              value={editUser.address}
-              displayValue={user.address}
-              editMode={editMode}
-              onChange={handleChange}
-              multiline
-            />
+         
+          <div className="lg:col-span-8 space-y-6">
+           
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Personal Information</h3>
+              </div>
 
-            {/* Payment Info */}
+              <div className="space-y-6  text-black">
+                <InfoField
+                  icon={<User className="w-5 h-5" />}
+                  label="Nickname"
+                  name="nickname"
+                  value={editUser.nickname}
+                  displayValue={user.nickname}
+                  editMode={editMode}
+                  onChange={handleChange}
+                />
+                <InfoField
+                  icon={<User className="w-5 h-5" />}
+                  label="Full Name"
+                  name="fullName"
+                  value={editUser.fullName}
+                  displayValue={user.fullName}
+                  editMode={editMode}
+                  onChange={handleChange}
+                />
+                <InfoField
+                  icon={<Phone className="w-5 h-5" />}
+                  label="Phone Number"
+                  name="phone"
+                  value={editUser.phone}
+                  displayValue={user.phone}
+                  editMode={editMode}
+                  onChange={handleChange}
+                />
+                <InfoField
+                  icon={<Mail className="w-5 h-5" />}
+                  label="Email Address"
+                  name="email"
+                  value={user.email}
+                  displayValue={user.email}
+                  editMode={false}
+                  onChange={handleChange}
+                  readonly
+                />
+                <InfoField
+                  icon={<MapPin className="w-5 h-5" />}
+                  label="Address"
+                  name="address"
+                  value={editUser.address}
+                  displayValue={user.address}
+                  editMode={editMode}
+                  onChange={handleChange}
+                  multiline
+                />
+              </div>
+            </div>
+
+            
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
@@ -321,134 +431,158 @@ export default function ProfilePage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900">Payment Information</h3>
               </div>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <label className="text-black text-sm sm:text-base font-medium">Bank:</label>
-                  <div className="sm:col-span-2">
-                    {editMode ? (
-                      <select
-                        name="bank"
-                        value={editUser.bank || ""}
-                        onChange={handleChange}
-                        className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
-                      >
-                        <option value="">-- Select Bank --</option>
-                        {banks.map((b) => (
-                          <option key={b.id} value={b.id}>{b.bank_name}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="text-black">{user.bank || "-"}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <label className="text-black text-sm sm:text-base font-medium">Account Number:</label>
-                  <div className="sm:col-span-2">
-                    {editMode ? (
-                      <input
-                        name="accountNumber"
-                        value={editUser.accountNumber || ""}
-                        onChange={handleChange}
-                        className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
-                      />
-                    ) : (
-                      <div className="text-black">{user.accountNumber || "-"}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <label className="text-black text-sm sm:text-base font-medium">Account Owner:</label>
-                  <div className="sm:col-span-2">
-                    {editMode ? (
-                      <input
-                        name="accountOwner"
-                        value={editUser.accountOwner || ""}
-                        onChange={handleChange}
-                        className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
-                      />
-                    ) : (
-                      <div className="text-black">{user.accountOwner || "-"}</div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Identification */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start mt-6">
-                  <label className="text-black text-sm sm:text-base font-medium sm:col-span-1 flex items-center">Identification</label>
-                  <div className="sm:col-span-2 space-y-2">
-                    {editMode ? (
-                      <>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="file-input file-input-bordered w-full max-w-md bg-white text-black"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (!f) return;
-                            uploadIdentity(f);
-                          }}
-                        />
-                        {identityUploading && <div className="text-xs text-gray-500">Uploading...</div>}
-                        {(identityPreview || user.identityFile) && (
-                          <img
-                            src={identityPreview || resolveImg(user.identityFile)}
-                            alt="identity"
-                            className="w-full max-h-64 object-contain border border-gray-200 rounded-md"
-                          />
-                        )}
-                        {!identityPreview && !user.identityFile && (
-                          <div className="text-gray-400 text-sm">No identification image</div>
-                        )}
-                      </>
-                    ) : user.identityFile ? (
-                      <img
-                        src={resolveImg(user.identityFile)}
-                        alt="identification"
-                        className="w-full max-w-52 max-h-52 object-contain border border-gray-200 rounded-md"
-                      />
-                    ) : (
-                      <div className="text-center py-8 text-slate-400">No document uploaded</div>
-                    )}
-                  </div>
-                </div>
+              <div className="space-y-6">
+                <InfoField
+                  icon={<CreditCard className="w-5 h-5" />}
+                  label="Bank Name"
+                  name="bank"
+                  value={editUser.bank}
+                  displayValue={user.bank}
+                  editMode={editMode}
+                  onChange={handleChange}
+                  options={banks}
+                />
+                <InfoField
+                  icon={<CreditCard className="w-5 h-5" />}
+                  label="Account Number"
+                  name="accountNumber"
+                  value={editUser.accountNumber}
+                  displayValue={user.accountNumber}
+                  editMode={editMode}
+                  onChange={handleChange}
+                />
+                <InfoField
+                  icon={<User className="w-5 h-5" />}
+                  label="Account Owner"
+                  name="accountOwner"
+                  value={editUser.accountOwner}
+                  displayValue={user.accountOwner}
+                  editMode={editMode}
+                  onChange={handleChange}
+                />
               </div>
             </div>
 
-            {/* Save / Cancel */}
-            {editMode && (
-              <div className="flex gap-4 mt-6">
-                <button type="button" onClick={handleCancel} className="btn btn-outline w-full">
-                  Cancel
-                </button>
-                <button type="button" onClick={handleSave} className="btn btn-primary w-full">
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
+            
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Identification Document</h3>
               </div>
-            )}
 
+              {editMode ? (
+                <div className="space-y-4">
+                  <label className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-500 transition-colors cursor-pointer group">
+                    <Upload className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                    <span className="text-slate-600 group-hover:text-blue-500 font-medium transition-colors">
+                      Upload Document
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (!f) return;
+                        uploadIdentity(f);
+                      }}
+                    />
+                  </label>
+                  {identityUploading && (
+                    <div className="flex items-center justify-center gap-2 text-blue-600">
+                      <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+                      <span className="text-sm">Uploading...</span>
+                    </div>
+                  )}
+                  {(identityPreview || user.identityFile) && (
+                    <div className="rounded-2xl overflow-hidden border border-slate-200">
+                      <img
+                        src={identityPreview || resolveImg(user.identityFile)}
+                        alt="identity"
+                        className="w-full h-auto object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : user.identityFile ? (
+                <div className="rounded-2xl overflow-hidden border border-slate-200">
+                  <img
+                    src={resolveImg(user.identityFile)}
+                    alt="identification"
+                    className="w-full h-auto object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-400">No document uploaded</div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in duration-300">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center mx-auto mb-6">
+              <LogOut className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-center text-slate-900 mb-3">Confirm Logout</h3>
+            <p className="text-center text-slate-600 mb-8">Are you sure you want to logout?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all duration-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105 transition-all duration-300"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function InfoField({ icon, label, name, value, displayValue, editMode, onChange, readonly, multiline }) {
+function InfoField({ icon, label, name, value, displayValue, editMode, onChange, readonly, multiline, options }) {
   return (
     <div className="group">
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+      <label className=" flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
         <span className="text-slate-400 group-hover:text-blue-500 transition-colors">{icon}</span>
         {label}
       </label>
+
       {editMode && !readonly ? (
-        multiline ? (
+        options ? (
+          <select
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            className=" text-black w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
+          >
+            <option value="">-- Select {label} --</option>
+            {options.map((opt) => (
+              <option key={opt.id} value={opt.bank_name}>
+                {opt.bank_name}
+              </option>
+            ))}
+          </select>
+        ) : multiline ? (
           <textarea
             name={name}
             value={value || ""}
             onChange={onChange}
             rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
+            className=" text-black  w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
           />
         ) : (
           <input
@@ -456,7 +590,7 @@ function InfoField({ icon, label, name, value, displayValue, editMode, onChange,
             name={name}
             value={value || ""}
             onChange={onChange}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
+            className=" text-black w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
           />
         )
       ) : (
@@ -467,3 +601,4 @@ function InfoField({ icon, label, name, value, displayValue, editMode, onChange,
     </div>
   );
 }
+
