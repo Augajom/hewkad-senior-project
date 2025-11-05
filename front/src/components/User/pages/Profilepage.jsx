@@ -12,6 +12,7 @@ import {
 import Navbar from "../components/navbar";
 
 const API_BASE = "http://localhost:5000";
+const API_BASE = "http://localhost:5000";
 
 function resolveImg(src) {
   if (!src) return "";
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const [loaded, setLoaded] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [user, setUser] = useState({
     picture: "",
@@ -101,14 +103,14 @@ export default function ProfilePage() {
       setLoaded(true);
     }
   }, []);
+  }, []);
 
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
 
   const handleEdit = () => setEditMode(true);
-  const handleChange = (e) =>
-    setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
+  const handleChange = (e) => setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
   const handleCancel = () => {
     setEditUser(user);
     setEditMode(false);
@@ -117,7 +119,9 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
     } catch {}
+    window.location.href = "/";
     window.location.href = "/";
   };
 
@@ -173,12 +177,14 @@ export default function ProfilePage() {
   const handleSave = useCallback(async () => {
     if (isSaving) return;
     setIsSaving(true);
+    setSaveSuccess(false);
     try {
       const payload = {
         nickname: editUser.nickname || null,
         fullName: editUser.fullName || null,
         phone: editUser.phone || null,
         address: editUser.address || null,
+        picture: editUser.picture || "",
         picture: editUser.picture || "",
         bank: editUser.bank || "",
         accountNumber: editUser.accountNumber || null,
@@ -426,8 +432,9 @@ export default function ProfilePage() {
 
           </div>
         </div>
-      </div>
+      </main>
 
+      {/* Logout Modal */}
       {/* Logout Modal */}
       {showLogoutModal && (
         <dialog className="modal modal-open">
@@ -444,6 +451,40 @@ export default function ProfilePage() {
             </div>
           </div>
         </dialog>
+      )}
+    </div>
+  );
+}
+
+function InfoField({ icon, label, name, value, displayValue, editMode, onChange, readonly, multiline }) {
+  return (
+    <div className="group">
+      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+        <span className="text-slate-400 group-hover:text-blue-500 transition-colors">{icon}</span>
+        {label}
+      </label>
+      {editMode && !readonly ? (
+        multiline ? (
+          <textarea
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            rows={3}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
+          />
+        ) : (
+          <input
+            type="text"
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
+          />
+        )
+      ) : (
+        <div className={`px-4 py-3 rounded-xl ${readonly ? 'bg-slate-50' : 'bg-white/50'} border border-slate-200 text-slate-900`}>
+          {displayValue || <span className="text-slate-400">Not provided</span>}
+        </div>
       )}
     </div>
   );
