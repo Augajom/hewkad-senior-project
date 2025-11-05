@@ -9,15 +9,13 @@ const API_BASE = (import.meta.env && import.meta.env.VITE_API_URL) || "http://lo
 function resolveImg(src) {
   if (!src) return "";
   if (src.startsWith("data:") || src.startsWith("http")) return src;
-  const path = src.startsWith("/") ? src : `/${src}`;
-  return `${API_BASE}${path}`;
+  return `${API_BASE}${src.startsWith("/") ? src : `/${src}`}`;
 }
 
 export default function ServiceProfile() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -41,11 +39,20 @@ export default function ServiceProfile() {
   const [identityPreview, setIdentityPreview] = useState("");
   const [identityUploading, setIdentityUploading] = useState(false);
 
+
+
+  // โหลดธนาคาร
   useEffect(() => {
-    return () => {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-      if (identityPreview) URL.revokeObjectURL(identityPreview);
-    };
+    fetch(`${API_BASE}/customer/banks`, { credentials: "include" })
+      .then(res => res.json())
+      .then(setBanks)
+      .catch(console.error);
+  }, []);
+
+  // cleanup preview URLs
+  useEffect(() => () => {
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    if (identityPreview) URL.revokeObjectURL(identityPreview);
   }, [avatarPreview, identityPreview]);
 
   const loadProfile = useCallback(async () => {
@@ -59,16 +66,16 @@ export default function ServiceProfile() {
       if (!res.ok) throw new Error("Failed to load profile");
       const d = await res.json();
       const next = {
-        picture: d?.picture ?? "",
-        nickname: d?.nickname ?? "",
-        fullName: d?.fullName || d?.name || "",
-        email: d?.email || "",
-        phone: d?.phone || "",
-        address: d?.address || "",
-        bank: d?.bank || "",
-        accountNumber: d?.accountNumber || "",
-        accountOwner: d?.accountOwner || "",
-        identityFile: d?.identityFile || "",
+        picture: data?.picture ?? "",
+        nickname: data?.nickname ?? "",
+        fullName: data?.fullName || data?.name || "",
+        email: data?.email || "",
+        phone: data?.phone || "",
+        address: data?.address || "",
+        bank: data?.bank || "",
+        accountNumber: data?.accountNumber || "",
+        accountOwner: data?.accountOwner || "",
+        identityFile: data?.identityFile || "",
       };
       setUser(next);
       setEditUser(next);
@@ -79,9 +86,7 @@ export default function ServiceProfile() {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+  useEffect(() => { loadProfile(); }, [loadProfile]);
 
   const handleEdit = () => setEditMode(true);
   const handleChange = (e) => setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
@@ -101,7 +106,20 @@ export default function ServiceProfile() {
     navigate("/", { replace: true });
   };
 
-  async function uploadIdentity(file) {
+  const onUploadAvatar = useCallback(async (file) => {
+    if (!file) return;
+    try {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(URL.createObjectURL(file));
+      const form = new FormData(); form.append("file", file);
+      const res = await fetch(`${API_BASE}/upload/avatar`, { method: "POST", credentials: "include", body: form });
+      const data = await res.json();
+      if (!res.ok || !data?.ok || !data?.url) throw new Error("Upload failed");
+      setEditUser(p => ({ ...p, picture: data.url }));
+    } catch (err) { alert(err.message || "อัปโหลดรูปโปรไฟล์ไม่สำเร็จ"); }
+  }, [avatarPreview]);
+
+  const uploadIdentity = async (file) => {
     if (!file) return;
     try {
       setIdentityUploading(true);
@@ -123,30 +141,6 @@ export default function ServiceProfile() {
     }
   }
 
-  const onUploadAvatar = useCallback(
-    async (file) => {
-      if (!file) return;
-      try {
-        if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-        const previewUrl = URL.createObjectURL(file);
-        setAvatarPreview(previewUrl);
-        const form = new FormData();
-        form.append("file", file);
-        const res = await fetch(`${API_BASE}/upload/avatar`, { method: "POST", credentials: "include", body: form });
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          const text = await res.text();
-          throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
-        }
-        const data = await res.json();
-        if (!res.ok || !data?.ok || !data?.url) throw new Error(data?.error || "Upload failed");
-        setEditUser((p) => ({ ...p, picture: data.url }));
-      } catch (err) {
-        alert(err?.message || "อัปโหลดรูปโปรไฟล์ไม่สำเร็จ");
-      }
-    },
-    [avatarPreview]
-  );
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
@@ -185,11 +179,8 @@ export default function ServiceProfile() {
       }, 1000);
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
       setAvatarPreview("");
-    } catch (err) {
-      alert(err?.message || "บันทึกไม่สำเร็จ");
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (err) { alert(err?.message || "บันทึกไม่สำเร็จ"); }
+    finally { setIsSaving(false); }
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
   const switchPath = location.pathname.includes("/provider/profile") ? "/user/profile" : "/user/profile";

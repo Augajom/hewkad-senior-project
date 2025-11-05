@@ -36,6 +36,26 @@ export default function ProfilePage() {
   const [identityPreview, setIdentityPreview] = useState("");
   const [identityUploading, setIdentityUploading] = useState(false);
 
+  const [banks, setBanks] = useState([]);
+
+  // Load bank list
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/customer/banks`, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to load banks");
+        const data = await res.json();
+        setBanks(data); // array {id, bank_name}
+      } catch (err) {
+        console.error("Error loading banks:", err);
+      }
+    };
+    fetchBanks();
+  }, []);
+
+  // Cleanup object URLs
   useEffect(() => {
     return () => {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
@@ -43,6 +63,7 @@ export default function ProfilePage() {
     };
   }, [avatarPreview, identityPreview]);
 
+  // Load profile
   const loadProfile = useCallback(async () => {
     setLoaded(false);
     try {

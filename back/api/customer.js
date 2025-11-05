@@ -12,10 +12,11 @@ const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
 const QRCode = require("qrcode");
 const Rating = require('../models/customer/rating');
+const bank = require('../models/customer/bank');
 const { sendOrderReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
 const getName = require('../models/getName');
-
+const cron = require('node-cron');
 const upload = multer();
 
 // ===================
@@ -288,6 +289,7 @@ router.post('/rate', verifyToken, async (req, res) => {
         res.status(500).json({ message: err.message }); // ส่ง error จริงกลับไป
     }
 });
+
 // POST /customer/reports
 router.post('/reports', verifyToken, async (req, res) => {
   try {
@@ -374,6 +376,47 @@ router.get('/name', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch fullName' });
+  }
+});
+
+cron.schedule('*/10 * * * *', async () => {
+  console.log('🕐 Checking for orders older than 3 hours...');
+  const sql = `
+    SELECT p.id, s.status_name, p.created_at
+    FROM posts p
+    JOIN status s ON p.status_id = s.id
+    WHERE s.status_name != 'Complete'
+      AND TIMESTAMPDIFF(HOUR, p.created_at, NOW()) >= 3
+  `;
+
+  db.query(sql, async (err, results) => {
+    if (err) {
+      console.error('❌ Error checking orders:', err);
+      return;
+    }
+
+    if (results.length === 0) return; // ไม่มีออเดอร์ครบเวลา
+
+    console.log(`🔄 Found ${results.length} orders to auto-complete...`);
+
+    for (const order of results) {
+      try {
+        await Ordering.updateStatus(order.id, 'Complete');
+        console.log(`✅ Order #${order.id} set to Complete`);
+      } catch (error) {
+        console.error(`❌ Failed to update order #${order.id}:`, error.message);
+      }
+    }
+  });
+});
+
+router.get('/banks', async (req, res) => {
+  try {
+    const list = await bank.getAll();
+    res.json(list);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
