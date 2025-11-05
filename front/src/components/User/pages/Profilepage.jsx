@@ -367,7 +367,7 @@ export default function ProfilePage() {
                 <h3 className="text-xl font-bold text-slate-900">Personal Information</h3>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-6  text-black">
                 <InfoField
                   icon={<User className="w-5 h-5" />}
                   label="Nickname"
@@ -436,6 +436,7 @@ export default function ProfilePage() {
                   displayValue={user.bank}
                   editMode={editMode}
                   onChange={handleChange}
+                  options={banks}
                 />
                 <InfoField
                   icon={<CreditCard className="w-5 h-5" />}
@@ -547,21 +548,36 @@ export default function ProfilePage() {
   );
 }
 
-function InfoField({ icon, label, name, value, displayValue, editMode, onChange, readonly, multiline }) {
+function InfoField({ icon, label, name, value, displayValue, editMode, onChange, readonly, multiline, options }) {
   return (
     <div className="group">
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+      <label className=" flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
         <span className="text-slate-400 group-hover:text-blue-500 transition-colors">{icon}</span>
         {label}
       </label>
+
       {editMode && !readonly ? (
-        multiline ? (
+        options ? (
+          <select
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            className=" text-black w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
+          >
+            <option value="">-- Select {label} --</option>
+            {options.map((opt) => (
+              <option key={opt.id} value={opt.bank_name}>
+                {opt.bank_name}
+              </option>
+            ))}
+          </select>
+        ) : multiline ? (
           <textarea
             name={name}
             value={value || ""}
             onChange={onChange}
             rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
+            className=" text-black  w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
           />
         ) : (
           <input
@@ -569,7 +585,7 @@ function InfoField({ icon, label, name, value, displayValue, editMode, onChange,
             name={name}
             value={value || ""}
             onChange={onChange}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
+            className=" text-black w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
           />
         )
       ) : (
@@ -580,3 +596,4 @@ function InfoField({ icon, label, name, value, displayValue, editMode, onChange,
     </div>
   );
 }
+
