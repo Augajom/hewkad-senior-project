@@ -2,8 +2,15 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '../components/navbar';
 import CreatePostBox from '../components/CreatePostBox';
 import PostCard from '../components/Postcard';
-import KadDropdown from '../components/Kaddropdown';
+import KadDropdown from '../components/KadDropdown';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { renderTimeViewClock } from '@mui/x-date-pickers/timeViewRenderers';
+import dayjs from 'dayjs';
+
 import '../DaisyUI.css';
+
 
 export default function Home({ }) {
   const [posts, setPosts] = useState([]);
@@ -13,6 +20,12 @@ export default function Home({ }) {
   const [currentPage, setCurrentPage] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPosts, setFilteredPosts] = useState([]);
+  const [deliveryTime, setDeliveryTime] = useState(dayjs());
+  const [minTime, setMinTime] = useState(dayjs()); // ✅ เวลาต่ำสุดที่เลือกได้
+  const now = dayjs();
+
+
+
   const [orderingCount, setOrderingCount] = useState(0); // ✅ นับจำนวน orderings
 
   const handleNavigate = (page) => setCurrentPage(page);
@@ -75,20 +88,30 @@ export default function Home({ }) {
     fetchKadOptions();
   },
     []);
+  const getCurrentDateTimeLocal = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // ✅ Fix timezone
+    return now.toISOString().slice(0, 16); // ✅ format: YYYY-MM-DDTHH:mm
+  };
 
   // ---------------- CREATE POST ----------------
   const createPost = async () => {
-    if (!formData.kadId) return alert('กรุณาเลือก Kad');
+    const { kadId, storeName, product, serviceFee, price, delivery } = formData;
+
+    if (!kadId || !storeName || !product || !serviceFee || !price || !delivery || !formData.delivery_at) {
+      return alert('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+    }
+
     try {
       const payload = {
-        kad_id: formData.kadId,
-        store_name: formData.storeName,
-        product: formData.product,
-        service_fee: Number(formData.serviceFee),
-        price: Number(formData.price),
+        kad_id: kadId,
+        store_name: storeName,
+        product,
+        service_fee: Number(serviceFee),
+        price: Number(price),
         status_id: 1,
-        delivery: formData.delivery,
-        delivery_at: formData.delivery_at,
+        delivery,
+        delivery_at: formData.delivery_at, // ✅ เช่น "2025-01-12 15:45"
       };
 
       const res = await fetch('http://localhost:5000/customer/posts', {
@@ -100,15 +123,13 @@ export default function Home({ }) {
 
       if (res.ok) {
         await fetchPosts();
-        resetForm();
+        resetForm(); // ✅ รีเซ็ตค่าหลังสร้าง
       } else {
         const errData = await res.json();
-        console.error('Create post error:', errData);
         alert(errData.message || 'Create failed');
       }
     } catch (err) {
       console.error('Create post failed:', err);
-      alert('เกิดข้อผิดพลาดขณะสร้างโพสต์');
     }
   };
 
@@ -176,8 +197,19 @@ export default function Home({ }) {
       delivery_at: post.delivery_at,
     });
     setEditingPostId(post.id);
+    const now = dayjs();
+    setMinTime(now);                     // ✅ จำกัดเวลาไม่ให้ย้อนหลัง
+    setDeliveryTime(dayjs());            // ✅ หรือ set เป็น post.delivery_at ถ้าต้องการให้แสดงเวลาเดิม
     setShowFormModal(true);
   };
+  const handleOpenForm = () => {
+    resetForm();
+    const now = dayjs();
+    setMinTime(now);        // ✅ อัปเดตเวลาต่ำสุดเป็นเวลาปัจจุบัน
+    setDeliveryTime(now);   // ✅ เวลาเริ่มต้นใน TimePicker
+    setShowFormModal(true);
+  };
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -204,7 +236,7 @@ export default function Home({ }) {
     else createPost();
   };
 
-  
+
   // ---------------- SEARCH ----------------
   const handleSearchSubmit = (value) => {
     setSearchQuery(value);
@@ -218,13 +250,14 @@ export default function Home({ }) {
       tempPosts = tempPosts.filter(post => selectedKad.includes(post.kad_name));
     }
 
-    // Filter by search query
+    // Dynamic search: search ทุก field ของ post
     if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
       tempPosts = tempPosts.filter(post =>
-        post.store_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.product?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.kad_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.delivery?.toLowerCase().includes(searchQuery.toLowerCase())
+        Object.values(post).some(value =>
+          value &&
+          value.toString().toLowerCase().includes(query)
+        )
       );
     }
 
@@ -233,7 +266,7 @@ export default function Home({ }) {
 
 
   // ---------------- FILTER ----------------
-  
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -253,7 +286,7 @@ export default function Home({ }) {
           <p className="text-center text-red-500">{error}</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <CreatePostBox onClick={() => setShowFormModal(true)} />
+            <CreatePostBox onClick={handleOpenForm} />
             {filteredPosts.map((post) => (
               <PostCard
                 key={post.id}
@@ -275,24 +308,114 @@ export default function Home({ }) {
               {editingPostId ? 'Edit Post' : 'Create New Post'}
             </h3>
             <form onSubmit={handleFormSubmit} className="space-y-4">
-              <select
-                name="kadId"
-                className="select select-bordered w-full text-black bg-white border border-black"
-                value={formData.kadId}
-                onChange={handleInputChange}
-              >
-                <option disabled value="">Kad Name</option>
-                {kadOptions.map((kad) => (
-                  <option key={kad.id} value={kad.id}>{kad.kad_name}</option>
-                ))}
-              </select>
+              <div>
+                <label className="block mb-1 font-semibold text-black">Kad Name <span className="text-red-500">*</span></label>
+                <select
+                  name="kadId"
+                  className="select select-bordered w-full text-black bg-white border border-black"
+                  value={formData.kadId}
+                  onChange={handleInputChange}
+                >
+                  <option disabled value="">-- กรุณาเลือกตลาด --</option>
+                  {kadOptions.map((kad) => (
+                    <option key={kad.id} value={kad.id}>{kad.kad_name}</option>
+                  ))}
+                </select>
+              </div>
 
-              <input type="text" placeholder="Store Name" name="storeName" className="input input-bordered w-full text-black border border-black bg-white" value={formData.storeName} onChange={handleInputChange} />
-              <input type="text" placeholder="Product" name="product" className="input input-bordered w-full text-black border border-black bg-white" value={formData.product} onChange={handleInputChange} />
-              <input type="text" placeholder="Service Fee" name="serviceFee" className="input input-bordered w-full text-black border border-black bg-white" value={formData.serviceFee} onChange={handleInputChange} />
-              <input type="text" placeholder="Price" name="price" className="input input-bordered w-full text-black border border-black bg-white" value={formData.price} onChange={handleInputChange} />
-              <input type="text" placeholder="Delivery" name="delivery" className="input input-bordered w-full text-black border border-black bg-white" value={formData.delivery} onChange={handleInputChange} />
-              <input type="text" placeholder="Receiving Time" name="delivery_at" className="input input-bordered w-full text-black border border-black bg-white" value={formData.delivery_at} onChange={handleInputChange} />
+              <div>
+                <label className="block mb-1 font-semibold text-black">Store Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  name="storeName"
+                  placeholder="กรอกชื่อร้าน"
+                  className="input input-bordered w-full text-black border border-black bg-white"
+                  value={formData.storeName}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-semibold text-black">Product <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  name="product"
+                  placeholder="กรอกชื่อสินค้า"
+                  className="input input-bordered w-full text-black border border-black bg-white"
+                  value={formData.product}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-semibold text-black">Price <span className="text-red-500">*</span></label>
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="กรอกราคา ขั้นต่ำ 1"
+                  className="input input-bordered w-full text-black border border-black bg-white no-spinner"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-semibold text-black">Service Fee <span className="text-red-500">*</span></label>
+                <input
+                  type="number"
+                  name="serviceFee"
+                  placeholder="กรอกค่าบริการ ขั้นต่ำ 1"
+                  className="input input-bordered w-full text-black border border-black bg-white no-spinner"
+                  value={formData.serviceFee}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+
+              
+
+
+              <div>
+                <label className="block mb-1 font-semibold text-black">Delivery <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  name="delivery"
+                  placeholder="กรอกวิธีจัดส่ง"
+                  className="input input-bordered w-full text-black border border-black bg-white"
+                  value={formData.delivery}
+                  onChange={handleInputChange}
+                  auto autoComplete='off'
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-semibold text-black">Delivery Time <span className="text-red-500">*</span></label>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <TimePicker
+                    label="เลือกเวลา"
+                    className=" text-black border border-black bg-white w-full"
+                    value={deliveryTime}
+                    onChange={(newValue) => {
+                      if (newValue && newValue.isAfter(minTime)) {
+                        setDeliveryTime(newValue);
+                        setFormData((prev) => ({
+                          ...prev,
+                          delivery_at: newValue.format('HH:mm'),
+                        }));
+                      }
+                    }}
+                    minTime={minTime}
+                    viewRenderers={{
+                      hours: renderTimeViewClock,
+                      minutes: renderTimeViewClock,
+                      seconds: renderTimeViewClock,
+                    }}
+                    ampm={false}
+                  />
+                </LocalizationProvider>
+              </div>
 
               <div className="modal-action flex justify-center gap-3 mt-8">
                 <button type="button" className="btn btn-ghost px-8 py-3 rounded-full bg-red-500 text-white" onClick={resetForm}>Cancel</button>

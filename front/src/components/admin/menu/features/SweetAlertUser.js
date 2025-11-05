@@ -234,12 +234,12 @@ export const showRejectVerify = () => {
 
 // Activity Page
 
-export const showUserSlip = () => {
+export const showUserSlip = (slipUrl) => {
   MySwal.fire({
     title: '<div style="font-size:32px; font-weight:bold; color:#333;">SLIP</div>',
     html: `
       <div style="display: flex; text-align: center; justify-content: center; height: 28rem;">
-        <img src="/src/assets/slip.webp" alt="" />
+        <img src="${slipUrl}" alt="Slip" style="max-height:100%; max-width:100%;" />
       </div>
     `,
     background: '#ffffff',

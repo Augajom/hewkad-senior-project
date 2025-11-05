@@ -129,6 +129,18 @@ router.get('/me', async (req, res) => {
   }
 });
 
+router.get("/check", (req, res) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: "No token" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    res.json({ valid: true, user: decoded });
+  } catch {
+    res.status(401).json({ message: "Invalid token" });
+  }
+});
+
 router.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ ok: true });

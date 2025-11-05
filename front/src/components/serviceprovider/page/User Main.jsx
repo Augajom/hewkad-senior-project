@@ -1,91 +1,88 @@
 import React, { useState } from "react";
-
 import Navbar from "../components/navbar.jsx";
-import FoodCardList from "../components/Order.jsx";
-import SP_OrderStatus from "../components/SP_OrderStatus.jsx";
+import OrderingList from "./orderingpage.jsx";
 import HistoryPage from "./SP_History.jsx";
+import Home from "./home.jsx";
 import ChatPage from "../components/ChatPage.jsx";
+import { useOrders } from "../hooks/useOrder"; // :white_check_mark: ดึง hook
+import KadDropdown from "../components/Kaddropdown.jsx"; // :white_check_mark: นำ dropdown มาใช้
 import "../DaisyUI.css";
-import OrderStatus from "../components/OrderStatus.jsx";
-import ConfirmModal from "../components/ConfirmModal.jsx";
 
-function userMain() {
+function UserMain() {
   const [currentPage, setCurrentPage] = useState("home");
-  const [orderingList, setOrderingList] = useState([]);
-  const [historyList, setHistoryList] = useState([]);
+  const [kadOptions, setKadOptions] = useState([]);
+  const [selectedKad, setSelectedKad] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(""); // สถานที่ค้นหา
 
-  // กด HEW → สร้าง order ใหม่ status เป็น Waiting
+  // :white_check_mark: ดึงออเดอร์ Rider Received
+  const { orders: riderOrders } = useOrders("Rider Received");
+   const handleSearchSubmit = (value) => {
+    setSearchQuery(value);
+  };
+
+  const handleKeyDown = (e) => {
+  if (e.key === 'Enter' && onSearchSubmit) {
+    onSearchSubmit(searchValue); // ส่งค่ากลับ UserMain
+  }
+};
+  const orderingCount = riderOrders.length; // จำนวนออเดอร์ที่ยังดำเนินการอยู่
+
+  // :small_blue_diamond: เมื่อกด HEW แล้วรับออเดอร์สำเร็จ
   const handleOrder = (order) => {
-    setOrderingList((prev) => [
-      ...prev,
-      { ...order, status: "Waiting", proof: null },
-    ]);
+    console.log("Rider accepted order:", order);
   };
 
-  // Confirm Payment → เปลี่ยนจาก Waiting → Ordering
-  const handleConfirmPayment = (orderId) => {
-    setOrderingList((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: "Ordering" } : order
-      )
-    );
-  };
-
-  // แนบหลักฐาน → เปลี่ยนเป็น Complete แล้วย้ายไป History
-  const handleCompleteOrder = (orderId, file) => {
-    const completedOrder = orderingList.find((order) => order.id === orderId);
-    if (completedOrder) {
-      const updatedOrder = {
-        ...completedOrder,
-        status: "Complete",
-        proof: file,
-      };
-
-      setOrderingList((prev) => prev.filter((order) => order.id !== orderId));
-      setHistoryList((prev) => [...prev, updatedOrder]);
-    }
-  };
+  // :white_check_mark: fetch kad options เมื่อโหลดหน้า
+  React.useEffect(() => {
+    const fetchKadOptions = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/customer/kad", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        setKadOptions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Fetch kad options failed:", err);
+        setKadOptions([]);
+      }
+    };
+    fetchKadOptions();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-amber-50">
+    <div className="min-h-screen bg-white">
       <Navbar
         currentPage={currentPage}
         onNavigate={setCurrentPage}
-        orderingCount={orderingList.length}
+        orderingCount={orderingCount}
+        onSearchSubmit={handleSearchSubmit}
       />
 
+      {/* :white_check_mark: Filter Kad สำหรับหน้า ordering */}
       {currentPage === "home" && (
-        <div className="p-4 w-40">
-          <select className="block w-full p-2 bg-gray-300 text-black rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <option value="">New Latest</option>
-            <option value="#">#</option>
-            <option value="#">#</option>
-            <option value="#">#</option>
-          </select>
+        <div className="p-4">
+          <div className="mb-4 w-60">
+            <KadDropdown
+              kadOptions={kadOptions}
+              selectedKad={selectedKad}
+              setSelectedKad={setSelectedKad}
+            />
+          </div>
+          <Home
+            onConfirmOrder={handleOrder}
+            selectedKad={selectedKad}
+            searchQuery={searchQuery}
+          />
         </div>
       )}
-
-      <div className="p-4">
-        {currentPage === "home" && (
-          <FoodCardList onConfirmOrder={handleOrder} />
-        )}
-
-        {currentPage === "ordering" && (
-          <SP_OrderStatus
-            orderingList={orderingList}
-            onConfirmPayment={handleConfirmPayment}
-            onComplete={handleCompleteOrder}
-          />
-        )}
-
-        {currentPage === "history" && <HistoryPage historyList={historyList} />}
-
-        {currentPage === "chat" && (
-          <ChatPage historyList={historyList} orderingList={orderingList} />
-        )}
-      </div>
+      {currentPage === "ordering" && (
+        <OrderingList selectedKad={selectedKad} />
+      )}
+      {currentPage === "history" && <HistoryPage />}
+      {currentPage === "chat" && <ChatPage />}
     </div>
+
   );
 }
 
-export default userMain;
+export default UserMain;

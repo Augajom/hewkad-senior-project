@@ -11,6 +11,7 @@ const Ordering = require('../models/customer/Ordering');
 const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
 const QRCode = require("qrcode");
+const Rating = require('../models/customer/rating');
 const { sendOrderReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
 const getName = require('../models/getName');
@@ -162,7 +163,11 @@ router.get('/history/:status', verifyToken, async (req, res) => {
     const status = req.params.status;
     const userId = req.user.id;
 
+    // เรียก method ใหม่ที่ join proof_url
     const posts = await History.getByStatus(status, userId);
+
+    console.log(posts); // ตรวจสอบว่า proof_url มาเรียบร้อย
+
     res.json(posts);
 
   } catch (err) {
@@ -183,6 +188,7 @@ router.get('/ordering', verifyToken, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 // router.put('/orders/:id', async (req, res) => {
 //   const orderId = req.params.id;
 
@@ -203,6 +209,20 @@ router.get('/ordering', verifyToken, async (req, res) => {
 //     res.status(500).json({ success: false, message: err.message });
 //   }
 // });
+router.put('/confirmorder/:id', async (req, res) => {
+  const orderId = req.params.id;
+
+  try {
+    const result = await Ordering.updateStatus(orderId, 'Complete');
+    res.json({ success: true, message: 'Order confirmed', data: result });
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes('not found')) {
+      return res.status(404).json({ success: false, message: err.message });
+    }
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 
 // GET /customer/payment/qr/:orderId
@@ -253,7 +273,21 @@ router.post("/upload-slip", upload.single("files"), async (req, res) => {
   }
 });
 
+//rating
+router.post('/rate', verifyToken, async (req, res) => {
+    const userId = req.user.id;  // จาก token
+    const { orderId, rating, comment } = req.body;
 
+    if (!orderId || !rating) return res.status(400).json({ message: "Missing data" });
+
+    try {
+        const result = await Rating.create(userId, orderId, rating, comment);
+        res.json({ success: true, data: result });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message }); // ส่ง error จริงกลับไป
+    }
+});
 // POST /customer/reports
 router.post('/reports', verifyToken, async (req, res) => {
   try {
@@ -267,10 +301,10 @@ router.post('/reports', verifyToken, async (req, res) => {
     // สร้าง report
     await Report.create(post_id, reporter_id, reason_id, detail);
 
-    // อัปเดตสถานะโพสต์เป็น Reported
-    await Report.updatePostStatusToReported(post_id);
+    // อัปเดตสถานะโพสต์และ order เป็น Reported
+    const result = await Ordering.updateStatus(post_id, 'Reported');
 
-    res.json({ success: true, message: 'Report submitted and status updated' });
+    res.json({ success: true, message: 'Report submitted and status updated', data: result });
   } catch (err) {
     console.error("Report error:", err);
     res.status(500).json({ message: err.message });

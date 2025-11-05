@@ -9,34 +9,46 @@ export default function History() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    
-    const fetchPosts = async (status = "Complete") => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await fetch(`http://localhost:5000/customer/history/${status}`, {
-                method: 'GET',
-                credentials: 'include', 
-            });
 
-            if (!res.ok) {
-                if (res.status === 401) throw new Error("Unauthorized: Please login");
-                throw new Error("Failed to fetch posts");
-            }
+    const fetchPosts = async () => {
+    setLoading(true);
+    setError(null);
 
-            const data = await res.json();
-            setPosts(data);
+    try {
+        const statuses = ["Complete", "Reported", "Successfully"];
+        const results = await Promise.all(
+            statuses.map(status =>
+                fetch(`http://localhost:5000/customer/history/${status}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                }).then(res => {
+                    if (!res.ok) {
+                        if (res.status === 401) throw new Error("Unauthorized: Please login");
+                        throw new Error(`Failed to fetch ${status} posts`);
+                    }
+                    return res.json();
+                })
+            )
+        );
 
-        } catch (err) {
-            console.error(err);
-            setError(err.message || "Something went wrong");
-        } finally {
-            setLoading(false);
-        }
-    };
+        // รวมผลลัพธ์ทั้งหมด
+        const combinedPosts = results.flat();
 
+        // ✅ แปลงสถานะ Successfully → Complete
+        const normalizedPosts = combinedPosts.map(post => ({
+            ...post,
+            status: post.status === "Successfully" ? "Complete" : post.status
+        }));
 
+        setPosts(normalizedPosts);
 
+    } catch (err) {
+        console.error(err);
+        setError(err.message || "Something went wrong");
+    } finally {
+        setLoading(false);
+    }
+};
 
     useEffect(() => {
         fetchPosts();
@@ -59,9 +71,7 @@ export default function History() {
                         <li className='text-black'>
                             <button onClick={() => fetchPosts("Reported")}>Reported</button>
                         </li>
-                        <li className='text-black'>
-                            <button onClick={() => fetchPosts("Pending")}>Pending</button>
-                        </li>
+                        
                     </ul>
                 </div>
             </div>
@@ -76,8 +86,8 @@ export default function History() {
                 ) : posts.length === 0 ? (
                     <p className="text-center text-gray-500">ยังไม่มีรายการ</p>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {posts.map(post => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+                        {posts.map((post) => (
                             <HistoryPostCard key={post.id} post={post} />
                         ))}
                     </div>

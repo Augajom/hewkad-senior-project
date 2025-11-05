@@ -1,5 +1,6 @@
 // src/components/OrderingPostCard.jsx
 import React, { useState, useEffect } from "react";
+import RatingModal from "../components/RatingModel";
 import Swal from "sweetalert2";
 import "../DaisyUI.css";
 
@@ -8,22 +9,27 @@ const OrderingPostCard = ({ post }) => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showSlipModal, setShowSlipModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showProofModal, setShowProofModal] = useState(false);
   const [qrCode, setQrCode] = useState(null);
   const [reportReasons, setReportReasons] = useState([]);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+
 
   // skipok
   const [slipOkData, setSlipOkData] = useState([]);
   const [slipFile, setSlipFile] = useState("");
   const [slipError, setSlipError] = useState("");
+  const proofImageUrl = post.proof_url || "/mnt/data/default-proof.png";
 
   const [reportForm, setReportForm] = useState({
     report: "",
     details: "",
   });
 
-  const total = (
+  // เปลี่ยนจาก .toFixed(2) → ใช้ Math.round() หรือ parseInt()
+  const total = Math.round(
     parseFloat(post.price || 0) + parseFloat(post.service_fee || 0)
-  ).toFixed(2);
+  );
 
   // โหลดเหตุผลจาก DB
   useEffect(() => {
@@ -74,7 +80,7 @@ const OrderingPostCard = ({ post }) => {
       // ตรวจสอบจำนวนเงิน
       if (parseFloat(data.data.amount) !== Number(total)) {
         setSlipError("จำนวนเงินไม่ถูกต้อง");
-      } else if (data.success === false){
+      } else if (data.success === false) {
         setSlipError("สลิปไม่ถูกต้อง");
       } else {
         setSlipError("");
@@ -95,7 +101,7 @@ const OrderingPostCard = ({ post }) => {
       icon: 'success',
       timer: 3000,
       showConfirmButton: false,
-    }).then (() => {
+    }).then(() => {
       handleConfirmPayment();
     })
   }
@@ -187,27 +193,28 @@ const OrderingPostCard = ({ post }) => {
   };
 
   const handleConfirmOrder = async () => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/customer/orders/${post.id}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "Complete" }),
-        }
-      );
+  try {
+    const res = await fetch(
+      `http://localhost:5000/customer/confirmorder/${post.id}`,
+      {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Complete" }),
+      }
+    );
 
-      if (!res.ok) throw new Error("Failed to update order status");
+    if (!res.ok) throw new Error("Failed to update order status");
 
-      setStatus("Complete");
-      alert("Order confirmed!");
-      window.location.reload();
-    } catch (err) {
-      console.error(err);
-      alert(err.message);
-    }
-  };
+    setStatus("Complete");
+    alert("Order confirmed!");
+    setShowRatingModal(true); // เปิดหน้าต่างให้ Rating
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+};
+
 
   const handleReportInputChange = (e) => {
     const { name, value } = e.target;
@@ -215,14 +222,20 @@ const OrderingPostCard = ({ post }) => {
   };
 
   return (
-    <div className="card w-full bg-white shadow-lg rounded-xl border border-gray-200 p-4 text-black">
+    <div className="card w-full sm:w-[450px] md:w-[400px] lg:w-[450px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
           <img
-            src={post.avatar || "https://i.pravatar.cc/150"}
+            src={
+              post.avatar
+                ? post.avatar.startsWith("http")
+                  ? post.avatar             // ถ้าเป็น URL เต็ม
+                  : `http://localhost:5000${post.avatar}` // ถ้าเป็น path local
+                : 'https://i.pravatar.cc/150' // default avatar
+            }
             alt="avatar"
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
           />
           <div>
             <div className="font-bold text-base">
@@ -237,13 +250,12 @@ const OrderingPostCard = ({ post }) => {
         <div className="flex flex-col items-end gap-2 max-w-full">
           {status && (
             <div
-              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${
-                status === "Ordering"
-                  ? "badge-info"
-                  : status === "Complete"
+              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${status === "Ordering"
+                ? "badge-info"
+                : status === "Complete"
                   ? "badge-success"
                   : "badge-warning"
-              }`}
+                }`}
             >
               {status}
             </div>
@@ -294,21 +306,55 @@ const OrderingPostCard = ({ post }) => {
           </button>
         )}
         {status === "Order Received" && (
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <button
+                onClick={handleConfirmOrder}
+                className="btn btn-success text-white"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="btn btn-error text-white"
+              >
+                Report
+              </button>
+            </div>
+
             <button
-              onClick={handleConfirmOrder}
-              className="btn btn-success text-white"
+              className="btn btn-link text-blue-600 underline self-start"
+              onClick={() => setShowProofModal(true)}
             >
-              Confirm
-            </button>
-            <button
-              onClick={() => setShowReportModal(true)}
-              className="btn btn-error text-white"
-            >
-              Report
+              View Proof Of Delivery
             </button>
           </div>
         )}
+        {showProofModal && post.proof_url && (
+          <dialog className="modal modal-open">
+            <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
+              <h3 className="font-bold text-lg text-center mb-4">Proof</h3>
+
+              <div className="flex justify-center mb-6">
+                <img
+                  src={`http://localhost:5000${post.proof_url}`} // ✅ proof_url มี /uploads/proofs/xxx
+                  alt="Proof"
+                  className="max-w-full max-h-[400px] object-contain rounded"
+                />
+              </div>
+
+              <div className="flex justify-center">
+                <button
+                  className="btn btn-error text-white px-8 py-3 rounded-full"
+                  onClick={() => setShowProofModal(false)}
+                >
+                  ปิด
+                </button>
+              </div>
+            </div>
+          </dialog>
+        )}
+
         {status === "Ordering" && (
           <button
             onClick={() => setShowReportModal(true)}
@@ -446,9 +492,20 @@ const OrderingPostCard = ({ post }) => {
             </div>
           </dialog>
         )}
+        {showRatingModal && (
+  <RatingModal
+    orderId={post.id}
+    onClose={() => setShowRatingModal(false)}
+    onRated={(rating) => {
+      console.log("Rated:", rating);
+      // อัปเดต UI ถ้าต้องการ
+    }}
+  />
+)}
       </div>
     </div>
   );
 };
+
 
 export default OrderingPostCard;

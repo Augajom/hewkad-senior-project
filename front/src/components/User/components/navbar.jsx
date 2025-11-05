@@ -52,10 +52,7 @@ function Navbar({ onSearchSubmit, orderingCount }) {
             </button>
           </Link>
 
-          <button className="btn btn-ghost">
-            <CreditCard className="w-5 h-5 mr-1 text-black" />
-            <span className="text-black">Payment</span>
-          </button>
+          
 
           <button className="btn btn-ghost btn-circle">
             <MessageCircle className="w-5 h-5 text-black" />

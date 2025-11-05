@@ -1,32 +1,56 @@
-import React from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import '../DaisyUI.css'
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import "../DaisyUI.css";
 
 const ConfirmModal = ({ visible, onCancel, onConfirm, selectedOrder }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
   if (!visible) return null;
 
+  const handleClickConfirm = async () => {
+    if (isLoading) return; // ป้องกันกดซ้ำ
+    setIsLoading(true);
+    try {
+      await onConfirm(); // เรียกฟังก์ชันส่ง backend
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-s">
-      <div className="bg-white rounded-xl p-6 w-80 shadow-2xl">
-        <p className="text-lg text-black font-bold mb-4">ยืนยันการรับออเดอร์</p>
+    <div className="modal modal-open">
+      <div className="modal-box bg-white text-black">
+        <h3 className="font-bold text-lg text-black">ยืนยันการรับออเดอร์</h3>
+
         {selectedOrder && (
-          <p className="mb-4 text-black">
+          <p className="py-4 text-black">
             คุณต้องการรับออเดอร์จาก{" "}
-            <span className="font-bold text-black ">{selectedOrder.name}</span> ใช่ไหม?
+            <span className="font-semibold">{selectedOrder.name}</span> ใช่ไหม?
           </p>
         )}
-        <div className="flex justify-end gap-3">
+
+        <div className="modal-action">
           <button
-            onClick={onCancel}
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
+            className="btn btn-success text-white flex items-center gap-2"
+            onClick={handleClickConfirm}
+            
           >
-            ยกเลิก
+            {isLoading ? (
+              <>
+                <AiOutlineLoading3Quarters className="animate-spin text-white text-lg" />
+                กำลังดำเนินการ...
+              </>
+            ) : (
+              "ยืนยัน"
+            )}
           </button>
           <button
-            onClick={onConfirm}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
+            className="btn"
+            onClick={onCancel}
+            disabled={isLoading}
           >
-            ยืนยัน
+            ยกเลิก
           </button>
         </div>
       </div>
