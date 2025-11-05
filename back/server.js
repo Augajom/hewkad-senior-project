@@ -17,6 +17,7 @@ const loginRoute = require('./routes/login.js');
 const logoutRoute = require('./routes/logout.js')
 const verifyToken = require('./utils/verifyToken.js');
 const requireRole = require('./utils/requireRole.js');
+const orderAutoComplete = require('./api/customer.js');
 
 
 const app = express();
@@ -46,7 +47,8 @@ app.use('/customer', verifyToken, requireRole('customer'), customerRoute);
 app.use('/service', verifyToken, requireRole('service'), serviceRoute);
 app.use('/profile', verifyToken, profileRoute);
 app.use('/upload', verifyToken, uploadRoute);
-
+app.use(orderAutoComplete);
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Admin
 app.use('/login', loginRoute);

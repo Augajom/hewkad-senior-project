@@ -40,6 +40,25 @@ export default function ServiceProfile() {
   const [identityFileName, setIdentityFileName] = useState("");
   const [identityUploading, setIdentityUploading] = useState(false);
 
+  const [banks, setBanks] = useState([]); // สำหรับ dropdown bank
+
+  // โหลด list ธนาคาร
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/customer/banks`, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to load banks");
+        const data = await res.json();
+        setBanks(data); // data ต้องเป็น array ของ {id, bank_name}
+      } catch (err) {
+        console.error("Error loading banks:", err);
+      }
+    };
+
+    fetchBanks();
+  }, []);
   useEffect(() => {
     return () => {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
@@ -221,7 +240,7 @@ export default function ServiceProfile() {
         method: "POST",
         credentials: "include",
       });
-    } catch {}
+    } catch { }
     navigate("/", { replace: true });
   };
 
@@ -252,7 +271,7 @@ export default function ServiceProfile() {
                     src={
                       editMode
                         ? avatarPreview ||
-                          resolveImg(editUser.picture || user.picture)
+                        resolveImg(editUser.picture || user.picture)
                         : resolveImg(user.picture)
                     }
                     alt="avatar"
@@ -380,37 +399,38 @@ export default function ServiceProfile() {
 
               <div className="space-y-6">
                 {[
-                  { label: "Bank :", name: "bank", value: editUser.bank },
-                  {
-                    label: "Account Number :",
-                    name: "accountNumber",
-                    value: editUser.accountNumber,
-                  },
-                  {
-                    label: "Account Owner :",
-                    name: "accountOwner",
-                    value: editUser.accountOwner,
-                  },
+                  { label: "Bank :", name: "bank", type: "select", value: editUser.bank },
+                  { label: "Account Number :", name: "accountNumber", value: editUser.accountNumber },
+                  { label: "Account Owner :", name: "accountOwner", value: editUser.accountOwner },
                 ].map((f) => (
-                  <div
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center"
-                    key={f.name}
-                  >
-                    <label className="text-black text-sm sm:text-base font-medium">
-                      {f.label}
-                    </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center" key={f.name}>
+                    <label className="text-black text-sm sm:text-base font-medium">{f.label}</label>
                     <div className="sm:col-span-2">
                       {editMode ? (
-                        <input
-                          name={f.name}
-                          value={f.value || ""}
-                          onChange={handleChange}
-                          className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
-                        />
+                        f.type === "select" ? (
+                          <select
+                            name={f.name}
+                            value={f.value || ""}
+                            onChange={handleChange}
+                            className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
+                          >
+                            <option value="">-- Select Bank --</option>
+                            {banks.map((opt) => (
+                              <option key={opt.id} value={opt.id}>
+                                {opt.bank_name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            name={f.name}
+                            value={f.value || ""}
+                            onChange={handleChange}
+                            className="input input-bordered w-full bg-white border-2 border-gray-500 focus:border-gray-600 text-black"
+                          />
+                        )
                       ) : (
-                        <div className="text-black break-words">
-                          {user[f.name] || "-"}
-                        </div>
+                        <div className="text-black break-words">{user[f.name] || "-"}</div>
                       )}
                     </div>
                   </div>
