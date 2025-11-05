@@ -7,11 +7,9 @@ import {
   Mail,
   MapPin,
   CreditCard,
-  FileText,
 } from "lucide-react";
 import Navbar from "../components/navbar";
 
-const API_BASE = "http://localhost:5000";
 const API_BASE = "http://localhost:5000";
 
 function resolveImg(src) {
@@ -26,7 +24,6 @@ export default function ProfilePage() {
   const [loaded, setLoaded] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [user, setUser] = useState({
     picture: "",
@@ -57,7 +54,7 @@ export default function ProfilePage() {
         });
         if (!res.ok) throw new Error("Failed to load banks");
         const data = await res.json();
-        setBanks(data); // array {id, bank_name}
+        setBanks(data);
       } catch (err) {
         console.error("Error loading banks:", err);
       }
@@ -103,14 +100,14 @@ export default function ProfilePage() {
       setLoaded(true);
     }
   }, []);
-  }, []);
 
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
 
   const handleEdit = () => setEditMode(true);
-  const handleChange = (e) => setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
+  const handleChange = (e) =>
+    setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
   const handleCancel = () => {
     setEditUser(user);
     setEditMode(false);
@@ -118,10 +115,11 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
-      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
     } catch {}
-    window.location.href = "/";
     window.location.href = "/";
   };
 
@@ -177,14 +175,12 @@ export default function ProfilePage() {
   const handleSave = useCallback(async () => {
     if (isSaving) return;
     setIsSaving(true);
-    setSaveSuccess(false);
     try {
       const payload = {
         nickname: editUser.nickname || null,
         fullName: editUser.fullName || null,
         phone: editUser.phone || null,
         address: editUser.address || null,
-        picture: editUser.picture || "",
         picture: editUser.picture || "",
         bank: editUser.bank || "",
         accountNumber: editUser.accountNumber || null,
@@ -235,9 +231,10 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center mb-8 md:mb-0 md:w-1/3">
             <div className="avatar relative mb-4">
               <div className="w-32 sm:w-40 md:w-48 h-32 sm:h-40 md:h-48 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center">
-                {editMode
-                  ? avatarPreview || editUser.picture || user.picture
-                  : user.picture ? <img src={resolveImg(user.picture)} className="w-full h-full object-cover" /> : null}
+                <img
+                  src={avatarPreview || resolveImg(editUser.picture) || resolveImg(user.picture)}
+                  className="w-full h-full object-cover"
+                />
                 {editMode && (
                   <label
                     htmlFor="profileUpload"
@@ -432,60 +429,7 @@ export default function ProfilePage() {
 
           </div>
         </div>
-      </main>
-
-      {/* Logout Modal */}
-      {/* Logout Modal */}
-      {showLogoutModal && (
-        <dialog className="modal modal-open">
-          <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black max-w-sm mx-auto">
-            <h3 className="font-bold text-lg text-center mb-4">Confirm Logout</h3>
-            <p className="text-center mb-6">Are you sure to logout?</p>
-            <div className="modal-action flex flex-col sm:flex-row justify-center gap-4">
-              <button onClick={() => setShowLogoutModal(false)} className="flex-1 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200">
-                Cancel
-              </button>
-              <button onClick={handleLogout} className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-lg hover:scale-105 transition-all">
-                Logout
-              </button>
-            </div>
-          </div>
-        </dialog>
-      )}
-    </div>
-  );
-}
-
-function InfoField({ icon, label, name, value, displayValue, editMode, onChange, readonly, multiline }) {
-  return (
-    <div className="group">
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-        <span className="text-slate-400 group-hover:text-blue-500 transition-colors">{icon}</span>
-        {label}
-      </label>
-      {editMode && !readonly ? (
-        multiline ? (
-          <textarea
-            name={name}
-            value={value || ""}
-            onChange={onChange}
-            rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
-          />
-        ) : (
-          <input
-            type="text"
-            name={name}
-            value={value || ""}
-            onChange={onChange}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
-          />
-        )
-      ) : (
-        <div className={`px-4 py-3 rounded-xl ${readonly ? 'bg-slate-50' : 'bg-white/50'} border border-slate-200 text-slate-900`}>
-          {displayValue || <span className="text-slate-400">Not provided</span>}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

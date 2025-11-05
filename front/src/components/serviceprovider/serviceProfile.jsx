@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Camera, LogOut, Edit3, Save, X, Upload, Check, User, Phone, Mail, MapPin, CreditCard, FileText, RefreshCw } from "lucide-react";
+import { Camera, LogOut, Edit3, Save, X, Upload, Check, User, Phone, Mail, MapPin, CreditCard } from "lucide-react";
 import Navbar from "./components/navbar";
 import "../../components/User/DaisyUI.css";
 
-const API_BASE = (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
+const API_BASE = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
 function resolveImg(src) {
   if (!src) return "";
@@ -20,29 +20,19 @@ export default function ServiceProfile() {
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  const [user, setUser] = useState({
-    picture: "",
-    nickname: "",
-    fullName: "",
-    email: "",
-    phone: "",
-    address: "",
-    bank: "",
-    accountNumber: "",
-    accountOwner: "",
-    identityFile: "",
-  });
-  const [editUser, setEditUser] = useState(user);
-
   const [avatarPreview, setAvatarPreview] = useState("");
   const [identityPreview, setIdentityPreview] = useState("");
   const [identityUploading, setIdentityUploading] = useState(false);
+
+  const [user, setUser] = useState({
+    picture: "", nickname: "", fullName: "", email: "", phone: "", address: "",
+    bank: "", accountNumber: "", accountOwner: "", identityFile: "",
+  });
+  const [editUser, setEditUser] = useState(user);
   const [banks, setBanks] = useState([]);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // โหลดธนาคาร
-  useEffect(() => { 
+  useEffect(() => {
     fetch(`${API_BASE}/customer/banks`, { credentials: "include" })
       .then(res => res.json())
       .then(setBanks)
@@ -59,403 +49,202 @@ export default function ServiceProfile() {
     setLoaded(false);
     try {
       const res = await fetch(`${API_BASE}/profile?t=${Date.now()}`, { credentials: "include" });
-      if (res.status === 401) {
-        navigate("/", { replace: true });
-        return;
-      }
-      if (!res.ok) throw new Error("Failed to load profile");
-      const d = await res.json();
+      if (res.status === 401) return navigate("/", { replace: true });
+      const data = await res.json();
       const next = {
-        picture: d?.picture ?? "",
-        nickname: d?.nickname ?? "",
-        fullName: d?.fullName || d?.name || "",
-        email: d?.email || "",
-        phone: d?.phone || "",
-        address: d?.address || "",
-        bank: d?.bank || "",
-        accountNumber: d?.accountNumber || "",
-        accountOwner: d?.accountOwner || "",
-        identityFile: d?.identityFile || "",
+        picture: data?.picture ?? "",
+        nickname: data?.nickname ?? "",
+        fullName: data?.fullName || data?.name || "",
+        email: data?.email || "",
+        phone: data?.phone || "",
+        address: data?.address || "",
+        bank: data?.bank || "",
+        accountNumber: data?.accountNumber || "",
+        accountOwner: data?.accountOwner || "",
+        identityFile: data?.identityFile || "",
       };
-      setUser(next);
-      setEditUser(next);
-    } catch {
-      alert("โหลดโปรไฟล์ไม่สำเร็จ");
-    } finally {
-      setLoaded(true);
-    }
+      setUser(next); setEditUser(next);
+    } catch { alert("โหลดโปรไฟล์ไม่สำเร็จ"); }
+    finally { setLoaded(true); }
   }, [navigate]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
-  const handleEdit = () => setEditMode(true);
-  const handleChange = (e) => setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
+  const handleChange = (e) => setEditUser(p => ({ ...p, [e.target.name]: e.target.value || "" }));
   const handleCancel = () => {
-    setEditUser(user);
+    setEditUser(user); setEditMode(false);
     if (avatarPreview) URL.revokeObjectURL(avatarPreview);
     if (identityPreview) URL.revokeObjectURL(identityPreview);
-    setAvatarPreview("");
-    setIdentityPreview("");
-    setEditMode(false);
+    setAvatarPreview(""); setIdentityPreview("");
   };
 
-  const handleLogout = async () => {
+  const onUploadAvatar = useCallback(async (file) => {
+    if (!file) return;
     try {
-      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
-    } catch {}
-    navigate("/", { replace: true });
-  };
-
-  const onUploadAvatar = useCallback(
-    async (file) => {
-      if (!file) return;
-      try {
-        if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-        const previewUrl = URL.createObjectURL(file);
-        setAvatarPreview(previewUrl);
-        const form = new FormData();
-        form.append("file", file);
-        const res = await fetch(`${API_BASE}/upload/avatar`, { method: "POST", credentials: "include", body: form });
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          const text = await res.text();
-          throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
-        }
-        const data = await res.json();
-        if (!res.ok || !data?.ok || !data?.url) throw new Error(data?.error || "Upload failed");
-        setEditUser((p) => ({ ...p, picture: data.url }));
-      } catch (err) {
-        alert(err?.message || "อัปโหลดรูปโปรไฟล์ไม่สำเร็จ");
-      }
-    },
-    [avatarPreview]
-  );
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(URL.createObjectURL(file));
+      const form = new FormData(); form.append("file", file);
+      const res = await fetch(`${API_BASE}/upload/avatar`, { method: "POST", credentials: "include", body: form });
+      const data = await res.json();
+      if (!res.ok || !data?.ok || !data?.url) throw new Error("Upload failed");
+      setEditUser(p => ({ ...p, picture: data.url }));
+    } catch (err) { alert(err.message || "อัปโหลดรูปโปรไฟล์ไม่สำเร็จ"); }
+  }, [avatarPreview]);
 
   const uploadIdentity = async (file) => {
     if (!file) return;
     try {
       setIdentityUploading(true);
       if (identityPreview) URL.revokeObjectURL(identityPreview);
-      const url = URL.createObjectURL(file);
-      setIdentityPreview(url);
-
-      const fd = new FormData();
-      fd.append("identity", file);
-      const res = await fetch(`${API_BASE}/profile/identity`, {
-        method: "PUT",
-        credentials: "include",
-        body: fd,
-      });
+      setIdentityPreview(URL.createObjectURL(file));
+      const fd = new FormData(); fd.append("identity", file, file.name || "identity.jpg");
+      const res = await fetch(`${API_BASE}/profile/identity`, { method: "PUT", credentials: "include", body: fd });
       const data = await res.json();
-      if (!res.ok || !data?.ok) throw new Error(data?.error || "Upload failed");
-      setUser((p) => ({ ...p, identityFile: data?.profile?.identityFile || data?.filePath || "" }));
-      setEditUser((p) => ({ ...p, identityFile: data?.profile?.identityFile || data?.filePath || "" }));
-    } catch (e) {
-      alert(e?.message || "อัปโหลดรูปบัตรไม่สำเร็จ");
-    } finally {
-      setIdentityUploading(false);
-    }
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Upload identity failed");
+      const savedPath = data?.profile?.identityFile || data?.filePath || "";
+      setUser(p => ({ ...p, identityFile: savedPath }));
+      setEditUser(p => ({ ...p, identityFile: savedPath }));
+    } catch (e) { alert(e?.message || "อัปโหลดรูปบัตรไม่สำเร็จ"); }
+    finally { setIdentityUploading(false); }
   };
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
-    setIsSaving(true);
-    setSaveSuccess(false);
+    setIsSaving(true); setSaveSuccess(false);
     try {
-      const payload = {
-        nickname: editUser.nickname || null,
-        fullName: editUser.fullName || null,
-        phone: editUser.phone || null,
-        address: editUser.address || null,
-        picture: editUser.picture || "",
-        bank: editUser.bank || "",
-        accountNumber: editUser.accountNumber || null,
-        accountOwner: editUser.accountOwner || null,
-        identityFile: editUser.identityFile || "",
-      };
+      const payload = { ...editUser };
       const res = await fetch(`${API_BASE}/profile`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(payload),
       });
-      const ct = res.headers.get("content-type") || "";
-      if (!ct.includes("application/json")) {
-        const text = await res.text();
-        throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
-      }
       const data = await res.json();
       if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
       await loadProfile();
       setSaveSuccess(true);
-      setTimeout(() => {
-        setEditMode(false);
-        setSaveSuccess(false);
-      }, 1000);
+      setTimeout(() => { setEditMode(false); setSaveSuccess(false); }, 1000);
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
       setAvatarPreview("");
     } catch (err) { alert(err?.message || "บันทึกไม่สำเร็จ"); }
     finally { setIsSaving(false); }
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
-  const switchPath = location.pathname.includes("/provider/profile") ? "/service/profile" : "/user/profile";
-
-  const handleSwitchRole = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/customer/switch-role`, { method: "POST", credentials: "include" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Switch role failed");
-      const newRole = data.role_name;
-      navigate(newRole === "service" ? "/service/profile" : "/user/profile", { replace: true });
-    } catch {
-      navigate(switchPath, { replace: true });
-    }
+  const handleLogout = async () => {
+    try { await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" }); } catch {}
+    navigate("/", { replace: true });
   };
+
+  const handleSwitchRole = () => navigate("/user/profile", { replace: true });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Navbar />
-      {/* Header */}
-      {/* Main content */}
-      {/* ส่วนอื่นๆ เหมือนเดิม */}
-      {/* ... */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:gap-8 lg:gap-12">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center mb-8 md:mb-0 md:w-1/3">
+            <div className="avatar relative mb-4">
+              <div className="w-32 sm:w-40 md:w-48 h-32 sm:h-40 md:h-48 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden flex items-center justify-center">
+                {(editMode ? avatarPreview || editUser.picture || user.picture : user.picture) && (
+                  <img src={resolveImg(editMode ? avatarPreview || editUser.picture : user.picture)} alt="avatar" className="w-full h-full object-cover" />
+                )}
+                {editMode && (
+                  <>
+                    <label htmlFor="profileUpload" className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center cursor-pointer hover:bg-opacity-60 transition rounded-full">
+                      <Camera className="w-8 h-8 text-white" />
+                    </label>
+                    <input type="file" id="profileUpload" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onUploadAvatar(e.target.files[0])} />
+                  </>
+                )}
+              </div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2 text-center">{user.fullName || "No Name"}</h2>
+              <p className="text-slate-500 text-sm mb-6 text-center">{user.email || "No Email"}</p>
+              {!editMode ? (
+                <button onClick={() => setEditMode(true)} className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg hover:scale-105 transition-all duration-300">
+                  <Edit3 className="w-4 h-4" /> Edit Profile
+                </button>
+              ) : (
+                <div className="w-full space-y-2">
+                  <button onClick={handleSave} disabled={!loaded || isSaving} className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg disabled:opacity-50">
+                    {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : saveSuccess ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Saving..." : saveSuccess ? "Saved!" : "Save Changes"}
+                  </button>
+                  <button onClick={handleCancel} className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all duration-300">
+                    <X className="w-4 h-4" /> Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
-      {/* InfoField ปรับ Bank เป็น select */}
-      {/** เปลี่ยนภายใน InfoField หรือส่ง props banks */}
+          {/* Personal & Payment Info */}
+          <div className="flex-1 space-y-6">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Personal Information</h3>
+              </div>
+              <div className="space-y-6">
+                <InfoField icon={<User />} label="Nickname" name="nickname" value={editUser.nickname} displayValue={user.nickname} editMode={editMode} onChange={handleChange} />
+                <InfoField icon={<User />} label="Full Name" name="fullName" value={editUser.fullName} displayValue={user.fullName} editMode={editMode} onChange={handleChange} />
+                <InfoField icon={<Phone />} label="Phone Number" name="phone" value={editUser.phone} displayValue={user.phone} editMode={editMode} onChange={handleChange} />
+                <InfoField icon={<Mail />} label="Email Address" name="email" value={user.email} displayValue={user.email} editMode={false} readonly />
+                <InfoField icon={<MapPin />} label="Address" name="address" value={editUser.address} displayValue={user.address} editMode={editMode} onChange={handleChange} multiline />
+              </div>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Payment Information</h3>
+              </div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                  <label>Bank:</label>
+                  <div className="sm:col-span-2">
+                    {editMode ? (
+                      <select name="bank" value={editUser.bank} onChange={handleChange} className="input input-bordered w-full">
+                        <option value="">-- Select Bank --</option>
+                        {banks.map(b => <option key={b.id} value={b.id}>{b.bank_name}</option>)}
+                      </select>
+                    ) : <div>{user.bank || "-"}</div>}
+                  </div>
+                </div>
+                <InfoField label="Account Number" name="accountNumber" value={editUser.accountNumber} displayValue={user.accountNumber} editMode={editMode} onChange={handleChange} />
+                <InfoField label="Account Owner" name="accountOwner" value={editUser.accountOwner} displayValue={user.accountOwner} editMode={editMode} onChange={handleChange} />
+
+                {editMode ? (
+                  <label className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-dashed cursor-pointer">
+                    <Upload className="w-5 h-5" /> Upload Document
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadIdentity(e.target.files[0])} />
+                  </label>
+                ) : user.identityFile ? (
+                  <img src={resolveImg(user.identityFile)} alt="identity" className="w-full h-auto mt-2 rounded-xl border" />
+                ) : <div className="text-center py-8 text-slate-400">No document uploaded</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-// InfoField component
 function InfoField({ icon, label, name, value, displayValue, editMode, onChange, readonly, multiline }) {
-  const [banks, setBanks] = useState([]);
-
-  // ถ้า label เป็น Bank Name ให้ fetch banks
-  useEffect(() => {
-    if (label === "Bank Name") {
-      fetch(`${API_BASE}/customer/banks`, { credentials: "include" })
-        .then(res => res.json())
-        .then(setBanks)
-        .catch(console.error);
-    }
-  }, [label]);
-
-  if (label === "Bank Name" && editMode) {
-    return (
-      <div className="group">
-        <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-          <span className="text-slate-400 group-hover:text-blue-500 transition-colors">{icon}</span>
-          {label}
-        </label>
-        <select
-          name={name}
-          value={value || ""}
-          onChange={onChange}
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
-        >
-          <option value="">-- Select Bank --</option>
-          {banks.map((b) => (
-            <option key={b.id} value={b.id}>{b.bank_name}</option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
   return (
     <div className="group">
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-        <span className="text-slate-400 group-hover:text-blue-500 transition-colors">{icon}</span>
-        {label}
-      </label>
+      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">{icon && <span>{icon}</span>}{label}</label>
       {editMode && !readonly ? (
-        multiline ? (
-          <textarea
-            name={name}
-            value={value || ""}
-            onChange={onChange}
-            rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
-          />
-        ) : (
-          <input
-            type="text"
-            name={name}
-            value={value || ""}
-            onChange={onChange}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-300 bg-white/50"
-          />
-        )
+        multiline ? <textarea name={name} value={value || ""} onChange={onChange} className="w-full px-4 py-3 rounded-xl border" rows={3} /> :
+          <input type="text" name={name} value={value || ""} onChange={onChange} className="w-full px-4 py-3 rounded-xl border" />
       ) : (
-        <div className={`px-4 py-3 rounded-xl ${readonly ? "bg-slate-50" : "bg-white/50"} border border-slate-200 text-slate-900`}>
-          {displayValue || <span className="text-slate-400">Not provided</span>}
-        </div>
+        <div className={`px-4 py-3 rounded-xl ${readonly ? "bg-slate-50" : "bg-white/50"} border`}>{displayValue || <span className="text-slate-400">Not provided</span>}</div>
       )}
     </div>
   );
 }
-return (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-    <Navbar />
-
-    <div className="max-w-3xl mx-auto py-10 px-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">Profile</h1>
-        <button
-          onClick={handleSwitchRole}
-          className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-        >
-          Switch Role
-        </button>
-      </div>
-
-      {/* Profile Card */}
-      <div className="bg-white shadow-md rounded-xl p-6 space-y-6">
-        {/* Avatar */}
-        <div className="flex items-center gap-6">
-          <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-slate-200">
-            <img
-              src={avatarPreview || resolveImg(user.picture)}
-              alt="avatar"
-              className="w-full h-full object-cover"
-            />
-            {editMode && (
-              <label className="absolute bottom-0 right-0 bg-white p-1 rounded-full cursor-pointer border border-slate-200">
-                <Camera size={16} />
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files && onUploadAvatar(e.target.files[0])}
-                />
-              </label>
-            )}
-          </div>
-          <div>
-            <div className="text-lg font-semibold">{user.nickname || "No nickname"}</div>
-            <div className="text-sm text-slate-500">{user.email || "No email"}</div>
-          </div>
-        </div>
-
-        {/* Form Fields */}
-        <div className="grid grid-cols-1 gap-4">
-          <InfoField
-            icon={<User size={16} />}
-            label="Full Name"
-            name="fullName"
-            value={editUser.fullName}
-            displayValue={user.fullName}
-            editMode={editMode}
-            onChange={handleChange}
-          />
-          <InfoField
-            icon={<Phone size={16} />}
-            label="Phone"
-            name="phone"
-            value={editUser.phone}
-            displayValue={user.phone}
-            editMode={editMode}
-            onChange={handleChange}
-          />
-          <InfoField
-            icon={<MapPin size={16} />}
-            label="Address"
-            name="address"
-            value={editUser.address}
-            displayValue={user.address}
-            editMode={editMode}
-            onChange={handleChange}
-            multiline
-          />
-          <InfoField
-            icon={<CreditCard size={16} />}
-            label="Bank Name"
-            name="bank"
-            value={editUser.bank}
-            displayValue={user.bank}
-            editMode={editMode}
-            onChange={handleChange}
-          />
-          <InfoField
-            icon={<FileText size={16} />}
-            label="Account Number"
-            name="accountNumber"
-            value={editUser.accountNumber}
-            displayValue={user.accountNumber}
-            editMode={editMode}
-            onChange={handleChange}
-          />
-          <InfoField
-            icon={<User size={16} />}
-            label="Account Owner"
-            name="accountOwner"
-            value={editUser.accountOwner}
-            displayValue={user.accountOwner}
-            editMode={editMode}
-            onChange={handleChange}
-          />
-        </div>
-
-        {/* Identity Upload */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-            <FileText size={16} />
-            Identity Document
-          </label>
-          <div className="flex items-center gap-4">
-            <div className="w-32 h-20 border rounded-xl overflow-hidden">
-              <img
-                src={identityPreview || resolveImg(user.identityFile)}
-                alt="identity"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            {editMode && (
-              <label className="cursor-pointer px-3 py-2 bg-slate-100 rounded-lg border border-slate-300 flex items-center gap-1">
-                <Upload size={16} />
-                <span>Upload</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files && uploadIdentity(e.target.files[0])}
-                />
-              </label>
-            )}
-            {identityUploading && <RefreshCw className="animate-spin" />}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-4 justify-end mt-6">
-          {editMode ? (
-            <>
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
-              >
-                <X className="inline mr-1" /> Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-                disabled={isSaving}
-              >
-                {saveSuccess ? <Check className="inline mr-1" /> : <Save className="inline mr-1" />}
-                {isSaving ? "Saving..." : "Save"}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleEdit}
-              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-            >
-              <Edit3 className="inline mr-1" /> Edit
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-);
