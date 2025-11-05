@@ -9,43 +9,76 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
   const isOwner = currentUser && post && Number(currentUser.id) === Number(post.user_id);
   console.log('Current user:', currentUser?.id, 'Post user_id:', post.user_id);
   return (
-    <div className="relative card w-full bg-white shadow-lg rounded-xl border border-gray-200 p-4 text-black">
+    <div className="relative bg-white shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div className="flex gap-3">
-          <img
-            src={
-              post.avatar
-                ? post.avatar.startsWith("http")
-                  ? post.avatar             // ถ้าเป็น URL เต็ม
-                  : `http://localhost:5000${post.avatar}` // ถ้าเป็น path local
-                : 'https://i.pravatar.cc/150' // default avatar
-            }
-            alt="avatar"
-            className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
-          />
-          <div>
-            <div className="font-bold text-base">{post.nickname || 'ไม่ระบุชื่อ'}</div>
-            <div className="text-sm text-gray-500">{post.username || '@username'}</div>
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex justify-between items-start">
+          <div className="flex gap-3">
+            <img
+              src={
+                post.avatar
+                  ? post.avatar.startsWith("http")
+                    ? post.avatar
+                    : `http://localhost:5000${post.avatar}`
+                  : 'https://i.pravatar.cc/150'
+              }
+              alt="avatar"
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+            />
+            <div>
+              <div className="font-semibold text-gray-900">{post.nickname || 'Anonymous'}</div>
+              <div className="text-sm text-gray-500">{post.username || '@username'}</div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col items-end">
-          <div className="badge badge-success">{post.status_name || ''}</div>
-          <div className="text-red-600 font-bold text-xl mt-1">
-            {post.service_fee ? `${post.service_fee} ฿` : '0 ฿'}
+          <div className="flex flex-col items-end">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              post.status_name === 'Available' 
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {post.status_name || ''}
+            </span>
+            <div className="text-blue-600 font-bold text-xl mt-1">
+              ฿{post.service_fee || '0'}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Post details */}
-      <div className="mt-4 text-sm space-y-1">
-        <p><span className="font-semibold">สถานที่ส่ง</span> : {post.delivery || '-'}</p>
-        <p><span className="font-semibold">ชื่อร้าน</span> : {post.store_name || '-'}</p>
-        <p><span className="font-semibold">หิ้ว</span> : {post.product || '-'}</p>
-        <p><span className="font-semibold">ราคา</span> : {post.price || '-'}</p>
-        <p><span className="font-semibold">ตลาด</span> : {post.kad_name || '-'}</p>
-        <p><span className="font-semibold">เวลาจัดส่ง</span> : {post.delivery_at || '-'}</p>
+      <div className="p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-gray-500">Store</p>
+            <p className="font-medium text-gray-900">{post.store_name || '-'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Market</p>
+            <p className="font-medium text-gray-900">{post.kad_name || '-'}</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs text-gray-500">Product</p>
+          <p className="font-medium text-gray-900">{post.product || '-'}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-gray-500">Price</p>
+            <p className="font-medium text-gray-900">฿{post.price || '-'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Delivery Time</p>
+            <p className="font-medium text-gray-900">{post.delivery_at || '-'}</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs text-gray-500">Delivery Location</p>
+          <p className="font-medium text-gray-900">{post.delivery || '-'}</p>
+        </div>
       </div>
 
       {/* Edit/Delete ปุ่ม */}
