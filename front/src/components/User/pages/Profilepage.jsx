@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+
 import { Camera, LogOut, Edit3, Save, X, Upload, Check, User, Phone, Mail, MapPin, CreditCard, FileText, RefreshCw } from "lucide-react";
+
 import Navbar from "../components/navbar";
 
 const API_BASE = "http://localhost:5000";
@@ -47,7 +49,7 @@ export default function ProfilePage() {
         });
         if (!res.ok) throw new Error("Failed to load banks");
         const data = await res.json();
-        setBanks(data); // array {id, bank_name}
+        setBanks(data);
       } catch (err) {
         console.error("Error loading banks:", err);
       }
@@ -105,7 +107,10 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
     } catch {}
     window.location.href = "/";
   };
