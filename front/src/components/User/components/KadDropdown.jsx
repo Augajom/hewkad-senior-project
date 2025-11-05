@@ -13,32 +13,39 @@ export default function KadDropdown({ kadOptions, selectedKad, setSelectedKad })
     };
 
     return (
-        <div className="dropdown mt-5 ml-6 w-52">
-            {/* ปุ่ม dropdown */}
-            <label tabIndex={0} className="btn w-full flex justify-between items-center bg-white text-black border-black rounded-lg cursor-pointer">
-                {selectedKad.length > 0 ? selectedKad.join(', ') : 'Select Kad'}
-                <SlArrowDown className="ml-2" />
-            </label>
-
-            {/* รายการ checkbox */}
-            <ul
-                tabIndex={0}
-                className="dropdown-content menu p-2 shadow bg-white rounded-box w-full max-h-60 overflow-auto border border-black text-black"
+        <div className="relative">
+            <button
+                onClick={() => setOpen(!open)}
+                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-                {kadOptions.map((kad) => (
-                    <li key={kad.id}>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="checkbox checkbox-neutral"
-                                checked={selectedKad.includes(kad.kad_name)}
-                                onChange={() => toggleKad(kad.kad_name)}
-                            />
-                            {kad.kad_name}
-                        </label>
-                    </li>
-                ))}
-            </ul>
+                <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">
+                        {selectedKad.length > 0 ? selectedKad.join(', ') : 'Filter by Market'}
+                    </span>
+                    <SlArrowDown className={`ml-2 transform transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                </div>
+            </button>
+
+            {open && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <div className="p-2 max-h-60 overflow-auto">
+                        {kadOptions.map((kad) => (
+                            <label
+                                key={kad.id}
+                                className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                            >
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
+                                    checked={selectedKad.includes(kad.kad_name)}
+                                    onChange={() => toggleKad(kad.kad_name)}
+                                />
+                                <span className="text-sm text-gray-700">{kad.kad_name}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

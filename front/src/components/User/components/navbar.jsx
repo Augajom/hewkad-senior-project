@@ -1,79 +1,198 @@
-import React, { useState } from "react";
-import { ShoppingCart, Search, CreditCard, MessageCircle, User } from "lucide-react";
+import React, { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
-import '../DaisyUI.css';
+import { ShoppingCart, Search, MessageCircle, User, Menu, X } from "lucide-react";
+import "../DaisyUI.css";
 
-function Navbar({ onSearchSubmit, orderingCount }) {
-  const [searchValue, setSearchValue] = useState('');
-  const baseBtnClass = "text-base transition-colors";
-  const activeClass = "text-cyan-500 font-bold";
-  const inactiveClass = "text-black hover:text-cyan-500";
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && onSearchSubmit) {
-      onSearchSubmit(searchValue);
-    }
-  };
-
-  // ใช้ useLocation เพื่อเช็ค path ปัจจุบัน
+function Navbar({ orderingCount = 0, onSearchSubmit }) {
+  const [searchValue, setSearchValue] = useState("");
+  const [open, setOpen] = useState(false);
   const location = useLocation();
-  const currentPath = location.pathname;
+  const current = location.pathname;
+
+  const isActive = useMemo(
+    () => (path) => current === path || (path !== "/" && current.startsWith(path)),
+    [current]
+  );
+
+  const triggerSearch = () => {
+    if (!onSearchSubmit) return;
+    onSearchSubmit(searchValue.trim());
+    setOpen(false);
+  };
 
   return (
     <div className="w-full">
-      {/* Top Navbar */}
-      <div className="navbar bg-gray-100 px-4 shadow-sm">
-        <div className="flex items-center gap-2">
-          <img src="/src/assets/logo.png" alt="Logo" className="w-30 h-20 object-cover" />
-        </div>
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-slate-200/50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-16 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link to="/" className="flex items-center gap-2">
+                <img src="/src/assets/logo.png" alt="Logo" className="w-24 h-12 object-contain" />
+              </Link>
+            </div>
 
-        <div className="flex-1 mx-4 flex justify-center">
-          <div className="relative w-full max-w-md">
-            <input
-              type="text"
-              placeholder="Search here..."
-              className="w-full bg-gray-200 rounded-full px-5 py-2 pr-12 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 text-black"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <Search className="w-5 h-5 absolute top-1/2 right-4 -translate-y-1/2 text-black" />
+            <div className="hidden md:flex flex-1 max-w-xl mx-6">
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Search products, brands, categories…"
+                  className="w-full bg-slate-100/80 rounded-full px-5 py-2.5 pr-12 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
+                />
+                <button
+                  aria-label="Search"
+                  onClick={triggerSearch}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 p-1.5 rounded-full hover:bg-slate-200/70"
+                >
+                  <Search className="w-5 h-5 text-slate-800" />
+                </button>
+              </div>
+            </div>
+
+            <nav className="hidden md:flex items-center gap-2">
+              <Link to="/user/ordering">
+                <button
+                  className={`btn btn-ghost relative ${
+                    isActive("/user/ordering") ? "text-cyan-600 font-semibold" : "text-slate-900 hover:text-cyan-600"
+                  }`}
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  <span className="ml-1">Ordering</span>
+                  {orderingCount > 0 && (
+                    <div className="badge badge-info badge-sm absolute -top-1 -right-1">{orderingCount}</div>
+                  )}
+                </button>
+              </Link>
+
+              <Link to="/messages">
+                <button
+                  className={`btn btn-ghost btn-circle ${
+                    isActive("/messages") ? "text-cyan-600" : "text-slate-900 hover:text-cyan-600"
+                  }`}
+                  aria-label="Messages"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                </button>
+              </Link>
+
+              <Link to="/user/profile">
+                <button
+                  className={`btn btn-ghost btn-circle ${
+                    isActive("/user/profile") ? "text-cyan-600" : "text-slate-900 hover:text-cyan-600"
+                  }`}
+                  aria-label="Profile"
+                >
+                  <User className="w-5 h-5" />
+                </button>
+              </Link>
+            </nav>
+
+            <button
+              className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/70 border border-slate-200 hover:bg-slate-100"
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Toggle menu"
+            >
+              {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link to="/user/ordering">
-            <button className="btn btn-ghost relative">
-              <ShoppingCart className="w-5 h-5 text-black" />
-              <span className="ml-1 font-semibold text-black">Ordering</span>
-              {orderingCount > 0 && (
-                <div className="badge badge-info badge-sm absolute top-0 right-0">{orderingCount}</div>
-              )}
-            </button>
-          </Link>
+        {open && (
+          <div className="md:hidden border-t border-slate-200/60 bg-white/80">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search products, brands, categories…"
+                  className="w-full bg-slate-100/80 rounded-xl px-4 py-2.5 pr-11 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
+                />
+                <button
+                  aria-label="Search"
+                  onClick={triggerSearch}
+                  className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-slate-200/70"
+                >
+                  <Search className="w-5 h-5 text-slate-800" />
+                </button>
+              </div>
 
-          
+              <Link to="/user/ordering" onClick={() => setOpen(false)}>
+                <div
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl ${
+                    isActive("/user/ordering") ? "bg-cyan-50 text-cyan-700" : "hover:bg-slate-100 text-slate-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="w-5 h-5" />
+                    <span>Ordering</span>
+                  </div>
+                  {orderingCount > 0 && <span className="badge badge-info badge-sm">{orderingCount}</span>}
+                </div>
+              </Link>
 
-          <button className="btn btn-ghost btn-circle">
-            <MessageCircle className="w-5 h-5 text-black" />
-          </button>
+              <Link to="/messages" onClick={() => setOpen(false)}>
+                <div
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl ${
+                    isActive("/messages") ? "bg-cyan-50 text-cyan-700" : "hover:bg-slate-100 text-slate-900"
+                  }`}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Messages</span>
+                </div>
+              </Link>
 
-          <Link to="/user/profile">
-            <button className="btn btn-ghost btn-circle">
-              <User className="w-5 h-5 text-black" />
-            </button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Bottom Navbar */}
-      <div className="navbar bg-white shadow-md border-t">
-        <div className="flex justify-center items-center w-full gap-8">
-          <Link to="/user/home" className={`${baseBtnClass} ${currentPath === "/user/home" ? activeClass : inactiveClass}`}>Home</Link>
-          <Link to="/user/history" className={`${baseBtnClass} ${currentPath === "/user/history" ? activeClass : inactiveClass}`}>History</Link>
-          <Link to="/user/chat" className={`${baseBtnClass} ${currentPath === "/user/chat" ? activeClass : inactiveClass}`}>Chat</Link>
-        </div>
-      </div>
+              <Link to="/user/profile" onClick={() => setOpen(false)}>
+                <div
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl ${
+                    isActive("/user/profile") ? "bg-cyan-50 text-cyan-700" : "hover:bg-slate-100 text-slate-900"
+                  }`}
+                >
+                  <User className="w-5 h-5" />
+                  <span>Profile</span>
+                </div>
+              </Link>
+            </div>
+          </div>
+        )}
+      </header>
+      <nav className="bg-white/80 backdrop-blur-xl border-t border-slate-200/60">
+              <div className="max-w-7xl mx-auto h-12 px-4 sm:px-6 lg:px-8 flex justify-center items-center gap-8">
+                <Link
+                  to="/user/home"
+                  className={`text-sm transition-colors ${
+                    isActive("/user/home")
+                      ? "text-cyan-600 font-semibold"
+                      : "text-slate-900 hover:text-cyan-600"
+                  }`}
+                >
+                  Home
+                </Link>
+                <Link
+                  to="/user/history"
+                  className={`text-sm transition-colors ${
+                    isActive("/user/history")
+                      ? "text-cyan-600 font-semibold"
+                      : "text-slate-900 hover:text-cyan-600"
+                  }`}
+                >
+                  History
+                </Link>
+                <Link
+                  to="/user/chat"
+                  className={`text-sm transition-colors ${
+                    isActive("/user/chat")
+                      ? "text-cyan-600 font-semibold"
+                      : "text-slate-900 hover:text-cyan-600"
+                  }`}
+                >
+                  Chat
+                </Link>
+              </div>
+            </nav>
     </div>
   );
 }
