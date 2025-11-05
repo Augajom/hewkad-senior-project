@@ -5,7 +5,9 @@ const HistoryPostCard = ({ post }) => {
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportReasons, setReportReasons] = useState([]);
     const [reportForm, setReportForm] = useState({ report: "", details: "" });
-    const [status, setStatus] = useState(post.status);
+    const [status, setStatus] = useState(
+  post.status_id === 8 ? "Complete" : post.status
+);
     const [showProofModal, setShowProofModal] = useState(false);
     const total = (post.price || 0) + (post.service_fee || 0);
     const proofImageUrl = post.proof_url || "/mnt/data/default-proof.png";

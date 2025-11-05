@@ -1,6 +1,6 @@
 // src/components/OrderingPostCard.jsx
 import React, { useState, useEffect } from "react";
-
+import RatingModal from "../components/RatingModel";
 import Swal from "sweetalert2";
 import "../DaisyUI.css";
 
@@ -12,6 +12,7 @@ const OrderingPostCard = ({ post }) => {
   const [showProofModal, setShowProofModal] = useState(false);
   const [qrCode, setQrCode] = useState(null);
   const [reportReasons, setReportReasons] = useState([]);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
 
   // skipok
@@ -192,27 +193,28 @@ const OrderingPostCard = ({ post }) => {
   };
 
   const handleConfirmOrder = async () => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/customer/confirmorder/${post.id}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "Complete" }),
-        }
-      );
+  try {
+    const res = await fetch(
+      `http://localhost:5000/customer/confirmorder/${post.id}`,
+      {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Complete" }),
+      }
+    );
 
-      if (!res.ok) throw new Error("Failed to update order status");
+    if (!res.ok) throw new Error("Failed to update order status");
 
-      setStatus("Complete");
-      alert("Order confirmed!");
-      window.location.reload();
-    } catch (err) {
-      console.error(err);
-      alert(err.message);
-    }
-  };
+    setStatus("Complete");
+    alert("Order confirmed!");
+    setShowRatingModal(true); // เปิดหน้าต่างให้ Rating
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+};
+
 
   const handleReportInputChange = (e) => {
     const { name, value } = e.target;
@@ -490,9 +492,20 @@ const OrderingPostCard = ({ post }) => {
             </div>
           </dialog>
         )}
+        {showRatingModal && (
+  <RatingModal
+    orderId={post.id}
+    onClose={() => setShowRatingModal(false)}
+    onRated={(rating) => {
+      console.log("Rated:", rating);
+      // อัปเดต UI ถ้าต้องการ
+    }}
+  />
+)}
       </div>
     </div>
   );
 };
+
 
 export default OrderingPostCard;
