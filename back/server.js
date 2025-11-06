@@ -6,6 +6,7 @@ const path = require('path');
 const db = require('./config/db');
 require('dotenv').config();
 require('./config/passport');
+require('./models/admin/DailyOrdersSummary.js')
 
 const authRoute = require('./routes/auth.js');
 const adminRoute = require('./api/admin.js');

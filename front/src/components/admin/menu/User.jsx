@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
-import AdminLayout from "../AdminLayout.jsx";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Nav from "../nav";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import {
@@ -12,6 +13,7 @@ import {
   showRejectVerify,
 } from "./features/SweetAlertUser";
 import { CiSearch } from "react-icons/ci";
+import AdminLayout from "../AdminLayout";
 
 function UserCard({ user, permitted, onTogglePermit }) {
   return (
@@ -87,149 +89,423 @@ export default function AdminUsers() {
     Object.fromEntries(MOCK_USERS.map((u) => [u.id, true]))
   );
 
-  const filteredUsers = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return MOCK_USERS;
-    return MOCK_USERS.filter(
-      (u) =>
-        u.name.toLowerCase().includes(q) ||
-        u.handle.toLowerCase().includes(q) ||
-        u.id.toLowerCase().includes(q)
-    );
-  }, [query]);
+  const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState("");
 
-  const onTogglePermit = async (user) => {
-    const isOn = !!permitMap[user.id];
-    if (!isOn) {
-      const result = await showAllowPermitUser(user);
+  const [request, setRequest] = useState([]);
+
+  // ✅ pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 6;
+
+  const resolveImg = (imgPath) => {
+    if (!imgPath) return "/src/assets/avatar.svg";
+    if (imgPath.startsWith("http")) return imgPath;
+    return `http://localhost:5000${imgPath}`;
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    fetchRequest();
+  }, []);
+
+  // --- All fetch functions and handlers (handleDeleteUser, handleTogglePermit, etc.) ---
+  // --- remain unchanged as their logic is correct. ---
+  // (Lógic functions like fetchUsers, fetchRequest, handleTogglePermit, handleDeleteUser are kept the same)
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/admin/users", {
+        withCredentials: true,
+      });
+      console.log(res.data);
+      setUsers(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("❌ Error fetching users:", error);
+      MySwal.fire("Error", "Failed to fetch users", "error");
+    }
+  };
+
+  const fetchRequest = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/admin/users/request", {
+        withCredentials: true,
+      });
+      console.log("Request", res.data);
+      setRequest(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("❌ Error fetching users:", error);
+      MySwal.fire("Error", "Failed to fetch users", "error");
+    }
+  };
+
+  const filteredUsers = users.filter((user) => {
+    const userName = user?.name || "";
+    return userName.toLowerCase().includes(search.toLowerCase());
+  });
+
+  // ✅ pagination logic
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleTogglePermit = async (userId, currentStatus) => {
+    try {
+      const result = currentStatus
+        ? await showDisablePermitUser()
+        : await showAllowPermitUser();
+
       if (result.isConfirmed) {
-        setPermitMap((m) => ({ ...m, [user.id]: true }));
+        await axios.put(
+          `http://localhost:5000/admin/users/work-permit/${userId}`,
+          { isActive: currentStatus ? 0 : 1 },
+          { withCredentials: true }
+        );
+
+        setUsers((prevUsers) =>
+          prevUsers.map((u) =>
+            u.user_id === userId
+              ? { ...u, is_Active: currentStatus ? 0 : 1 }
+              : u
+          )
+        );
+
+        // SweetAlert (unchanged)
         await MySwal.fire({
-          title: '<span style="color:#e5e7eb;">Permit Granted</span>',
-          text: "The Permit Is Now Active.",
+          title: currentStatus
+            ? '<span style="color:#333;">Permit Revoked</span>'
+            : '<span style="color:#333;">Permit Granted</span>',
+          text: currentStatus
+            ? "The Permit Is Now Disabled."
+            : "The Permit Is Now Active.",
+          icon: currentStatus ? "error" : "success",
+          confirmButtonColor: currentStatus ? "red" : "#00c950",
+          background: "#fff",
+          customClass: {
+            popup: "rounded-xl shadow-lg",
+            container: "backdrop-blur",
+          },
+          backdrop: true,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error updating work permit:", error);
+      MySwal.fire("Error", "Failed to update work permit status", "error");
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    try {
+      const result = await showUserDelete(user);
+
+      if (result.isConfirmed) {
+        await axios.delete(
+          `http://localhost:5000/admin/users/delete/${user.user_id}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        setUsers((prev) => prev.filter((u) => u.user_id !== user.user_id));
+
+        // SweetAlert (unchanged)
+        await MySwal.fire({
+          title: '<span style="color:#333;">User Deleted</span>',
+          text: "The user has been successfully removed.",
           icon: "success",
-          confirmButtonColor: "#10b981",
-          background: "#111316",
-          color: "#e5e7eb",
-          customClass: { popup: "rounded-2xl", container: "backdrop-blur" },
-          backdrop: true,
+          confirmButtonColor: "#00c950",
+          background: "#fff",
+          customClass: {
+            popup: "rounded-xl shadow-lg",
+            container: "backdrop-blur",
+          },
         });
       }
-    } else {
-      const result = await showDisablePermitUser(user);
-      if (result.isConfirmed) {
-        setPermitMap((m) => ({ ...m, [user.id]: false }));
-        await MySwal.fire({
-          title: '<span style="color:#e5e7eb;">Permit Revoked</span>',
-          text: "The Permit Is Now Disable.",
-          icon: "error",
-          confirmButtonColor: "#ef4444",
-          background: "#111316",
-          color: "#e5e7eb",
-          customClass: { popup: "rounded-2xl", container: "backdrop-blur" },
-          backdrop: true,
-        });
-      }
+    } catch (error) {
+      console.error("❌ Error deleting user:", error);
+      MySwal.fire("Error", "Failed to delete user", "error");
     }
   };
 
   return (
-    <AdminLayout title="Users">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end mb-6">
-        <div className="relative">
-          <p className="absolute top-2 left-4 text-gray-400 text-xs">Page</p>
-          <select
-            className="rounded-xl px-4 pb-2 pt-7 w-full bg-[#171a1f] text-gray-100 border border-gray-800"
-            value={pageType}
-            onChange={(e) => setPageType(e.target.value)}
-          >
-            <option value="User">User</option>
-            <option value="Request">Request</option>
-          </select>
-        </div>
-        <div className="relative md:col-span-2">
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full h-[56px] bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl pl-12 pr-4"
-          />
-          <CiSearch className="absolute size-6 left-4 top-[15px] text-gray-400" />
+    <>
+      <Nav />
+      <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
+        <div className="container mx-auto m-10">
+          <div className="w-full mx-auto flex flex-col items-center">
+            {/* 🔍 Filter - Styled with glassmorphism */}
+            <div className="filter-con flex flex-col sm:flex-row items-center gap-6 w-full justify-center mb-8 p-6 bg-white/70 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-lg">
+              {/* Page Select (Label inside) */}
+              <div className="relative w-full sm:w-56">
+                <label className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 pointer-events-none z-10">
+                  Page
+                </label>
+                <select
+                  className="select select-bordered w-full rounded-xl border-slate-300 bg-white/50 pl-16 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
+                  value={pageType}
+                  onChange={(e) => setPageType(e.target.value)}
+                >
+                  <option value="User">User</option>
+                  <option value="Request">Request</option>
+                </select>
+              </div>
+
+              {/* Search Input (Icon inside) */}
+              <div className="relative w-full sm:w-80">
+                <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+                <input
+                  type="text"
+                  placeholder="Search here..."
+                  className="input input-bordered w-full rounded-xl border-slate-300 bg-white/50 pl-12 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* 🧍 User Page - Styled with glassmorphism cards */}
+            {pageType === "User" ? (
+              <>
+                <div className="card-con grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl mx-auto">
+                  {currentUsers.length > 0 ? (
+                    currentUsers.map((user, index) => (
+                      <div
+                        key={index}
+                        className="card bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50"
+                      >
+                        <div className="card-body items-center text-center p-6">
+                          {/* Avatar - Styled like ProfilePage.js */}
+                          <div className="relative group mb-4">
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 p-1 shadow-lg shadow-indigo-500/30">
+                              <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                                <img
+                                  src={resolveImg(user.picture)}
+                                  alt={user.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* User Info - Styled like ProfilePage.js */}
+                          <div className="id-name-con my-2">
+                            <h2 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-1 text-center">
+                              {user.name}
+                            </h2>
+                            <p className="text-slate-500 text-sm">
+                              {user.email}
+                            </p>
+                          </div>
+
+                          {/* Permit Toggle - Custom toggle matching the theme */}
+                          <div className="flex items-center justify-between w-full max-w-xs px-2 py-2">
+                            <p className="font-semibold mr-1 text-slate-700">
+                              Work-Permitted
+                            </p>
+                            <label className="relative inline-block w-12 h-6">
+                              <input
+                                type="checkbox"
+                                className="opacity-0 w-0 h-0"
+                                checked={user.is_Active === 1}
+                                onChange={() =>
+                                  handleTogglePermit(
+                                    user.user_id,
+                                    user.is_Active === 1
+                                  )
+                                }
+                              />
+                              <span
+                                className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition duration-300 ${
+                                  user.is_Active === 1
+                                    ? "bg-gradient-to-r from-emerald-500 to-teal-500" // Green/Teal for "on"
+                                    : "bg-slate-300" // Gray for "off"
+                                }`}
+                              ></span>
+                              <span
+                                className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300 ${
+                                  user.is_Active === 1 ? "translate-x-6" : ""
+                                }`}
+                              ></span>
+                            </label>
+                          </div>
+
+                          {/* Buttons - Styled with gradients */}
+                          <div className="card-actions w-full flex-col gap-2 mt-4">
+                            <button
+                              onClick={() => showUserInfo(user)}
+                              className="btn btn-block border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/30 hover:shadow-blue-500/50"
+                            >
+                              Information
+                            </button>
+                            <button
+                              onClick={() =>
+                                showUserLicense(user.identity_file)
+                              }
+                              className="btn btn-block border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30 hover:shadow-emerald-500/50"
+                            >
+                              License
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user)}
+                              className="btn btn-block border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/30 hover:shadow-red-500/50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-slate-500 text-center col-span-3 py-10">
+                      No users found.
+                    </p>
+                  )}
+                </div>
+
+                {/* 📄 Pagination - Styled with theme */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center mt-10 gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i + 1}
+                        onClick={() => handlePageChange(i + 1)}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 cursor-pointer ${
+                          currentPage === i + 1
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
+                            : "bg-white text-slate-700 shadow-md hover:bg-slate-100"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              // 📑 Request Page - Styled with glassmorphism table container
+              <div className="overflow-x-auto w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-6">
+                <table className="table w-full text-center">
+                  {/* Head */}
+                  <thead>
+                    <tr className="border-b border-slate-300">
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        User ID
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Date
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Name
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Phone
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Address
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Bank
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Acc. Num
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Acc. Owner
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        File
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Verify
+                      </th>
+                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                        Reject
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {request.length > 0 ? (
+                      request.map((req, index) => (
+                        <tr
+                          key={index}
+                          className="hover:bg-slate-50/50 border-b border-slate-200 last:border-b-0"
+                        >
+                          <td className="py-3 px-2 text-slate-800">
+                            {req.user_id}
+                          </td>
+                          <td className="py-3 px-2 text-slate-800">
+                            {new Date(req.update_at).toLocaleDateString(
+                              "th-TH"
+                            )}
+                          </td>
+                          <td className="py-3 px-2 text-slate-800">
+                            {req.name}
+                          </td>
+                          <td className="py-3 px-2 text-slate-800">
+                            {req.phone_num}
+                          </td>
+                          <td className="py-3 px-2 text-slate-800">
+                            {req.address}
+                          </td>
+                          <td className="py-3 px-2 text-slate-800">
+                            {req.bank_name}
+                          </td>
+                          <td className="py-3 px-2 text-slate-800">
+                            {req.acc_number}
+                          </td>
+                          <td className="py-3 px-2 text-slate-800">
+                            {req.acc_owner}
+                          </td>
+                          <td>
+                            <button
+                              onClick={() => showUserLicense(req.identity_file)}
+                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                            >
+                              View
+                            </button>
+                          </td>
+                          <td>
+                            <button
+                              onClick={() =>
+                                showConfirmVerify(req.user_id, req.name)
+                              }
+                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/20"
+                            >
+                              Confirm
+                            </button>
+                          </td>
+                          <td>
+                            <button
+                              onClick={() =>
+                                showRejectVerify(req.user_id, req.name)
+                              }
+                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/20"
+                            >
+                              Reject
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="11" className="text-slate-500 py-6">
+                          No requests found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {pageType === "User" ? (
-        <div className="flex flex-wrap justify-start gap-6">
-          {filteredUsers.map((u) => (
-            <UserCard
-              key={u.id}
-              user={u}
-              permitted={!!permitMap[u.id]}
-              onTogglePermit={onTogglePermit}
-            />
-          ))}
-          {filteredUsers.length === 0 && (
-            <div className="text-gray-400">No users found.</div>
-          )}
-        </div>
-      ) : (
-        <div className="rounded-2xl overflow-hidden border border-gray-800 bg-[#171a1f]">
-          <table className="w-full text-sm">
-            <thead className="bg-[#1f2330] text-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left">User ID</th>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">Name</th>
-                <th className="px-4 py-3 text-left">Phone</th>
-                <th className="px-4 py-3 text-left">Address</th>
-                <th className="px-4 py-3 text-left">Bank</th>
-                <th className="px-4 py-3 text-left">Account No.</th>
-                <th className="px-4 py-3 text-left">Owner</th>
-                <th className="px-4 py-3 text-left">Identity</th>
-                <th className="px-4 py-3 text-left">Verify</th>
-                <th className="px-4 py-3 text-left">Reject</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              <tr className="hover:bg-[#1a1d24] text-gray-100">
-                <td className="px-4 py-3">@User2</td>
-                <td className="px-4 py-3">21/02/2025</td>
-                <td className="px-4 py-3">Pongsakorn Srisawat</td>
-                <td className="px-4 py-3">0168888999</td>
-                <td className="px-4 py-3">169/888 Sriracha</td>
-                <td className="px-4 py-3">SCB</td>
-                <td className="px-4 py-3">4581235446</td>
-                <td className="px-4 py-3">Pongsakorn Srisawat</td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => showUserLicense()}
-                    className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4"
-                  >
-                    IMG.PNG
-                  </button>
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => showConfirmVerify()}
-                    className="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white"
-                  >
-                    Confirm
-                  </button>
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => showRejectVerify()}
-                    className="px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white"
-                  >
-                    Reject
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
-    </AdminLayout>
+    </>
   );
 }

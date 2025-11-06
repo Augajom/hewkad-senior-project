@@ -1,163 +1,214 @@
-import React, { useMemo, useState } from "react";
-import AdminLayout from "../AdminLayout.jsx";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Nav from "../nav";
+// Icon
 import { CiSearch } from "react-icons/ci";
 
-const STATUS_MAP = {
-  Available: "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30",
-  Reserved: "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30",
-  Closed: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30",
-  Default: "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/30",
-};
+function Postlist() {
+  const [posts, setPost] = useState([]);
+  const [search, setSearch] = useState("");
 
-const PriceBadge = ({ value }) => (
-  <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-semibold shadow">
-    {value}
-  </div>
-);
+  const [markets, setMarkets] = useState([]);
+  const [selectedMarket, setSelectedMarket] = useState("All");
 
-const StatusChip = ({ status }) => {
-  const cls = STATUS_MAP[status] || STATUS_MAP.Default;
-  return <span className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}>{status || "Unknown"}</span>;
-};
+  useEffect(() => {
+    fetchMarkets();
+    fetchPost();
+  }, []);
 
-const MOCK = Array.from({ length: 8 }).map((_, i) => ({
-  id: i + 1,
-  user: { name: "Name", handle: "XXXXX" },
-  status: ["Available", "Reserved", "Closed"][i % 3],
-  deliverTo: "F1",
-  store: "นายอ้วนไก่หมี่คลุก",
-  product: "หมี่ไก่ฉีก 1 ถ้วย",
-  price: 500,
-  market: i % 2 === 0 ? "กาดในมอ" : "กาดหน้ามอ",
-  total: "35฿",
-}));
-
-export default function AdminPostlist() {
-  const [market, setMarket] = useState("All");
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState("All");
-  const [sortBy, setSortBy] = useState("Newest");
-
-  const data = useMemo(() => {
-    let list = [...MOCK];
-    if (market !== "All") list = list.filter((p) => p.market === market);
-    if (status !== "All") list = list.filter((p) => p.status === status);
-    if (q.trim()) {
-      const s = q.toLowerCase();
-      list = list.filter((p) =>
-        [p.user.name, p.user.handle, p.store, p.product, p.market, p.status].join(" ").toLowerCase().includes(s)
-      );
+  const fetchMarkets = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/kad", {
+        withCredentials: true,
+      });
+      setMarkets(res.data);
+    } catch (error) {
+      console.error("❌ Error fetching markets:", error);
     }
-    if (sortBy === "Price High") list.sort((a, b) => b.price - a.price);
-    if (sortBy === "Price Low") list.sort((a, b) => a.price - b.price);
-    return list;
-  }, [market, status, q, sortBy]);
+  };
+
+  const fetchPost = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/admin/posts", {
+        withCredentials: true,
+      });
+      console.log("post", res.data);
+      setPost(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("❌ Error fetching posts:", error);
+    }
+  };
+
+  const resolveImg = (imgPath) => {
+    if (!imgPath) return "/src/assets/avatar.svg"; // default avatar
+    if (imgPath.startsWith("http")) return imgPath; // external URL
+    return `http://localhost:5000${imgPath}`; // local path
+  };
+
+  const filteredPosts = posts.filter((post) => {
+    const text = `${post.nickname || ""} ${post.username || ""} ${
+      post.store_name || ""
+    }`;
+    const matchesSearch = text.toLowerCase().includes(search.toLowerCase());
+    const matchesMarket =
+      selectedMarket === "All" ? true : post.kad_name === selectedMarket;
+
+    return matchesSearch && matchesMarket;
+  });
+
+  const calPlatformFees = (fee) => {
+    if (!fee) return 0;
+    return Math.round(fee * 0.3);
+  };
 
   return (
-    <AdminLayout title="Posts">
-      <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-3 items-end mb-6">
-        <div className="relative">
-          <p className="absolute top-2 left-4 text-gray-400 text-xs">Markets</p>
-          <select
-            className="rounded-xl px-4 pb-2 pt-7 w-full bg-[#171a1f] text-gray-100 border border-gray-800"
-            value={market}
-            onChange={(e) => setMarket(e.target.value)}
-          >
-            <option>All</option>
-            <option>กาดหน้ามอ</option>
-            <option>กาดในมอ</option>
-          </select>
-        </div>
-        <div className="relative">
-          <p className="absolute top-2 left-4 text-gray-400 text-xs">Status</p>
-          <select
-            className="rounded-xl px-4 pb-2 pt-7 w-full bg-[#171a1f] text-gray-100 border border-gray-800"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option>All</option>
-            <option>Available</option>
-            <option>Reserved</option>
-            <option>Closed</option>
-          </select>
-        </div>
-        <div className="relative">
-          <p className="absolute top-2 left-4 text-gray-400 text-xs">Sort</p>
-          <select
-            className="rounded-xl px-4 pb-2 pt-7 w-full bg-[#171a1f] text-gray-100 border border-gray-800"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option>Newest</option>
-            <option>Price High</option>
-            <option>Price Low</option>
-          </select>
-        </div>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search posts..."
-            className="w-full h-[56px] bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl pl-12 pr-4"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <CiSearch className="absolute size-6 left-4 top-[15px] text-gray-400" />
-        </div>
-      </div>
+    <>
+      <Nav />
+      <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
+        <div className="container mx-auto m-10">
+          <div className="w-full mx-auto flex flex-col items-center">
 
-      {data.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-800 bg-[#171a1f] p-12 text-center text-gray-400">
-          No posts found
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {data.map((p) => (
-            <div
-              key={p.id}
-              className="relative bg-[#171a1f] border border-gray-800 rounded-2xl p-5 text-gray-100 hover:border-indigo-600/40 transition"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <img src="/src/assets/avatar.svg" className="rounded-full w-12 h-12" />
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">{p.user.name}</p>
-                  <p className="text-gray-400 text-sm truncate">@{p.user.handle}</p>
-                </div>
-                <div className="ml-auto">
-                  <StatusChip status={p.status} />
-                </div>
+            <div className="filter-con flex flex-col sm:flex-row items-center gap-6 w-full justify-center mb-8 p-6 bg-white/70 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-lg">
+              
+              {/* Markets Select (Label inside) */}
+              <div className="relative w-full sm:w-64">
+                <label className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 pointer-events-none z-10">
+                  Market
+                </label>
+                <select
+                  className="select select-bordered w-full rounded-xl border-slate-300 bg-white/50 pl-20 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
+                  value={selectedMarket}
+                  onChange={(e) => setSelectedMarket(e.target.value)}
+                >
+                  <option value="All">All</option>
+                  {markets.map((market, index) => (
+                    <option key={index} value={market.kad_name}>
+                      {market.kad_name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="space-y-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">สถานที่ส่ง</span>
-                  <span className="font-medium">{p.deliverTo}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">ชื่อร้าน</span>
-                  <span className="font-medium truncate max-w-[60%] text-right">{p.store}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">หิ้ว</span>
-                  <span className="font-medium truncate max-w-[60%] text-right">{p.product}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">ราคา</span>
-                  <span className="font-semibold">{p.price.toLocaleString()} บาท</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">ตลาด</span>
-                  <span className="font-medium">{p.market}</span>
-                </div>
-              </div>
-              <div className="mt-10">
-                <PriceBadge value={p.total} />
+              {/* Search Input (Icon inside) */}
+              <div className="relative w-full sm:w-80">
+                <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+                <input
+                  type="text"
+                  placeholder="Search nickname, store..."
+                  className="input input-bordered w-full rounded-xl border-slate-300 bg-white/50 pl-12 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      <div className="mt-8 text-sm text-gray-400">Total: {data.length} posts</div>
-    </AdminLayout>
+            <div className="card-con grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl mx-auto">
+              {filteredPosts.length > 0 ? (
+                filteredPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="card relative bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 overflow-hidden" 
+                  >
+                    <p className="absolute text-red-600 text-3xl font-bold bottom-6 right-6 z-10">
+                      {Math.round(
+                        (post.service_fee - calPlatformFees(post.service_fee)) + post.price
+                      )}
+                      <span className="text-xl ml-1">฿</span>
+                    </p>
+                    <div className="card-body p-6 pt-6 px-6">
+                      
+                      <div className="profile-con flex justify-between items-center mb-4">
+                        
+                        {/* Left side: Avatar + Name */}
+                        <div className="flex items-center">
+                          <div className="avatar mr-4">
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 p-1 shadow-lg shadow-indigo-500/30">
+                              <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                                <img
+                                  src={resolveImg(post.avatar)}
+                                  alt={post.nickname}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="id-name-con">
+                            <p className="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                              {post.nickname}
+                            </p>
+                            <p className="text-slate-500 text-sm">
+                              @{post.username}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="status-con">
+                          <div
+                            className={`badge text-white font-semibold px-4 py-3 rounded-lg border-none ${
+                              post.status_name === "Available"
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-500" // Green/Teal
+                                : "bg-slate-400" // Gray
+                            }`}
+                          >
+                            {post.status_name}
+                          </div>
+                        </div>
+                      </div> 
+                      {/* End profile-con */}
+
+                      {/* Details Section (No change, but now safe from price overlap) */}
+                      <div className="details-con mt-2 space-y-2 text-base text-slate-800">
+                        <div className="location">
+                          <span className="font-semibold text-slate-600">
+                            Delivery :{" "}
+                          </span>
+                          {post.delivery}
+                        </div>
+                        <div className="store">
+                          <span className="font-semibold text-slate-600">
+                            Store :{" "}
+                          </span>
+                          {post.store_name}
+                        </div>
+                        <div className="detail">
+                          <span className="font-semibold text-slate-600">
+                            Product :{" "}
+                          </span>
+                          {post.product}
+                        </div>
+                        <div className="price">
+                          <span className="font-semibold text-slate-600">
+                            Price :{" "}
+                          </span>
+                          {post.price} บาท
+                        </div>
+                        <div className="fee">
+                          <span className="font-semibold text-slate-600">
+                            Fee :{" "}
+                          </span>
+                          {post.service_fee} บาท
+                        </div>
+                        <div className="market">
+                          <span className="font-semibold text-slate-600">
+                            Market :{" "}
+                          </span>
+                          {post.kad_name}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-slate-500 col-span-1 md:col-span-2 lg:col-span-3 text-center py-10">
+                  No posts found.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
+
+export default Postlist;

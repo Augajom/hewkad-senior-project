@@ -211,19 +211,24 @@ export default function ProfilePage() {
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
   const handleSwitchRole = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/customer/switch-role`, {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Switch role failed");
-      const newRole = data.role_name;
-      window.location.href = newRole === "service" ? "/service/profile" : "/user/profile";
-    } catch (err) {
-      alert("ไม่สามารถเปลี่ยน role ได้");
+  try {
+    const res = await fetch(`${API_BASE}/customer/check-role`, {
+      method: "GET",
+      credentials: "include",
+    });
+    const data = await res.json();
+
+    // ถ้ามี role service ให้ไป /service/profile
+    if (data.hasServiceRole) {
+      window.location.href = "/service/profile";
+    } else {
+      window.location.href = "/user/profile";
     }
-  };
+  } catch (err) {
+    alert("ไม่สามารถตรวจสอบ role ได้");
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -245,14 +250,14 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSwitchRole}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
                 Switch Role
               </button>
               <button
                 onClick={() => setShowLogoutModal(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105 transition-all duration-300"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -319,7 +324,7 @@ export default function ProfilePage() {
                 {!editMode ? (
                   <button
                     onClick={handleEdit}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
                   >
                     <Edit3 className="w-4 h-4" />
                     Edit Profile
@@ -329,7 +334,7 @@ export default function ProfilePage() {
                     <button
                       onClick={handleSave}
                       disabled={!loaded || isSaving}
-                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
                     >
                       {isSaving ? (
                         <>
@@ -350,7 +355,7 @@ export default function ProfilePage() {
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all duration-300"
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all duration-300 cursor-pointer"
                     >
                       <X className="w-4 h-4" />
                       Cancel
@@ -535,13 +540,13 @@ export default function ProfilePage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="flex-1 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all duration-300"
+                className="flex-1 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all duration-300 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105 transition-all duration-300"
+                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-medium shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
               >
                 Logout
               </button>
@@ -571,7 +576,7 @@ function InfoField({ icon, label, name, value, displayValue, editMode, onChange,
           >
             <option value="">-- Select {label} --</option>
             {options.map((opt) => (
-              <option key={opt.id} value={opt.bank_name}>
+              <option key={opt.id} value={opt.id}>
                 {opt.bank_name}
               </option>
             ))}

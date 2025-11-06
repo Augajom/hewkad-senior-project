@@ -4,6 +4,7 @@ import { CiSearch } from "react-icons/ci";
 import axios from "axios";
 import dayjs from "dayjs";
 import { showUserPayment, showRejectPayment } from "./features/SweetAlertPayment";
+import Nav from "../nav";
 
 const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
@@ -32,149 +33,122 @@ export default function AdminPayments() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        setLoading(true);
-        setErr("");
-        const res = await axios.get(`${API}/admin/payment`, { withCredentials: true });
-        setOrders(Array.isArray(res.data?.orders) ? res.data.orders : []);
-      } catch {
-        setErr("Failed to load payments");
-        setOrders([]);
-      } finally {
-        setLoading(false);
+        const res = await axios.get("http://localhost:5000/admin/payment", {
+          withCredentials: true,
+        });
+        console.log(res.data.orders);
+        setOrders(res.data.orders);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
       }
     };
     fetchOrders();
   }, []);
 
-  const filtered = useMemo(() => {
-    let list = [...orders];
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((o) =>
-        [o.customer_username, o.rider_username, o.status_name, o.order_id?.toString()]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(q)
-      );
-    }
-    if (statusFilter !== "All") {
-      list = list.filter((o) => (o.status_name || "").toLowerCase() === statusFilter.toLowerCase());
-    }
-    if (sortBy === "Newest") list.sort((a, b) => new Date(b.ordered_at) - new Date(a.ordered_at));
-    if (sortBy === "Oldest") list.sort((a, b) => new Date(a.ordered_at) - new Date(b.ordered_at));
-    if (sortBy === "Amount High") list.sort((a, b) => Number(b.order_price || 0) - Number(a.order_price || 0));
-    if (sortBy === "Amount Low") list.sort((a, b) => Number(a.order_price || 0) - Number(b.order_price || 0));
-    return list;
-  }, [orders, search, statusFilter, sortBy]);
+  // กรองข้อมูลตาม search input
+  const filteredOrders = orders.filter(
+    (order) =>
+      order.customer_username.toLowerCase().includes(search.toLowerCase()) ||
+      (order.rider_username &&
+        order.rider_username.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
-    <AdminLayout title="Payments">
-      <div className="grid md:grid-cols-3 gap-3 items-end mb-6">
-        <div className="relative md:col-span-2">
-          <input
-            type="text"
-            placeholder="Search user, rider, status..."
-            className="w-full h-12 bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl pl-12 pr-4"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <CiSearch className="absolute size-6 left-4 top-3.5 text-gray-400" />
-        </div>
-        <div className="flex gap-3">
-          <select
-            className="h-12 bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-4 w-full"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option>All</option>
-            <option>Pending</option>
-            <option>Completed</option>
-            <option>Rejected</option>
-          </select>
-          <select
-            className="h-12 bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-4 w-full"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option>Newest</option>
-            <option>Oldest</option>
-            <option>Amount High</option>
-            <option>Amount Low</option>
-          </select>
+    <>
+      <Nav />
+      {/* 1. พื้นหลัง Gradient (เหมือนเดิม) */}
+      <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
+        <div className="container mx-auto m-10">
+          <div className="w-full mx-auto flex flex-col items-center">
+            
+            {/* 2. Search Bar (สไตล์เดิม) */}
+            <div className="relative w-full sm:w-96 mb-8">
+              <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+              <input
+                type="text"
+                placeholder="Search Customer or Rider..."
+                className="input input-bordered w-full rounded-xl border-slate-300 bg-white/50 pl-12 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            {/* 3. Card Grid */}
+            <div className="card-con grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl mx-auto">
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map((order) => (
+                  <div
+                    key={order.order_id}
+                    className="card bg-white rounded-3xl shadow-2xl" 
+                  >
+                    <div className="card-body p-8">
+                      
+                      <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                        Order: {order.customer_username}
+                      </h2>
+
+                      <div className="flex items-center gap-2 mb-6">
+                        <span className="text-base font-medium text-slate-500">Status:</span>
+                        <span
+                          className={`badge badge-md text-white font-semibold border-none rounded-full px-4 py-3 ${
+                            order.status_name === "Completed"
+                              ? "bg-gradient-to-r from-blue-500 to-indigo-600" // "Complete" ในรูปเป็นสีน้ำเงิน
+                              : "bg-gradient-to-r from-orange-500 to-yellow-500" // สไตล์สำรอง
+                          }`}
+                        >
+                          {order.status_name}
+                        </span>
+                      </div>
+
+                      <div className="details-con space-y-4 text-base mb-8">
+                        <div>
+                          <p className="text-sm font-medium text-slate-500">Service Provider:</p>
+                          <p className="font-semibold text-slate-800">{order.rider_username || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-500">Amount:</p>
+                          <p className="font-semibold text-slate-800">{order.order_price} Baht</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-500">Fee:</p>
+                          <p className="font-semibold text-slate-800">{order.order_service_fee} Baht</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-500">Date:</p>
+                          <p className="font-semibold text-slate-800">{new Date(order.ordered_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="btn-con w-full space-y-3">
+                        <button
+                          onClick={() => showUserPayment(order, order.order_id)}
+                          className="btn btn-block h-12 border-none text-white font-bold text-base shadow-lg 
+                                     bg-gradient-to-r from-green-400 to-teal-500 
+                                     hover:from-green-500 hover:to-teal-600"
+                        >
+                          Payment
+                        </button>
+                        <button
+                          onClick={() => showRejectPayment(order)}
+                          className="btn btn-block h-12 border-none text-white font-bold text-base shadow-lg 
+                                     bg-gradient-to-r from-red-500 to-pink-500 
+                                     hover:from-red-600 hover:to-pink-600"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-slate-500 col-span-1 md:col-span-2 lg:col-span-3 text-center py-10">
+                  No orders found.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-2xl h-56 bg-[#171a1f] border border-gray-800 animate-pulse" />
-          ))}
-        </div>
-      ) : err ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="text-rose-400 font-semibold mb-2">{err}</div>
-          <div className="text-gray-400 text-sm">Please try again later</div>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-800 bg-[#171a1f] p-12 text-center text-gray-400">
-          No orders found
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filtered.map((order) => (
-              <div key={order.order_id} className="bg-[#171a1f] border border-gray-800 rounded-2xl p-5 flex flex-col hover:border-indigo-600/40 transition">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-400">Order #{order.order_id}</p>
-                    <p className="text-base font-semibold text-gray-100 truncate">{order.customer_username}</p>
-                    <p className="text-sm text-gray-400 truncate">Rider: {order.rider_username || "-"}</p>
-                  </div>
-                  <StatusChip text={order.status_name || "Unknown"} />
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-xl bg-[#1f2330] border border-gray-800 p-3">
-                    <p className="text-gray-400">Amount</p>
-                    <p className="font-semibold text-gray-100">{currencyTHB(order.order_price)}</p>
-                  </div>
-                  <div className="rounded-xl bg-[#1f2330] border border-gray-800 p-3">
-                    <p className="text-gray-400">Fee</p>
-                    <p className="font-semibold text-gray-100">{currencyTHB(order.order_service_fee)}</p>
-                  </div>
-                  <div className="rounded-xl bg-[#1f2330] border border-gray-800 p-3 col-span-2">
-                    <p className="text-gray-400">Date</p>
-                    <p className="font-semibold text-gray-100">
-                      {order.ordered_at ? dayjs(order.ordered_at).format("DD MMM YYYY • HH:mm") : "-"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => showRejectPayment(order)}
-                    className="h-11 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => showUserPayment(order.order_id)}
-                    className="h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold"
-                  >
-                    Payment
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 flex items-center justify-between text-sm text-gray-400">
-            <span>Total: {filtered.length} orders</span>
-            <span>Showing {Math.min(filtered.length, 16)} of {filtered.length}</span>
-          </div>
-        </>
-      )}
-    </AdminLayout>
+    </>
   );
 }

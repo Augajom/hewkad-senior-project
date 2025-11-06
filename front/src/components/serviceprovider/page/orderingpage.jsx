@@ -10,7 +10,14 @@ const statusColors = {
   "Reported": "bg-red-500 text-white",
 };
 
-const API_URL = "http://localhost:5000"; // เปลี่ยนเป็นโดเมนจริงตอน deploy
+const API_URL = "http://localhost:5000";
+
+const resolveImg = (src) => {
+  if (!src) return ""; // หรือ fallback เป็น default avatar ใน JSX
+  if (src.startsWith("data:") || src.startsWith("http")) return src;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_URL}${path}`;
+};
 
 const OrderingCard = ({ order, onStatusUpdate }) => {
   const fileInputRef = useRef(null);

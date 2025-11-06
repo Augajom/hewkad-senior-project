@@ -5,6 +5,14 @@ import { useOrders } from "../hooks/useOrder";
 import dayjs from "dayjs";
 import "../DaisyUI.css";
 
+const API_BASE = "http://localhost:5000";
+
+const resolveImg = (src) => {
+  if (!src) return ""; // หรือ fallback เป็น default avatar ใน JSX
+  if (src.startsWith("data:") || src.startsWith("http")) return src;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_BASE}${path}`;
+};
 
 const FoodCard = ({ order, onRequestConfirm }) => {
   return (
@@ -27,18 +35,16 @@ const FoodCard = ({ order, onRequestConfirm }) => {
             <div className="font-bold text-base">
               {order.nickname || order.name || "ไม่ระบุชื่อ"}
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs text-gray-500">
               {order.username || "@username"}
             </div>
           </div>
         </div>
-
         <div className="flex flex-col items-end">
           <div
-            className={`badge ${order.status_name === "Available"
-              ? "badge-success"
-              : "badge-info"
-              }`}
+            className={`badge ${
+              order.status_name === "Available" ? "badge-success" : "badge-info"
+            }`}
           >
             {order.status_name || order.status || ""}
           </div>
@@ -88,6 +94,7 @@ const FoodCard = ({ order, onRequestConfirm }) => {
     </div>
   );
 };
+
 
 const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searchQuery }) => {
   const { orders, loading, error, setOrders } = useOrders(status);

@@ -7,7 +7,8 @@ const User = require('../models/userModel');
 const Payment = require('../models/admin/Payment');
 const historyadmin = require('../models/admin/historyadmin');
 const Report = require("../models/admin/Report");
-
+const manageUser = require('../models/admin/manageUser');
+const getPost = require('../models/admin/getPost');
 
 
 router.get('/', (req, res) => {
@@ -133,6 +134,9 @@ router.put('/payment/approve/:orderId', async (req, res) => {
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const getKad = require('../models/admin/getKad');
+const Dashboard = require('../models/admin/Dashboard');
+const DailySummary = require('../models/admin/DailySummary');
 
 // 💡 แก้ encoding ของชื่อไฟล์
 Buffer.prototype.toString = (function (original) {
@@ -265,12 +269,106 @@ router.put("/report/:orderId/resolve", resolvedUpload.single("file"), async (req
   }
 });
 
+router.get("/users", async (req, res) => {
+  try {
+    const users = await manageUser.getAllInfo();
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
 
+router.put("/users/work-permit/:id", async (req, res) => {
+  const userId = req.params.id;
+  const { isActive } = req.body;
 
-// Logout
-router.post('/logout', (req, res) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'lax', path: '/' });
-  res.json({ message: 'Logged out successfully' });
+  try {
+    const result = await manageUser.toggleWorkPermit(userId, isActive ? 1 : 0);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to toggle work permit" });
+  }
+});
+
+router.delete("/users/delete/:id", async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const result = await manageUser.deleteUser(userId);
+    res.json({ success: true, message: result.message });
+  } catch (error) {
+    console.error("❌ Error deleting user:", error);
+    res.status(500).json({ success: false, message: "Failed to delete user" });
+  }
+});
+
+router.get("/users/request", async (req, res) => {
+  try {
+    const users = await manageUser.getRequest();
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+router.put("/users/request/update/:id", async (req, res) => {
+  const userId = req.params.id;
+  const { isActive } = req.body;
+
+  try {
+    const result = await manageUser.updateRequestActive(userId, isActive);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update isActive" });
+  }
+});
+
+router.get('/posts', async (req, res) => {
+  try {
+    // เรียกจาก model
+    const postsList = await getPost.getAll();
+
+    res.json(postsList);
+  } catch (err) {
+    console.error('Failed to get posts:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get("/kad", async (req, res) => {
+  try {
+    const kadList = await getKad.getAll();
+    res.json(kadList);
+  } catch (err) {
+    console.error("Failed to get kad list:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/dashboard-stats", async (req, res) => {
+  try {
+    const { kad_id, start, end } = req.query;
+    const data = await Dashboard.getStats(kad_id, start, end);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error("Dashboard error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+router.get("/daily-summary", async (req, res) => {
+  try {
+    const days = parseInt(req.query.days || 10);
+    const data = await DailySummary.getSummary(days);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching daily summary:", error);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 module.exports = router;

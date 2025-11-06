@@ -1,274 +1,229 @@
-import React, { useEffect, useMemo, useState } from "react";
-import AdminLayout from "../AdminLayout.jsx";
+import React, { useState, useEffect } from "react";
+import Nav from "../nav";
 import { CiSearch } from "react-icons/ci";
+import { IoMdClose } from "react-icons/io";
 import axios from "axios";
 
-const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
-
-const currencyTHB = (n) =>
-  new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(Number(n || 0));
-
-const StatusChip = ({ text }) => {
-  const map =
-    (text || "").toLowerCase() === "successfully" || (text || "").toLowerCase() === "complete"
-      ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30"
-      : (text || "").toLowerCase().includes("report")
-      ? "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30"
-      : (text || "").toLowerCase().includes("ordering") || (text || "").toLowerCase().includes("received")
-      ? "bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30"
-      : "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/30";
-  return <span className={`px-3 py-1 rounded-full text-xs font-medium ${map}`}>{text || "-"}</span>;
-};
-
-const PaymentChip = ({ text }) => {
-  const t = (text || "").toLowerCase();
-  const cls =
-    t === "completed"
-      ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30"
-      : t === "reject"
-      ? "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30"
-      : "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30";
-  const label = text || "Pending";
-  return <span className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}>{label}</span>;
-};
-
-export default function AdminActivity() {
+function Activity() {
   const [pageType, setPageType] = useState("History");
   const [search, setSearch] = useState("");
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState(null);
 
+  // ดึงข้อมูลตามหน้า (History / Report)
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        setLoading(true);
-        setErr("");
-        const url = pageType === "History" ? `${API}/admin/history` : `${API}/admin/report`;
+        const url =
+          pageType === "History"
+            ? "http://localhost:5000/admin/history"
+            : "http://localhost:5000/admin/report";
         const { data } = await axios.get(url, { withCredentials: true });
-        setOrders(Array.isArray(data.orders) ? data.orders : []);
-      } catch {
-        setErr("Failed to load data");
-        setOrders([]);
-      } finally {
-        setLoading(false);
+        setOrders(data.orders);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
       }
     };
     fetchOrders();
   }, [pageType]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return orders;
-    return orders.filter((o) =>
-      [
-        o.order_id?.toString(),
-        o.customer_name,
-        o.customer_email,
-        o.customer_username,
-        o.rider_name,
-        o.rider_email,
-        o.rider_username,
-        o.status_name,
-        o.status_payment,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(q)
-    );
-  }, [orders, search]);
-
-  const revenueOf = (fee) => {
-    const f = Number(fee || 0);
-    return { admin: f * 0.3, rider: f * 0.7 };
-  };
-
+  // ฟังก์ชันเปิด/ปิด modal
   const openSlipModal = (url) => {
     setSelectedSlip(url);
     setModalOpen(true);
   };
 
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedSlip(null);
+  };
+
+  // Filter ตาม search
+  const filteredOrders = orders.filter((order) => {
+    const query = search.toLowerCase();
+
+    // แปลงค่าต่างๆ เป็น string และ lowercase
+    return (
+      order.order_id?.toString().toLowerCase().includes(query) ||
+      order.customer_name?.toLowerCase().includes(query) ||
+      order.customer_username?.toLowerCase().includes(query) ||
+      order.customer_email?.toLowerCase().includes(query) ||
+      order.rider_name?.toLowerCase().includes(query) ||
+      order.rider_username?.toLowerCase().includes(query) ||
+      order.rider_email?.toLowerCase().includes(query) ||
+      order.status_name?.toLowerCase().includes(query) ||
+      order.status_payment?.toLowerCase().includes(query) ||
+      order.order_price?.toString().toLowerCase().includes(query) ||
+      order.order_service_fee?.toString().toLowerCase().includes(query) ||
+      order.slip_filename?.toLowerCase().includes(query)
+    );
+  });
+  // สี status
+  const getOrderStatusClass = (status) => {
+    if (!status) return "text-gray-600";
+    const s = status.toLowerCase();
+
+    if (s.includes("complete") || s.includes("successfully"))
+      return "text-green-600 font-semibold"; // ✅ เขียว
+    if (s.includes("reported")) return "text-red-600 font-semibold";
+    if (s.includes("ordering")) return "text-orange-500 font-semibold";
+    if (s.includes("rider received")) return "text-sky-500 font-semibold";
+    if (s.includes("order received")) return "text-blue-600 font-semibold";
+
+    return "text-gray-600";
+  };
+
+  // สีสถานะ payment
+  const getPaymentStatusClass = (status) => {
+    if (!status) return "text-gray-500";
+    const s = status.toLowerCase();
+    if (s === "completed") return "text-green-600 font-semibold";
+    if (s === "reject") return "text-red-600 font-semibold";
+    return "text-gray-500";
+  };
+
   return (
-    <AdminLayout title="Activity">
-      <div className="sticky top-0 z-30 -mx-6 -mt-6 px-6 pt-6 pb-4 bg-[#0e1116]/70 backdrop-blur border-b border-gray-800">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-          <div className="relative">
-            <p className="absolute top-2 left-4 text-gray-400 text-xs">Page</p>
-            <select
-              value={pageType}
-              onChange={(e) => setPageType(e.target.value)}
-              className="w-full bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-4 pb-2 pt-7"
-            >
-              <option value="History">History</option>
-              <option value="Report">Report</option>
-            </select>
-          </div>
-          <div className="relative md:col-span-2">
-            <input
-              type="text"
-              placeholder="Search by name, order ID, email, status..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-[56px] bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl pl-12 pr-6"
-            />
-            <CiSearch className="absolute left-4 top-[15px] size-6 text-gray-400" />
+    <>
+      <Nav />
+      <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
+        <div className="container mx-auto m-10">
+          <div className="w-full mx-auto flex flex-col items-center">
+            
+            <div className="filter-con flex flex-col sm:flex-row items-center gap-6 w-full justify-center mb-8 p-6 bg-white/70 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-lg">
+
+              <div className="relative w-full sm:w-96">
+                <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or order ID..."
+                  className="input input-bordered w-full rounded-xl border-slate-300 bg-white/50 pl-12 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-6">
+              <table className="w-full text-sm text-center text-slate-800">
+                <thead className="bg-transparent text-slate-600 uppercase text-xs">
+                  <tr className="border-b border-slate-300">
+                    <th className="px-4 py-3">Order ID</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Customer</th>
+                    <th className="px-4 py-3">Rider (Service Provider)</th>
+                    <th className="px-4 py-3">Order Status</th>
+                    <th className="px-4 py-3">Price</th>
+                    <th className="px-4 py-3">Service Fee</th>
+                    <th className="px-4 py-3">Revenue</th>
+                    <th className="px-4 py-3">Status Payment</th>
+                    <th className="px-4 py-3">Slip File</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => {
+                      const fee = parseFloat(order.order_service_fee || 0);
+                      const revenue = fee * 0.3; // ✅ Revenue 30%
+                      const afterDeduct = fee - revenue; // ✅ Rider เหลือ 70%
+
+                      return (
+                        <tr
+                          key={order.order_id}
+                          className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/50"
+                        >
+                          <td className="p-4">{order.order_id}</td>
+                          <td className="p-4">{order.ordered_date}</td>
+                          <td className ="p-4">
+                            {order.customer_name || "-"}
+                            <div className="text-slate-400 text-xs">
+                              {order.customer_email || "-"}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            {order.rider_name || "-"}
+                            <div className="text-slate-400 text-xs">
+                              {order.rider_email || "-"}
+                            </div>
+                          </td>
+                          <td
+                            className={`p-4 ${getOrderStatusClass(
+                              order.status_name
+                            )}`}
+                          >
+                            {order.status_name || "-"}
+                          </td>
+                          <td className="p-4">{order.order_price || 0} ฿</td>
+                          <td className="p-4">{fee.toFixed(2)} ฿</td>
+                          <td className="p-4">
+                            <div className="font-semibold text-green-700">
+                              {revenue.toFixed(2)} ฿
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              Rider: {afterDeduct.toFixed(2)} ฿
+                            </div>
+                          </td>
+                          <td
+                            className={`p-4 ${getPaymentStatusClass(
+                              order.status_payment
+                            )}`}
+                          >
+                            {order.status_payment || "-"}
+                          </td>
+                          <td className="p-4">
+                            {order.slip_filename ? (
+                              <button
+                                className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                                onClick={() =>
+                                  openSlipModal(
+                                    `http://localhost:5000/Files/Payment/${order.slip_filename}`
+                                  )
+                                }
+                              >
+                                View Slip
+                              </button>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="10" className="text-slate-500 py-10">
+                        ไม่มีข้อมูลในหน้านี้
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {modalOpen && (
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[999]">
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 max-w-xl w-full relative">
+                  <button
+                    className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-white shadow-lg text-red-500 text-2xl font-bold flex items-center justify-center hover:bg-red-100 transition-all z-10"
+                    onClick={closeModal}
+                  >
+                    <IoMdClose />
+                  </button>
+                  {selectedSlip && (
+                    <img
+                      src={selectedSlip}
+                      alt="Slip"
+                      className="max-h-[80vh] w-auto mx-auto rounded-lg"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-36 rounded-2xl bg-[#171a1f] border border-gray-800 animate-pulse" />
-          ))}
-        </div>
-      ) : err ? (
-        <div className="rounded-2xl border border-dashed border-gray-800 bg-[#171a1f] p-12 text-center text-rose-300">
-          {err}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-800 bg-[#171a1f] p-12 text-center text-gray-400">
-          No data found
-        </div>
-      ) : (
-        <>
-          <div className="hidden md:block rounded-2xl overflow-x-auto border border-gray-800 bg-[#111316]">
-            <table className="w-full text-sm">
-              <thead className="bg-[#1b1f2a] text-gray-300">
-                <tr>
-                  <th className="px-4 py-3 text-left">Order ID</th>
-                  <th className="px-4 py-3 text-left">Date</th>
-                  <th className="px-4 py-3 text-left">Customer</th>
-                  <th className="px-4 py-3 text-left">Rider</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Price</th>
-                  <th className="px-4 py-3 text-left">Fee</th>
-                  <th className="px-4 py-3 text-left">Revenue</th>
-                  <th className="px-4 py-3 text-left">Payment</th>
-                  <th className="px-4 py-3 text-left">Slip</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800 text-gray-100">
-                {filtered.map((o) => {
-                  const rev = revenueOf(o.order_service_fee);
-                  return (
-                    <tr key={o.order_id} className="hover:bg-[#151922]">
-                      <td className="px-4 py-3">#{o.order_id}</td>
-                      <td className="px-4 py-3">{o.ordered_date || "-"}</td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium">{o.customer_name || "-"}</div>
-                        <div className="text-xs text-gray-400">{o.customer_email || "-"}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium">{o.rider_name || "-"}</div>
-                        <div className="text-xs text-gray-400">{o.rider_email || "-"}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusChip text={o.status_name} />
-                      </td>
-                      <td className="px-4 py-3">{currencyTHB(o.order_price)}</td>
-                      <td className="px-4 py-3">{currencyTHB(o.order_service_fee)}</td>
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-emerald-300">{currencyTHB(rev.admin)}</div>
-                        <div className="text-xs text-gray-400">Rider: {currencyTHB(rev.rider)}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <PaymentChip text={o.status_payment} />
-                      </td>
-                      <td className="px-4 py-3">
-                        {o.slip_filename ? (
-                          <button
-                            onClick={() => openSlipModal(`${API}/Files/Payment/${o.slip_filename}`)}
-                            className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4"
-                          >
-                            View
-                          </button>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="md:hidden grid grid-cols-1 gap-4">
-            {filtered.map((o) => {
-              const rev = revenueOf(o.order_service_fee);
-              return (
-                <div key={o.order_id} className="rounded-2xl border border-gray-800 bg-[#111316] p-4 text-gray-100">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm text-gray-400">Order #{o.order_id}</p>
-                      <p className="text-lg font-semibold">{o.customer_name || "-"}</p>
-                      <p className="text-xs text-gray-400">{o.customer_email || "-"}</p>
-                    </div>
-                    <StatusChip text={o.status_name} />
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-xl bg-[#171a1f] border border-gray-800 p-3">
-                      <p className="text-gray-400">Price</p>
-                      <p className="font-semibold">{currencyTHB(o.order_price)}</p>
-                    </div>
-                    <div className="rounded-xl bg-[#171a1f] border border-gray-800 p-3">
-                      <p className="text-gray-400">Fee</p>
-                      <p className="font-semibold">{currencyTHB(o.order_service_fee)}</p>
-                    </div>
-                    <div className="rounded-xl bg-[#171a1f] border border-gray-800 p-3 col-span-2">
-                      <p className="text-gray-400">Revenue</p>
-                      <p className="font-semibold text-emerald-300">{currencyTHB(rev.admin)}</p>
-                      <p className="text-xs text-gray-400">Rider: {currencyTHB(rev.rider)}</p>
-                    </div>
-                    <div className="rounded-xl bg-[#171a1f] border border-gray-800 p-3 col-span-2">
-                      <p className="text-gray-400">Rider</p>
-                      <p className="font-semibold">{o.rider_name || "-"}</p>
-                      <p className="text-xs text-gray-400">{o.rider_email || "-"}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <PaymentChip text={o.status_payment} />
-                    {o.slip_filename ? (
-                      <button
-                        onClick={() => openSlipModal(`${API}/Files/Payment/${o.slip_filename}`)}
-                        className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4"
-                      >
-                        View Slip
-                      </button>
-                    ) : (
-                      <span className="text-gray-500">-</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-3xl rounded-2xl border border-gray-800 bg-[#111316] text-gray-100 shadow-2xl relative">
-            <button
-              onClick={() => setModalOpen(false)}
-              className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-[#171a1f] border border-gray-800 text-gray-300"
-            >
-              Close
-            </button>
-            <div className="p-4">
-              {selectedSlip ? (
-                <img src={selectedSlip} alt="Slip" className="max-h-[80vh] w-auto mx-auto rounded-xl" />
-              ) : (
-                <div className="p-12 text-center text-gray-400">No slip</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </AdminLayout>
+    </>
   );
 }
+
+export default Activity;

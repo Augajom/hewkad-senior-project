@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../AdminLayout.jsx";
 import { CiSearch } from "react-icons/ci";
+import { IoMdClose } from "react-icons/io";
 import axios from "axios";
+import Nav from "../nav";
 
 const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
@@ -85,163 +87,216 @@ export default function ReportPage() {
     const formData = new FormData();
     formData.append("resolved_detail", resolvedDetail);
     if (file) formData.append("file", file);
-    await axios.put(`${API}/admin/report/${selectedReport.order_id}/resolve`, formData, {
-      withCredentials: true,
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    setModalOpen(false);
-    await load();
+
+    try {
+      await axios.put(
+        `http://localhost:5000/admin/report/${selectedReport.order_id}/resolve`,
+        formData,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      alert("แก้ไขรายงานสำเร็จ!");
+      setModalOpen(false);
+      fetchReports();
+    } catch (err) {
+      console.error("Error updating report:", err);
+      alert("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+    }
+  };
+
+  const filteredReports = reports.filter((r) => {
+    const query = search.toLowerCase();
+    return (
+      r.customer_name?.toLowerCase().includes(query) ||
+      r.customer_email?.toLowerCase().includes(query) ||
+      r.rider_name?.toLowerCase().includes(query) ||
+      r.rider_email?.toLowerCase().includes(query) ||
+      r.report_detail?.toLowerCase().includes(query) ||
+      r.resolved_detail?.toLowerCase().includes(query) ||
+      r.order_id?.toString().includes(query) ||
+      (r.status_id === 5 && "resolved".includes(query)) ||
+      ((r.status_id === 6 ||
+        r.status_id === 8 ||
+        r.status_id === 9 ||
+        r.status_id === 10) &&
+        "unresolved".includes(query))
+    );
+  });
+
+  const getStatusClass = (status) => {
+    if (status === 5 || status === 8)
+      return "text-green-600 font-semibold"; // ✅ Resolved
+    if (status === 6 || status === 9 || status === 10)
+      return "text-red-500 font-semibold"; // Unresolved
+    return "text-gray-500";
   };
 
   return (
-    <AdminLayout title="Reports">
-      <div className="sticky top-0 z-30 -mx-6 -mt-6 px-6 pt-6 pb-4 bg-[#0e1116]/70 backdrop-blur border-b border-gray-800">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-100">Reports</h1>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <div className="relative">
+    <>
+      <Nav />
+      <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
+        <div className="container mx-auto m-10">
+          <div className="w-full mx-auto flex flex-col items-center">
+            
+            <h1 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              Report Management
+            </h1>
+
+            <div className="relative w-full sm:w-96 mb-8">
+              <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
               <input
                 type="text"
-                placeholder="Search customer, rider, detail..."
-                className="h-11 w-72 bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl pl-11 pr-4 text-sm"
+                placeholder="Search by name, email, or order ID..."
+                className="input input-bordered w-full rounded-xl border-slate-300 bg-white/50 pl-12 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <CiSearch className="absolute size-5 left-3 top-3.5 text-gray-400" />
             </div>
-            <select
-              className="h-11 bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-4 text-sm"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option>All</option>
-              <option>Resolved</option>
-              <option>Unresolved</option>
-            </select>
-            <select
-              className="h-11 bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-4 text-sm"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option>Newest</option>
-              <option>Oldest</option>
-            </select>
+
+            <div className="overflow-x-auto w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-6">
+              <table className="w-full text-sm text-center text-slate-800">
+                
+                <thead className="bg-transparent text-slate-600 uppercase text-xs">
+                  <tr className="border-b border-slate-300">
+                    <th className="px-4 py-3">Order ID</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Report By (Customer)</th>
+                    <th className="px-4 py-3">Report User (Rider)</th>
+                    <th className="px-4 py-3">Report Detail</th>
+                    <th className="px-4 py-3">Resolved Detail</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredReports.length > 0 ? (
+                    filteredReports.map((report) => (
+                      <tr
+                        key={report.order_id}
+                        className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/50"
+                      >
+                        <td className="p-4">{report.order_id}</td>
+                        <td className="p-4">{report.date || "-"}</td>
+                        <td className="p-4">
+                          <>
+                            {report.customer_name || "-"}
+                            <div className="text-slate-400 text-xs">
+                              {report.customer_email || "-"}
+                            </div>
+                          </>
+                        </td>
+                        <td className="p-4">
+                          {report.rider_name || "-"}
+                          <div className="text-slate-400 text-xs">
+                            {report.rider_email || "-"}
+                          </div>
+                        </td>
+                        <td className="p-4 text-left">
+                          {report.report_detail || "-"}
+                        </td>
+                        <td className="p-4 text-left">
+                          {report.resolved_detail || "-"}
+                        </td>
+                        <td
+                          className={`p-4 ${getStatusClass(report.status_id)}`}
+                        >
+                          {report.status_id === 5 || report.status_id === 8
+                            ? "Resolved"
+                            : report.status_id === 6 ||
+                              report.status_id === 9 ||
+                              report.status_id === 10
+                            ? "Unresolved"
+                            : "-"}
+                        </td>
+                        <td className="p-4">
+                          
+                          {report.status_id === 6 ? (
+                            <button
+                              onClick={() => handleOpenModal(report)}
+                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                            >
+                              Resolve
+                            </button>
+                          ) : report.resolved_file ? (
+                            <a
+                              href={`http://localhost:5000${report.resolved_file}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/20"
+                            >
+                              View File
+                            </a>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="text-slate-500 py-10">
+                        ไม่มีรายงานในระบบ
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-36 rounded-2xl bg-[#171a1f] border border-gray-800 animate-pulse" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-800 bg-[#171a1f] p-12 text-center text-gray-400">
-          No reports found
-        </div>
-      ) : (
-        <div className="rounded-2xl overflow-hidden border border-gray-800 bg-[#111316]">
-          <table className="w-full text-sm">
-            <thead className="bg-[#1b1f2a] text-gray-300">
-              <tr>
-                <th className="px-4 py-3 text-left">Order ID</th>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">Customer</th>
-                <th className="px-4 py-3 text-left">Rider</th>
-                <th className="px-4 py-3 text-left">Report Detail</th>
-                <th className="px-4 py-3 text-left">Resolved Detail</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800 text-gray-100">
-              {filtered.map((r) => (
-                <tr key={r.order_id} className="hover:bg-[#151922]">
-                  <td className="px-4 py-3">#{r.order_id}</td>
-                  <td className="px-4 py-3">{r.date || "-"}</td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{r.customer_name || "-"}</div>
-                    <div className="text-xs text-gray-400">{r.customer_email || "-"}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{r.rider_name || "-"}</div>
-                    <div className="text-xs text-gray-400">{r.rider_email || "-"}</div>
-                  </td>
-                  <td className="px-4 py-3 max-w-[280px]">
-                    <div className="line-clamp-2 text-gray-300">{r.report_detail || "-"}</div>
-                  </td>
-                  <td className="px-4 py-3 max-w-[280px]">
-                    <div className="line-clamp-2 text-gray-300">{r.resolved_detail || "-"}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusChip status_id={r.status_id} />
-                  </td>
-                  <td className="px-4 py-3">
-                    {r.status_id === 6 ? (
-                      <button
-                        onClick={() => openModal(r)}
-                        className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white"
-                      >
-                        Resolve
-                      </button>
-                    ) : r.resolved_file ? (
-                      <a
-                        href={`${API}${r.resolved_file}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4"
-                      >
-                        View File
-                      </a>
-                    ) : (
-                      <span className="text-gray-500">-</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
       {modalOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-gray-800 bg-[#111316] text-gray-100 shadow-2xl">
-            <div className="p-6 border-b border-gray-800">
-              <h3 className="text-lg font-semibold">Resolve • Order #{selectedReport?.order_id}</h3>
-            </div>
-            <form onSubmit={submitResolve} className="p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-[999]">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-lg relative">
+            <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              Resolve Report Order {selectedReport.order_id}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
               <textarea
                 rows="4"
-                className="w-full rounded-xl bg-[#171a1f] border border-gray-800 text-gray-100 p-3 outline-none focus:border-indigo-600"
+                className="textarea textarea-bordered w-full rounded-xl border-slate-300 bg-white/50 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
                 placeholder="Detail of resolution..."
                 value={resolvedDetail}
                 onChange={(e) => setResolvedDetail(e.target.value)}
               />
               <input
                 type="file"
-                className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-indigo-500/15 file:text-indigo-300 hover:file:bg-indigo-500/25"
-                onChange={(e) => setFile(e.target.files[0] || null)}
+                className="file-input file-input-bordered w-full rounded-xl border-slate-300 bg-white/50
+                           file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold 
+                           file:bg-gradient-to-r file:from-blue-600 file:to-indigo-600 file:text-white
+                           hover:file:opacity-90 file:cursor-pointer"
+                onChange={(e) => setFile(e.target.files[0])}
               />
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-5 py-2 rounded-xl bg-[#171a1f] border border-gray-800 text-gray-200 hover:bg-[#1a1f29]"
+                  className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/30 hover:shadow-red-500/50"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white">
-                  Save
+                <button
+                  type="submit"
+                  className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30 hover:shadow-emerald-500/50"
+                >
+                  บันทึก
                 </button>
               </div>
             </form>
+
+            <button
+              className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-white shadow-lg text-red-500 text-2xl font-bold flex items-center justify-center hover:bg-red-100 transition-all z-10"
+              onClick={() => setModalOpen(false)}
+            >
+              <IoMdClose />
+            </button>
           </div>
         </div>
       )}
-    </AdminLayout>
+    </>
   );
 }

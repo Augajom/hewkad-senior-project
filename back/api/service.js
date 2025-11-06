@@ -13,6 +13,7 @@ const { sendOrderReceivedEmail } = require('../utils/notification');
 const multer = require('multer');
 const path = require('path'); // ✅ ต้องมีบรรทัดนี้
 const fs = require('fs');
+const ServiceRole = require('../models/service/serviceRole');
 // ===================
 // TEST route
 // ===================
@@ -204,6 +205,25 @@ router.post(
   }
 );
 
+// GET /service/check-role
+router.get("/check-role", verifyToken, async (req, res) => {
+  const userId = req.user.id;
 
+  try {
+    const rows = await ServiceRole.getCurrentRole(userId);
+    if (!rows || rows.length === 0)
+      return res.json({ hasServiceRole: false });
+
+    // เช็ค role_id = 1 และ is_Active = 1
+    const hasServiceRole = rows.some(
+      (r) => r.role_id === 3 && r.is_Active === 1
+    );
+
+    res.json({ hasServiceRole });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ hasServiceRole: false });
+  }
+});
 
 module.exports = router;

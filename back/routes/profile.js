@@ -273,6 +273,24 @@ router.put('/identity', maybeIdentityUpload, async (req, res) => {
       );
     }
 
+    const [roleRows] = await conn.query(
+      `SELECT * FROM user_roles WHERE user_id = ? AND role_id = 2 LIMIT 1`,
+      [userId]
+    );
+
+    if (roleRows.length > 0) {
+      await conn.query(
+        `UPDATE user_roles SET is_Active = 2 WHERE user_id = ? AND role_id = 2`,
+        [userId]
+      );
+    } else {
+      await conn.query(
+        `INSERT INTO user_roles (user_id, role_id, is_Active)
+     VALUES (?, 2, 2)`,
+        [userId]
+      );
+    }
+
     const [rows] = await conn.query(
       `SELECT identity_file AS identityFile FROM profile WHERE user_id = ? LIMIT 1`,
       [userId]

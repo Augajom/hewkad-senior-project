@@ -10,13 +10,13 @@ const Kad = require('../models/customer/Kad');
 const Ordering = require('../models/customer/Ordering');
 const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
+const bank = require('../models/customer/bank')
 const QRCode = require("qrcode");
-const Rating = require('../models/customer/rating');
-const bank = require('../models/customer/bank');
 const { sendOrderReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
-const getName = require('../models/getName');
-const cron = require('node-cron');
+const getName = require('../models/getName')
+const cron = require("node-cron");
+
 const upload = multer();
 
 // ===================
@@ -167,8 +167,6 @@ router.get('/history/:status', verifyToken, async (req, res) => {
     // เรียก method ใหม่ที่ join proof_url
     const posts = await History.getByStatus(status, userId);
 
-    console.log(posts); // ตรวจสอบว่า proof_url มาเรียบร้อย
-
     res.json(posts);
 
   } catch (err) {
@@ -274,21 +272,6 @@ router.post("/upload-slip", upload.single("files"), async (req, res) => {
   }
 });
 
-//rating
-router.post('/rate', verifyToken, async (req, res) => {
-    const userId = req.user.id;  // จาก token
-    const { orderId, rating, comment } = req.body;
-
-    if (!orderId || !rating) return res.status(400).json({ message: "Missing data" });
-
-    try {
-        const result = await Rating.create(userId, orderId, rating, comment);
-        res.json({ success: true, data: result });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message }); // ส่ง error จริงกลับไป
-    }
-});
 
 // POST /customer/reports
 router.post('/reports', verifyToken, async (req, res) => {
@@ -336,35 +319,27 @@ router.get('/report-reasons', async (req, res) => {
   }
 });
 
-router.post("/switch-role", verifyToken, (req, res) => {
+// GET /customer/check-role
+router.get("/check-role", verifyToken, async (req, res) => {
   const userId = req.user.id;
 
-  UserRole.getCurrentRole(userId, (err, currentRoleRows) => {
-    if (err) return res.status(500).json({ message: "DB error" });
-    if (!currentRoleRows || currentRoleRows.length === 0)
-      return res.status(404).json({ message: "User role not found" });
+  try {
+    const rows = await UserRole.getCurrentRole(userId);
+    if (!rows || rows.length === 0)
+      return res.json({ hasServiceRole: false });
 
-    const activeRole = currentRoleRows[0].role_name;
-    const newRoleName = activeRole === "service" ? "customer" : "service";
+    // เช็ค role_id = 2 และ is_Active = 1
+    const hasServiceRole = rows.some(
+      (r) => r.role_id === 2 && r.is_Active === 1
+    );
 
-    UserRole.getRoleByName(newRoleName, (err, newRoleRows) => {
-      if (err) return res.status(500).json({ message: "DB error" });
-      if (!newRoleRows || newRoleRows.length === 0)
-        return res.status(404).json({ message: "New role not found" });
-
-      const newRoleId = newRoleRows[0].id;
-
-      UserRole.deactivateCurrentRole(userId, (err) => {
-        if (err) return res.status(500).json({ message: "DB error" });
-
-        UserRole.activateRole(userId, newRoleId, (err) => {
-          if (err) return res.status(500).json({ message: "DB error" });
-          res.json({ role_name: newRoleName });
-        });
-      });
-    });
-  });
+    res.json({ hasServiceRole });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ hasServiceRole: false });
+  }
 });
+
 
 // GET Name by userId
 router.get('/name', verifyToken, async (req, res) => {
@@ -419,7 +394,6 @@ router.get('/banks', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 
 module.exports = router;
