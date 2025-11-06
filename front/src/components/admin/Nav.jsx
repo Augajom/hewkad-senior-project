@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-// SweetAlert2
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-// Icon
 import { RiBox3Line } from "react-icons/ri";
 import { FiUser, FiActivity, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { LuBriefcase } from "react-icons/lu";
@@ -35,8 +33,8 @@ function NavLink({ to, icon, label, currentPath }) {
 function Nav() {
   const MySwal = withReactContent(Swal);
   const navigate = useNavigate();
-
   const location = useLocation();
+
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isOn, setIsOn] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -141,7 +139,7 @@ function Nav() {
             <NavLink
               to="/Activity"
               icon={<FaRegFileAlt className="w-6 h-6" />}
-              label="ACTIVITY"
+              label="HISTORY"
               currentPath={location.pathname}
             />
             <NavLink

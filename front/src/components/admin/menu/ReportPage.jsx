@@ -1,43 +1,89 @@
-import React, { useState, useEffect } from "react";
-import Nav from "../nav";
+import React, { useEffect, useMemo, useState } from "react";
+import AdminLayout from "../AdminLayout.jsx";
 import { CiSearch } from "react-icons/ci";
 import { IoMdClose } from "react-icons/io"; // 🎨 Import icon
 import axios from "axios";
+import Nav from "../nav";
 
-function ReportPage() {
+const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
+
+const StatusChip = ({ status_id }) => {
+  const isResolved = status_id === 5 || status_id === 8;
+  const isUnresolved = status_id === 6 || status_id === 9 || status_id === 10;
+  const label = isResolved ? "Resolved" : isUnresolved ? "Unresolved" : "Unknown";
+  const cls = isResolved
+    ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30"
+    : isUnresolved
+    ? "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30"
+    : "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/30";
+  return <span className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}>{label}</span>;
+};
+
+export default function ReportPage() {
   const [search, setSearch] = useState("");
   const [reports, setReports] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("Newest");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [resolvedDetail, setResolvedDetail] = useState("");
   const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
-  const fetchReports = async () => {
+  const load = async () => {
     try {
-      const { data } = await axios.get("http://localhost:5000/admin/report", {
-        withCredentials: true,
-      });
-      setReports(data.reports || []);
-    } catch (err) {
-      console.error("Error fetching reports:", err);
+      setLoading(true);
+      const { data } = await axios.get(`${API}/admin/report`, { withCredentials: true });
+      setReports(Array.isArray(data.reports) ? data.reports : []);
+    } catch {
+      setReports([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleOpenModal = (report) => {
+  useEffect(() => {
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    let list = reports.filter((r) => {
+      const bucket =
+        (r.customer_name || "") +
+        " " +
+        (r.customer_email || "") +
+        " " +
+        (r.rider_name || "") +
+        " " +
+        (r.rider_email || "") +
+        " " +
+        (r.report_detail || "") +
+        " " +
+        (r.resolved_detail || "") +
+        " " +
+        (r.order_id || "");
+      return bucket.toLowerCase().includes(q);
+    });
+    if (statusFilter !== "All") {
+      if (statusFilter === "Resolved") list = list.filter((r) => r.status_id === 5 || r.status_id === 8);
+      if (statusFilter === "Unresolved") list = list.filter((r) => [6, 9, 10].includes(r.status_id));
+    }
+    if (sortBy === "Newest") list.sort((a, b) => new Date(b.date || b.created_at || 0) - new Date(a.date || a.created_at || 0));
+    if (sortBy === "Oldest") list.sort((a, b) => new Date(a.date || a.created_at || 0) - new Date(b.date || b.created_at || 0));
+    return list;
+  }, [reports, search, statusFilter, sortBy]);
+
+  const openModal = (report) => {
     setSelectedReport(report);
     setResolvedDetail(report.resolved_detail || "");
     setFile(null); // 🎨 Clear file on new modal open
     setModalOpen(true);
   };
 
-  const handleSubmit = async (e) => {
+  const submitResolve = async (e) => {
     e.preventDefault();
     if (!selectedReport) return;
-
     const formData = new FormData();
     formData.append("resolved_detail", resolvedDetail);
     if (file) formData.append("file", file);
@@ -227,7 +273,6 @@ function ReportPage() {
                 value={resolvedDetail}
                 onChange={(e) => setResolvedDetail(e.target.value)}
               />
-
               <input
                 type="file"
                 className="file-input file-input-bordered w-full rounded-xl border-slate-300 bg-white/50
@@ -236,14 +281,13 @@ function ReportPage() {
                            hover:file:opacity-90 file:cursor-pointer"
                 onChange={(e) => setFile(e.target.files[0])}
               />
-
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
                   className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/30 hover:shadow-red-500/50"
                 >
-                  ยกเลิก
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -266,5 +310,3 @@ function ReportPage() {
     </>
   );
 }
-
-export default ReportPage;

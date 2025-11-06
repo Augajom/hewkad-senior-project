@@ -140,7 +140,7 @@ function Activity() {
                         >
                           <td className="p-4">{order.order_id}</td>
                           <td className="p-4">{order.ordered_date}</td>
-                          <td className_ ="p-4">
+                          <td className ="p-4">
                             {order.customer_name || "-"}
                             <div className="text-slate-400 text-xs">
                               {order.customer_email || "-"}

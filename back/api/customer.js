@@ -10,10 +10,12 @@ const Kad = require('../models/customer/Kad');
 const Ordering = require('../models/customer/Ordering');
 const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
+const bank = require('../models/customer/bank')
 const QRCode = require("qrcode");
 const { sendOrderReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
-const getName = require('../models/getName');
+const getName = require('../models/getName')
+const cron = require("node-cron");
 
 const upload = multer();
 
@@ -322,7 +324,7 @@ router.get("/check-role", verifyToken, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const rows = await UserRole.getCurrentRole(userId); // ดึง role ปัจจุบัน
+    const rows = await UserRole.getCurrentRole(userId);
     if (!rows || rows.length === 0)
       return res.json({ hasServiceRole: false });
 
@@ -352,6 +354,46 @@ router.get('/name', verifyToken, async (req, res) => {
   }
 });
 
+cron.schedule('*/10 * * * *', async () => {
+  console.log('🕐 Checking for orders older than 3 hours...');
+  const sql = `
+    SELECT o.post_id, s.status_name, o.completed_at
+    FROM orders o
+    JOIN status s ON o.status_id = s.id
+    WHERE s.status_name = 'Order Received'
+      AND TIMESTAMPDIFF(HOUR, o.completed_at, NOW()) >= 3
+  `;
+  
+  db.query(sql, async (err, results) => {
+    if (err) {
+      console.error('❌ Error checking orders:', err);
+      return;
+    }
+    
+    if (results.length === 0) return; // ไม่มีออเดอร์ครบเวลา
+    
+    console.log(`🔄 Found ${results.length} orders to auto-complete...`);
+    
+    for (const order of results) {
+      try {
+        await Ordering.updateStatus(order.post_id, 'Complete');
+        console.log(`✅ Order #${order.post_id} set to Complete`);
+      } catch (error) {
+        console.error(`❌ Failed to update order #${order.post_id}:`, error.message);
+      }
+    }
+  });
+});
+
+router.get('/banks', async (req, res) => {
+  try {
+    const list = await bank.getAll();
+    res.json(list);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 
 module.exports = router;

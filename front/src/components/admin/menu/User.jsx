@@ -13,10 +13,81 @@ import {
   showRejectVerify,
 } from "./features/SweetAlertUser";
 import { CiSearch } from "react-icons/ci";
+import AdminLayout from "../AdminLayout";
 
-function User() {
+function UserCard({ user, permitted, onTogglePermit }) {
+  return (
+    <div className="flex flex-col items-center p-5 rounded-2xl bg-[#171a1f] border border-gray-800 shadow-lg w-[320px]">
+      <div className="flex items-center gap-3 w-full">
+        <img src="/src/assets/avatar.svg" className="rounded-full w-16 h-16" />
+        <div className="min-w-0">
+          <p className="font-semibold truncate text-gray-100">{user.name}</p>
+          <p className="text-gray-400 truncate">@{user.handle}</p>
+        </div>
+        <div className="ml-auto text-right">
+          <p className="font-medium text-xs text-gray-300">Work-Permitted</p>
+          <label className="relative inline-block w-12 h-6 mt-1">
+            <input
+              type="checkbox"
+              className="opacity-0 w-0 h-0"
+              checked={permitted}
+              onChange={() => onTogglePermit(user)}
+            />
+            <span
+              className={`absolute inset-0 rounded-full transition ${
+                permitted ? "bg-emerald-500" : "bg-gray-700"
+              }`}
+            />
+            <span
+              className={`absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-white transition ${
+                permitted ? "translate-x-6" : ""
+              }`}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="w-full mt-5 grid grid-cols-1 gap-2">
+        <button
+          onClick={() => showUserInfo(user)}
+          className="text-sm text-white font-semibold p-2 w-full rounded-lg bg-emerald-600 hover:bg-emerald-500"
+        >
+          Information
+        </button>
+        <button
+          onClick={() => showUserLicense(user)}
+          className="text-sm text-white font-semibold p-2 w-full rounded-lg bg-amber-500 hover:bg-amber-400"
+        >
+          License
+        </button>
+        <button
+          onClick={() => showUserDelete(user)}
+          className="text-sm text-white font-semibold p-2 w-full rounded-lg bg-rose-600 hover:bg-rose-500"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const MOCK_USERS = [
+  { id: "u1", name: "Pongsakorn Srisawat", handle: "user01" },
+  { id: "u2", name: "S Intharalib", handle: "user02" },
+  { id: "u3", name: "Kanchana P.", handle: "user03" },
+  { id: "u5", name: "Suda K.", handle: "suda" },
+  { id: "u6", name: "Thanawat T.", handle: "thanawat" },
+  { id: "u7", name: "Darin L.", handle: "darin" },
+  { id: "u8", name: "Boss Dev", handle: "boss" },
+];
+
+export default function AdminUsers() {
   const MySwal = withReactContent(Swal);
   const [pageType, setPageType] = useState("User");
+  const [query, setQuery] = useState("");
+  const [permitMap, setPermitMap] = useState(
+    Object.fromEntries(MOCK_USERS.map((u) => [u.id, true]))
+  );
 
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -439,5 +510,3 @@ function User() {
     </>
   );
 }
-
-export default User;

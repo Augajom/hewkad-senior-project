@@ -1,17 +1,35 @@
-import React, { useEffect, useState } from "react";
-import Nav from "../nav";
+import React, { useEffect, useMemo, useState } from "react";
+import AdminLayout from "../AdminLayout.jsx";
 import { CiSearch } from "react-icons/ci";
 import axios from "axios";
-import {
-  showUserPayment,
-  showRejectPayment,
-} from "./features/SweetAlertPayment";
+import dayjs from "dayjs";
+import { showUserPayment, showRejectPayment } from "./features/SweetAlertPayment";
+import Nav from "../nav";
 
-function Payment() {
+const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
+
+const currencyTHB = (n) =>
+  new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(Number(n || 0));
+
+const StatusChip = ({ text }) => {
+  const map = {
+    Pending: "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30",
+    Completed: "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30",
+    Rejected: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30",
+    Default: "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/30",
+  };
+  const cls = map[text] || map.Default;
+  return <span className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}>{text}</span>;
+};
+
+export default function AdminPayments() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("Newest");
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
-  // ดึงข้อมูลจาก API
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -139,5 +157,3 @@ function Payment() {
     </>
   );
 }
-
-export default Payment;

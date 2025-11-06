@@ -16,7 +16,10 @@ import "react-datepicker/dist/react-datepicker.css";
 // 🎨 Custom CSS to style react-datepicker
 import "../css/DatePickerStyles.css"; // (ใช้ไฟล์เดิมจากครั้งที่แล้ว)
 
-function Dashboard() {
+const formatCurrencyTHB = (n) =>
+  new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(n ?? 0);
+
+export default function AdminDashboard() {
   const [dateRange, setDateRange] = useState("All");
   const [customDate, setCustomDate] = useState({ start: null, end: null });
   const [markets, setMarkets] = useState([]);
@@ -359,6 +362,7 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
     </>
   );
 }
@@ -387,5 +391,3 @@ const StatusCard = ({ title, value, bgColor }) => (
     <p className="text-3xl font-bold m-0">{value}</p>
   </div>
 );
-
-export default Dashboard;
