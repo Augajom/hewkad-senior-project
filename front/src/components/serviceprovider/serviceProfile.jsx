@@ -240,23 +240,31 @@ export default function ServiceProfile() {
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
   const handleSwitchRole = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/service/check-role`, {
-        method: "GET",
-        credentials: "include",
-      });
-      const data = await res.json();
-
-      // ถ้ามี role service ให้ไป /service/profile
-      if (data.hasServiceRole) {
-        window.location.href = "/user/profile";
-      } else {
-        window.location.href = "/service/profile";
+      try {
+        const res = await fetch(`${API_BASE}/customer/check-role`, {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await res.json();
+  
+        if (data.hasServiceRole) {
+          window.location.href = "/user/profile";
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            html: 'You do not have permission to access<br>the Customer role.',
+            confirmButtonColor: "#3B82F6",
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Could not verify your roles. Please try again later.",
+        });
       }
-    } catch (err) {
-      alert("ไม่สามารถตรวจสอบ role ได้");
-    }
-  };
+    };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">

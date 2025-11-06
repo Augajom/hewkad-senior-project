@@ -36,7 +36,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
           <div className="h-16 flex items-center justify-between">
             {/* Brand */}
             <div className="flex items-center gap-3">
-              <Link to="/service/main" className="flex items-center gap-2">
+              <Link to="/service/home" className="flex items-center gap-2">
                 <img
                   src="/src/assets/logo.png"
                   alt="Logo"
@@ -228,9 +228,9 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
       <nav className="bg-white/80 backdrop-blur-xl border-t border-slate-200/60">
         <div className="max-w-7xl mx-auto h-12 px-4 sm:px-6 lg:px-8 flex justify-center items-center gap-8">
           <Link
-            to="/service/main"
+            to="/service/home"
             className={`text-sm transition-colors ${
-              isActive("/service/main")
+              isActive("/service/home")
                 ? "text-cyan-600 font-semibold"
                 : "text-slate-900 hover:text-cyan-600"
             }`}

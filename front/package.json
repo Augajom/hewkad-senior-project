@@ -21,6 +21,7 @@
     "daisyui": "^5.0.50",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
+    "firebase": "^12.5.0",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.541.0",

@@ -4,6 +4,10 @@ import ConfirmModal from "./ConfirmModal";
 import { useOrders } from "../hooks/useOrder";
 import dayjs from "dayjs";
 import "../DaisyUI.css";
+import { useNavigate } from "react-router-dom";
+import { db } from "../../../firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "../../../hooks/useAuth";
 
 const API_BASE = "http://localhost:5000";
 
@@ -69,12 +73,10 @@ const FoodCard = ({ order, onRequestConfirm }) => {
           {order.product || order.item || "-"}
         </p>
         <p>
-          <span className="font-semibold">ราคา:</span>{" "}
-          {order.price ?? "-"} ฿
+          <span className="font-semibold">ราคา:</span> {order.price ?? "-"} ฿
         </p>
         <p>
-          <span className="font-semibold">ตลาด:</span>{" "}
-          {order.kad_name || "-"}
+          <span className="font-semibold">ตลาด:</span> {order.kad_name || "-"}
         </p>
         <p>
           <span className="font-semibold">เวลาจัดส่ง:</span>{" "}
@@ -95,18 +97,23 @@ const FoodCard = ({ order, onRequestConfirm }) => {
   );
 };
 
-
-const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searchQuery }) => {
-  const { orders, loading, error, setOrders } = useOrders(status);
+const FoodCardList = ({
+  onConfirmOrder,
+  status = "Available",
+  selectedKad,
+  searchQuery,
+}) => {
+  const { orders, loading: loadingOrders, error, setOrders } = useOrders(status);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-
+  const navigate = useNavigate();
+  const { user: rider, loading: loadingRider } = useAuth();
 
   const emptyText = useMemo(() => {
-    if (loading) return "กำลังโหลดออเดอร์...";
+    if (loadingOrders) return "กำลังโหลดออเดอร์...";
     if (error) return `เกิดข้อผิดพลาด: ${error}`;
     return "ไม่มีออเดอร์เหลืออยู่";
-  }, [loading, error]);
+  }, [loadingOrders, error]);
 
   const handleRequestConfirm = (order) => {
     setSelectedOrder(order);
@@ -118,15 +125,17 @@ const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searc
 
     // Filter by Kad
     if (selectedKad && selectedKad.length > 0) {
-      tempOrders = tempOrders.filter(order => selectedKad.includes(order.kad_name));
+      tempOrders = tempOrders.filter((order) =>
+        selectedKad.includes(order.kad_name)
+      );
     }
 
     // Dynamic search: เช็คทุก field ของ order
-    if (searchQuery && searchQuery.trim() !== '') {
+    if (searchQuery && searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase();
 
       const matchesSearch = (obj) => {
-        return Object.values(obj).some(value => {
+        return Object.values(obj).some((value) => {
           if (value == null) return false;
           // ถ้าเป็น object ให้ search recursive
           if (typeof value === "object") return matchesSearch(value);
@@ -134,92 +143,144 @@ const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searc
         });
       };
 
-      tempOrders = tempOrders.filter(order => matchesSearch(order));
+      tempOrders = tempOrders.filter((order) => matchesSearch(order));
     }
 
     return tempOrders;
   }, [orders, selectedKad, searchQuery]);
 
   const handleConfirm = async () => {
-  if (!selectedOrder) return;
-
-  try {
-    // 1️⃣ สร้างคำสั่งซื้อ (Step 1)
-    const res1 = await fetch("http://localhost:5000/service/hew", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        post_id: selectedOrder.id,
-        order_price: selectedOrder.price,
-        order_service_fee: selectedOrder.service_fee,
-        delivery_address: selectedOrder.delivery || selectedOrder.kad_name,
-        delivery_time: dayjs().format("YYYY-MM-DD") + " " + selectedOrder.delivery_at,
-      }),
-    });
-
-    if (!res1.ok) throw new Error(`Create order failed: HTTP ${res1.status}`);
-
-    const orderData = await res1.json();
-    const newOrderId = orderData.order_id;
-    if (!newOrderId) throw new Error("Invalid order ID");
-
-    console.log("Order created:", orderData);
-
-    // เพิ่ม delay เล็กน้อยให้ DB commit เสร็จ
-    await new Promise(resolve => setTimeout(resolve, 150));
-
-    // 2️⃣ ส่งอีเมล + เปลี่ยน status ของโพสต์ (Step 2)
-    try {
-      const res2 = await fetch(`http://localhost:5000/service/orders/${newOrderId}/notification`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-
-      if (!res2.ok) {
-        console.warn(`Notification request returned HTTP ${res2.status}`);
-        const text = await res2.text();
-        console.warn("Response:", text);
-      } else {
-        console.log("Notification sent successfully");
-      }
-    } catch (notifErr) {
-      console.warn("Notification fetch failed:", notifErr);
+    if (!selectedOrder || !rider) {
+      console.error("User (Rider) not found or order not selected.");
+      return; 
     }
 
-    // 3️⃣ อัปเดต UI
-    const newOrder = { ...selectedOrder, status_name: "Rider Received" };
-    onConfirmOrder(newOrder);
-    setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+    if (loadingRider) {
+      console.log("Waiting for user auth...");
+      return;
+    }
+    if (!rider || !selectedOrder) {
+      console.error("User (Rider) not found or order not selected.");
+      return; 
+    }
 
-  } catch (err) {
-    console.error("Error creating order:", err);
-  } finally {
-    setModalVisible(false);
-    setSelectedOrder(null);
-  }
-};
+    const customer_id = selectedOrder.user_id;
+    const rider_id = rider.id;
 
+    const chatRoomId =
+      customer_id < rider_id
+        ? `${customer_id}_${rider_id}`
+        : `${rider_id}_${customer_id}`;
 
+    try {
+      // สร้าง/อัปเดต ห้องแชทใน Firestore
+      const chatRef = doc(db, "chats", chatRoomId);
+      await setDoc(
+        chatRef,
+        {
+          participants: [customer_id, rider_id],
+          customer_id: customer_id,
+          rider_id: rider_id,
+          customer_name:
+            selectedOrder.nickname || selectedOrder.name || "ลูกค้า",
+          rider_name: rider.name || "ไรเดอร์",
+          customer_avatar: selectedOrder.avatar || null,
+          rider_avatar: rider.picture || null,
+          lastTimestamp: serverTimestamp(),
+        },
+        { merge: true }
+      ); // merge: true = ถ้ามีห้องอยู่แล้ว จะไม่เขียนทับ แต่จะอัปเดตข้อมูล
+
+      console.log(`Firebase Chat Room [${chatRoomId}] is ready.`);
+    } catch (firebaseErr) {
+      console.error("Error creating Firebase chat room:", firebaseErr);
+      // อาจจะแจ้งเตือนผู้ใช้ แต่ไม่ควรหยุดการทำงานของ Order
+    }
+
+    try {
+      // 1️⃣ สร้างคำสั่งซื้อ (Step 1)
+      const res1 = await fetch("http://localhost:5000/service/hew", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          post_id: selectedOrder.id,
+          order_price: selectedOrder.price,
+          order_service_fee: selectedOrder.service_fee,
+          delivery_address: selectedOrder.delivery || selectedOrder.kad_name,
+          delivery_time:
+            dayjs().format("YYYY-MM-DD") + " " + selectedOrder.delivery_at,
+        }),
+      });
+
+      if (!res1.ok) throw new Error(`Create order failed: HTTP ${res1.status}`);
+
+      const orderData = await res1.json();
+      const newOrderId = orderData.order_id;
+      if (!newOrderId) throw new Error("Invalid order ID");
+
+      console.log("Order created:", orderData);
+
+      // เพิ่ม delay เล็กน้อยให้ DB commit เสร็จ
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // 2️⃣ ส่งอีเมล + เปลี่ยน status ของโพสต์ (Step 2)
+      try {
+        const res2 = await fetch(
+          `http://localhost:5000/service/orders/${newOrderId}/notification`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }
+        );
+
+        if (!res2.ok) {
+          console.warn(`Notification request returned HTTP ${res2.status}`);
+          const text = await res2.text();
+          console.warn("Response:", text);
+        } else {
+          console.log("Notification sent successfully");
+        }
+      } catch (notifErr) {
+        console.warn("Notification fetch failed:", notifErr);
+      }
+
+      // 3️⃣ อัปเดต UI
+      const newOrder = { ...selectedOrder, status_name: "Rider Received" };
+      onConfirmOrder(newOrder);
+      setOrders((prev) => prev.filter((o) => o.id !== selectedOrder.id));
+
+      navigate(`/service/chat/${chatRoomId}`);
+    } catch (err) {
+      console.error("Error creating order:", err);
+    } finally {
+      setModalVisible(false);
+      setSelectedOrder(null);
+    }
+  };
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full px-4">
+        {loadingOrders &&
+          [...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="h-48 bg-gray-200 animate-pulse rounded-xl"
+            />
+          ))}
 
-        {loading && [...Array(4)].map((_, i) => (
-          <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-xl" />
-        ))}
+        {!loadingOrders &&
+          filteredOrders.map((order) => (
+            <FoodCard
+              key={order.id}
+              order={order}
+              onRequestConfirm={() => handleRequestConfirm(order)}
+            />
+          ))}
 
-        {!loading && filteredOrders.map(order => (
-          <FoodCard
-            key={order.id}
-            order={order}
-            onRequestConfirm={() => handleRequestConfirm(order)}
-          />
-        ))}
-
-        {!loading && filteredOrders.length === 0 && (
+        {!loadingOrders && filteredOrders.length === 0 && (
           <p className="text-gray-500 w-full text-left mt-10">
             {error ? `เกิดข้อผิดพลาด: ${error}` : "ไม่มีออเดอร์ในตลาดนี้"}
           </p>
