@@ -11,12 +11,10 @@ const Ordering = require('../models/customer/Ordering');
 const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
 const QRCode = require("qrcode");
-const Rating = require('../models/customer/rating');
-const bank = require('../models/customer/bank');
 const { sendOrderReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
 const getName = require('../models/getName');
-const cron = require('node-cron');
+
 const upload = multer();
 
 // ===================
@@ -167,8 +165,6 @@ router.get('/history/:status', verifyToken, async (req, res) => {
     // เรียก method ใหม่ที่ join proof_url
     const posts = await History.getByStatus(status, userId);
 
-    console.log(posts); // ตรวจสอบว่า proof_url มาเรียบร้อย
-
     res.json(posts);
 
   } catch (err) {
@@ -274,21 +270,6 @@ router.post("/upload-slip", upload.single("files"), async (req, res) => {
   }
 });
 
-//rating
-router.post('/rate', verifyToken, async (req, res) => {
-    const userId = req.user.id;  // จาก token
-    const { orderId, rating, comment } = req.body;
-
-    if (!orderId || !rating) return res.status(400).json({ message: "Missing data" });
-
-    try {
-        const result = await Rating.create(userId, orderId, rating, comment);
-        res.json({ success: true, data: result });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message }); // ส่ง error จริงกลับไป
-    }
-});
 
 // POST /customer/reports
 router.post('/reports', verifyToken, async (req, res) => {
@@ -336,6 +317,28 @@ router.get('/report-reasons', async (req, res) => {
   }
 });
 
+// GET /customer/check-role
+router.get("/check-role", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const rows = await UserRole.getCurrentRole(userId); // ดึง role ปัจจุบัน
+    if (!rows || rows.length === 0)
+      return res.json({ hasServiceRole: false });
+
+    // เช็ค role_id = 2 และ is_Active = 1
+    const hasServiceRole = rows.some(
+      (r) => r.role_id === 2 && r.is_Active === 1
+    );
+
+    res.json({ hasServiceRole });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ hasServiceRole: false });
+  }
+});
+
+
 // GET Name by userId
 router.get('/name', verifyToken, async (req, res) => {
   try {
@@ -346,47 +349,6 @@ router.get('/name', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to fetch fullName' });
-  }
-});
-
-cron.schedule('*/10 * * * *', async () => {
-  console.log('🕐 Checking for orders older than 3 hours...');
-  const sql = `
-    SELECT p.id, s.status_name, p.created_at
-    FROM posts p
-    JOIN status s ON p.status_id = s.id
-    WHERE s.status_name != 'Complete'
-      AND TIMESTAMPDIFF(HOUR, p.created_at, NOW()) >= 3
-  `;
-
-  db.query(sql, async (err, results) => {
-    if (err) {
-      console.error('❌ Error checking orders:', err);
-      return;
-    }
-
-    if (results.length === 0) return; // ไม่มีออเดอร์ครบเวลา
-
-    console.log(`🔄 Found ${results.length} orders to auto-complete...`);
-
-    for (const order of results) {
-      try {
-        await Ordering.updateStatus(order.id, 'Complete');
-        console.log(`✅ Order #${order.id} set to Complete`);
-      } catch (error) {
-        console.error(`❌ Failed to update order #${order.id}:`, error.message);
-      }
-    }
-  });
-});
-
-router.get('/banks', async (req, res) => {
-  try {
-    const list = await bank.getAll();
-    res.json(list);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
   }
 });
 

@@ -1,51 +1,77 @@
 import { useEffect, useState } from "react";
-
-// ฟังก์ชันสร้างวันที่ย้อนหลัง 10 วัน
-const generateMockPostData = () => {
-  const data = [];
-  const today = new Date();
-  for (let i = 9; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const day = date.getDate();
-    const month = date.toLocaleString("default", { month: "short" }).toUpperCase();
-    const label = `${day} ${month}`;
-    const count = Math.floor(Math.random() * 30) + 5; // สุ่ม 5-34 post
-    data.push({ label, count });
-  }
-  return data;
-};
+import axios from "axios";
 
 const PostChart10Days = () => {
   const [postData, setPostData] = useState([]);
 
   useEffect(() => {
-    // เปลี่ยนเป็น API ได้
-    const data = generateMockPostData();
-    setPostData(data);
+    const fetchChartData = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/admin/daily-summary",
+          {
+            withCredentials: true,
+          }
+        );
+
+        if (Array.isArray(response.data)) {
+          const formattedData = response.data.map((item) => {
+            const date = new Date(item.date);
+            const day = date.getDate();
+            const month = date
+              .toLocaleString("default", { month: "short" })
+              .toUpperCase();
+            const label = `${day} ${month}`;
+
+            return {
+              label: label,
+              count: item.total_orders,
+            };
+          });
+
+          setPostData(formattedData);
+        } else {
+          console.error(
+            "API /daily-summary did not return an array:",
+            response.data
+          );
+          setPostData([]);
+        }
+      } catch (error) {
+        console.error("Error fetching daily summary:", error);
+        setPostData([]);
+      }
+    };
+
+    fetchChartData();
   }, []);
+  const maxCount = Math.max(...postData.map((d) => d.count), 30);
 
   return (
-    <div className="relative flex flex-col justify-end bg-[#ffdede] p-4 rounded-xl mx-auto w-300 h-auto shadow-2xl">
-      <h2 className="absolute top-6 left-8 font-bold text-xl mb-4 ">TOTAL POST</h2>
-      <div className="flex items-end space-x-8">
+    <div className="card bg-white rounded-2xl shadow-xl p-6 h-full">
+      <h2 className="font-bold text-lg mb-4 text-slate-800">
+        TOTAL POST (LAST 10 DAYS)
+      </h2>
+      <div className="flex items-end justify-between h-full px-2 pt-8 pb-4">
         {postData.map((day, idx) => (
-          <div key={idx} className="flex flex-col items-center">
+          <div
+            key={idx}
+            className="flex flex-col items-center h-full justify-end w-6"
+          >
+            <div className="font-medium text-xs text-slate-600 text-center mb-1">
+              {day.count}
+            </div>
             <div
-              className={`w-6 rounded-t-lg relative ${
-                idx === postData.length - 1 ? "bg-blue-500" : "bg-[#d0c9e4]"
+              className={`w-6 rounded-t-md relative ${
+                idx === postData.length - 1 ? "bg-blue-600" : "bg-gray-300"
               }`}
               style={{
-                width: "2rem",
-                height: `${day.count * 3}px`,
+                height: `${(day.count / maxCount) * 100}%`,
+                minHeight: "20px",
                 transition: "height 0.3s",
               }}
-            >
-              <div className="absolute -top-5 w-full font-semibold text-[14px] text-black text-center">
-                {day.count}
-              </div>
-            </div>
-            <div className="text-[10px] mt-1">{day.label}</div>
+            ></div>
+            <div className="text-xs text-slate-500 mt-2">{day.label}</div>
           </div>
         ))}
       </div>

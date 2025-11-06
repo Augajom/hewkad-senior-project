@@ -69,19 +69,6 @@ export default function History() {
                 ))}
               </ul>
             </div>
-
-            {/* Tabs (quick switch) */}
-            <div className="tabs tabs-boxed bg-white/70 ml-2">
-              {["Complete", "Reported", "Pending"].map((s) => (
-                <button
-                  key={s}
-                  className={`tab ${statusFilter === s ? "tab-active text-cyan-700" : ""}`}
-                  onClick={() => setStatusFilter(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Search in-page (optional, in addition to global navbar search) */}

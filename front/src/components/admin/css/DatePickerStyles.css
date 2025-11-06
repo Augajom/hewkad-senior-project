@@ -1,0 +1,79 @@
+/* DatePickerStyles.css */
+
+/* 🎨 Style the popup container */
+.react-datepicker-popper {
+  z-index: 50 !important; /* Make sure it appears above other elements */
+}
+
+.react-datepicker {
+  font-family: inherit !important; /* Use the same font as your app */
+  border-radius: 1.5rem !important; /* rounded-3xl */
+  border: 1px solid rgba(203, 213, 225, 0.5) !important; /* border-slate-300/50 */
+  background-color: rgba(255, 255, 255, 0.9) !important; /* bg-white/90 */
+  backdrop-filter: blur(16px) !important; /* backdrop-blur-xl */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important; /* shadow-xl */
+  padding: 8px !important;
+}
+
+/* 🎨 Style the header */
+.react-datepicker__header {
+  background-color: transparent !important;
+  border-bottom: none !important;
+  padding-top: 8px !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-read-view--down-arrow,
+.react-datepicker-month-read-view--down-arrow,
+.react-datepicker-month-year-read-view--down-arrow {
+  color: #1e293b !important; /* text-slate-800 */
+  font-weight: 600 !important;
+}
+
+/* 🎨 Style navigation arrows */
+.react-datepicker__navigation-icon::before {
+  border-color: #334155 !important; /* text-slate-700 */
+  border-width: 2px 2px 0 0 !important;
+  height: 8px !important;
+  width: 8px !important;
+}
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: #0f172a !important; /* text-slate-900 */
+}
+
+/* 🎨 Style day names */
+.react-datepicker__day-name {
+  color: #475569 !important; /* text-slate-600 */
+  font-weight: 600 !important;
+}
+
+/* 🎨 Style individual days */
+.react-datepicker__day {
+  color: #334155 !important; /* text-slate-700 */
+  border-radius: 0.75rem !important; /* rounded-xl */
+  transition: all 0.2s ease-in-out;
+}
+
+.react-datepicker__day:hover {
+  background-color: rgba(99, 102, 241, 0.1) !important; /* bg-indigo-500/10 */
+  border-radius: 0.75rem !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+  background-color: #4f46e5 !important; /* bg-indigo-600 */
+  color: white !important;
+  border-radius: 0.75rem !important;
+}
+
+.react-datepicker__day--today {
+  font-weight: 700 !important;
+  border: 1px solid #4f46e5 !important;
+}
+
+.react-datepicker__day--disabled {
+  color: #94a3b8 !important; /* text-slate-400 */
+  opacity: 0.7;
+}

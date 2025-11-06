@@ -63,7 +63,7 @@ export default function Ordering({ currentUser }) {
               </div>
               <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-white rounded-2xl w-56 text-slate-900">
                 <li>
-                  <button onClick={() => setStatusFilter("All")}>All</button>
+                  <button onClick={() => setStatusFilter("All" )}>All</button>
                 </li>
                 <li>
                   <button onClick={() => setStatusFilter("Rider Received")}>Rider Received</button>
@@ -76,23 +76,12 @@ export default function Ordering({ currentUser }) {
                 </li>
               </ul>
             </div>
-            <div className="tabs tabs-boxed bg-white/70 ml-2">
-              {["All", "Rider Received", "Ordering", "Order Received"].map((s) => (
-                <button
-                  key={s}
-                  className={`tab ${statusFilter === s ? "tab-active text-cyan-700" : ""}`}
-                  onClick={() => setStatusFilter(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
           </div>
           <div className="w-full md:w-80">
             <input
               type="text"
               placeholder="Search in orders…"
-              className="input input-bordered w-full bg-white/90 text-slate-900 rounded-xl"
+              className="border border-1 border-gray-400 input input-bordered w-full bg-white/90 text-slate-900 rounded-xl"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

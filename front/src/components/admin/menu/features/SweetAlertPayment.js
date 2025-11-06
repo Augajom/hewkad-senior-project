@@ -4,7 +4,13 @@ import axios from "axios";
 
 const MySwal = withReactContent(Swal);
 
-export const showUserPayment = async (orderId) => {
+export const showUserPayment = async (order, orderId) => {
+
+  const calPlatformFees = (fee) => {
+    if (!fee) return 0;
+    return Math.round(fee * 0.3);
+  };
+
   try {
     // ดึงข้อมูล order
     const { data } = await axios.get(
@@ -27,6 +33,7 @@ export const showUserPayment = async (orderId) => {
             <p style="color:black; font-size: 20px; font-weight: bold;">${order.bank_name || "BANK"}</p>
             <p style="color:#807a7a; font-size: 24px; font-weight: 400; margin-top: 2px;">${order.acc_number || "-"}</p>
             <p style="color:#807a7a; font-size: 18px; font-weight: 400;">${order.acc_owner || "-"}</p>
+            <p style="color:#807a7a; font-size: 18px; font-weight: 400;">${((order.order_service_fee - calPlatformFees(order.order_service_fee)) + order.order_price)}฿</p>
           </div>
         </div>
       `,

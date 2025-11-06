@@ -1,6 +1,6 @@
 const db = require("../../config/db");
 
-const UserRole = {
+const ServiceRole = {
   getCurrentRole: (userId) => {
     return new Promise((resolve, reject) => {
       db.query(
@@ -15,4 +15,4 @@ const UserRole = {
   },
 };
 
-module.exports = UserRole;
+module.exports = ServiceRole;

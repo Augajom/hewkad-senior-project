@@ -134,6 +134,9 @@ router.put('/payment/approve/:orderId', async (req, res) => {
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const getKad = require('../models/admin/getKad');
+const Dashboard = require('../models/admin/Dashboard');
+const DailySummary = require('../models/admin/DailySummary');
 
 // 💡 แก้ encoding ของชื่อไฟล์
 Buffer.prototype.toString = (function (original) {
@@ -326,18 +329,45 @@ router.put("/users/request/update/:id", async (req, res) => {
 
 router.get('/posts', async (req, res) => {
   try {
-    const status = req.query.status || 'Available';
-    
     // เรียกจาก model
     const postsList = await getPost.getAll();
 
-    // กรองตาม status ถ้าต้องการ
-    const filtered = postsList.filter(p => p.status_name === status);
-
-    res.json(filtered);
+    res.json(postsList);
   } catch (err) {
     console.error('Failed to get posts:', err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get("/kad", async (req, res) => {
+  try {
+    const kadList = await getKad.getAll();
+    res.json(kadList);
+  } catch (err) {
+    console.error("Failed to get kad list:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/dashboard-stats", async (req, res) => {
+  try {
+    const { kad_id, start, end } = req.query;
+    const data = await Dashboard.getStats(kad_id, start, end);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error("Dashboard error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+router.get("/daily-summary", async (req, res) => {
+  try {
+    const days = parseInt(req.query.days || 10);
+    const data = await DailySummary.getSummary(days);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching daily summary:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

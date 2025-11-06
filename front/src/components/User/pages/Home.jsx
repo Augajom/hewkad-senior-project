@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/navbar";
-import CreatePostBox from "../components/CreatePostBox";
 import PostCard from "../components/Postcard";
 import KadDropdown from "../components/KadDropdown";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -229,19 +228,19 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <div className="tabs tabs-boxed bg-white/70">
               <button
-                className={`tab ${statusTab === "Available" ? "tab-active text-cyan-700" : ""}`}
+                className={`tab ${statusTab === "Available" ? "tab-active text-cyan-700" : "!text-gray-500"}`}
                 onClick={() => setStatusTab("Available")}
               >
                 Available
               </button>
               <button
-                className={`tab ${statusTab === "Reserved" ? "tab-active text-cyan-700" : ""}`}
+                className={`tab ${statusTab === "Reserved" ? "tab-active text-cyan-700" : "!text-gray-500"}`}
                 onClick={() => setStatusTab("Reserved")}
               >
                 Reserved
               </button>
               <button
-                className={`tab ${statusTab === "Closed" ? "tab-active text-cyan-700" : ""}`}
+                className={`tab ${statusTab === "Closed" ? "tab-active text-cyan-700" : "!text-gray-500"}`}
                 onClick={() => setStatusTab("Closed")}
               >
                 Closed
@@ -279,7 +278,6 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <CreatePostBox onClick={handleOpenForm} />
             {filteredPosts.map((post) => (
               <PostCard
                 key={post.id}

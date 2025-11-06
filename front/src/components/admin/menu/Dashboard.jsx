@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Nav from "../nav";
+import axios from "axios";
 // Graph
 import PostChart10Days from "./features/PostChart10Days";
 // Icon
@@ -12,27 +13,171 @@ import { MdDateRange } from "react-icons/md";
 // Date-Range
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+// 🎨 Custom CSS to style react-datepicker
+import "../css/DatePickerStyles.css"; // (ใช้ไฟล์เดิมจากครั้งที่แล้ว)
 
 function Dashboard() {
   const [dateRange, setDateRange] = useState("All");
   const [customDate, setCustomDate] = useState({ start: null, end: null });
+  const [markets, setMarkets] = useState([]);
+
+  const [stats, setStats] = useState(null);
+  const [selectedMarket, setSelectedMarket] = useState("All");
+  const [loading, setLoading] = useState(false);
+
+  const getDateRange = (range) => {
+    const now = new Date();
+    let start = null;
+    let end = null;
+
+    switch (range) {
+      case "Today":
+        start = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          0,
+          0,
+          0
+        );
+        end = new Date(now);
+        break;
+
+      case "Yesterday": {
+        const y = new Date(now);
+        y.setDate(now.getDate() - 1);
+        start = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0);
+        end = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59);
+        break;
+      }
+
+      case "This Week": {
+        const d = new Date(now);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        start = new Date(d.getFullYear(), d.getMonth(), diff, 0, 0, 0);
+        end = new Date(now);
+        break;
+      }
+
+      case "Last Week": {
+      const d = new Date(now);
+      const day = d.getDay(); // 0 = Sunday
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday this week
+      const lastWeekStart = new Date(d.getFullYear(), d.getMonth(), diff - 7, 0, 0, 0);
+      const lastWeekEnd = new Date(d.getFullYear(), d.getMonth(), diff - 1, 23, 59, 59);
+      start = lastWeekStart;
+      end = lastWeekEnd;
+      break;
+    }
+
+      case "This Month":
+        start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+        end = new Date(now);
+        break;
+
+      case "Last Month":
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
+        end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        break;
+
+      case "This Year":
+        start = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
+        end = new Date(now);
+        break;
+
+      case "Last Year":
+        start = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0);
+        end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+        break;
+
+      default:
+        start = null;
+        end = null;
+    }
+
+    return { start, end };
+  };
+
+  const fetchMarkets = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/kad", {
+        withCredentials: true,
+      });
+      console.log(res.data)
+      setMarkets(res.data);
+    } catch (error) {
+      console.error("❌ Error fetching markets:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMarkets();
+  }, [])
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        let start = null;
+        let end = null;
+
+        if (dateRange === "Custom Range") {
+          start = customDate.start;
+          end = customDate.end;
+        } else {
+          const range = getDateRange(dateRange);
+          start = range.start;
+          end = range.end;
+        }
+
+        const params = {
+          kad_id: selectedMarket,
+          start: start ? start.toLocaleDateString("en-CA") : "",
+          end: end ? end.toLocaleDateString("en-CA") : "",
+        };
+
+        const { data } = await axios.get(
+          "http://localhost:5000/admin/dashboard-stats",
+          {
+            params,
+            withCredentials: true,
+          }
+        );
+
+        if (data.success) setStats(data.data);
+      } catch (error) {
+        console.error("Error fetching dashboard:", error);
+      }
+      setLoading(false);
+    };
+
+    if (dateRange === "Custom Range") {
+      if (customDate.start && customDate.end) {
+        fetchDashboardData();
+      }
+    } else {
+      fetchDashboardData();
+    }
+  }, [dateRange, customDate.start, customDate.end, selectedMarket]);
 
   return (
     <>
       <Nav />
-      <div className="h-screen flex items-start justify-center bg-[#F1F1F1] text-black">
-        <div className="container mx-auto mt-5 px-20">
-
-          <div className="filter-con flex gap-5 mb-5">
-
-            {/* Date Range */}
-            <div className="date-range-con flex gap-2 relative w-full">
-              <p className="absolute top-2 left-5 text-[#807a7a] text-sm">Date Range</p>
-              <MdDateRange className="absolute bottom-3 left-5"/>
+      {/* 🎨 1. Background (Solid Light Gray) */}
+      <div className="min-h-screen flex items-start justify-center bg-slate-100 text-slate-900">
+        <div className="container mx-auto mt-5 px-4 sm:px-10 lg:px-20">
+          {/* 🎨 2. Filter Bar (Solid White) */}
+          <div className="filter-con flex flex-col sm:flex-row items-center flex-wrap gap-6 w-full justify-center mb-8 p-6 bg-white rounded-2xl shadow-xl">
+            {/* 🎨 3. Date Range Select (Solid inputs) */}
+            <div className="relative w-full sm:w-auto sm:min-w-[220px]">
+              <label className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 pointer-events-none z-10">
+                Date Range
+              </label>
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
-                className="rounded px-9 pb-2 pt-7 w-full bg-white shadow-xl"
+                className="select select-bordered w-full rounded-xl border-slate-300 bg-slate-50 pl-28 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
               >
                 <option value="All">All</option>
                 <option value="Today">Today</option>
@@ -45,131 +190,202 @@ function Dashboard() {
                 <option value="Last Year">Last Year</option>
                 <option value="Custom Range">Custom Range</option>
               </select>
+            </div>
 
-              {/* โชว์ Date Picker ถ้าเลือก Custom Range */}
-              {dateRange === "Custom Range" && (
-                <div className="flex flex-row gap-2">
+            {/* Custom Date Pickers */}
+            {dateRange === "Custom Range" && (
+              <>
+                <div className="relative w-full sm:w-auto">
+                  <MdDateRange className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                   <DatePicker
                     selected={customDate.start}
                     onChange={(date) =>
                       setCustomDate((prev) => ({ ...prev, start: date }))
                     }
-                    selectsStart
-                    startDate={customDate.start}
-                    endDate={customDate.end}
                     placeholderText="Start Date"
-                    className="rounded text-center px-4 py-4 w-full bg-white shadow-xl no-blink-cursor"
-                    onClick={(e) => e.currentTarget.focus()}
+                    className="input input-bordered w-full sm:w-48 rounded-xl border-slate-300 bg-slate-50 pl-12 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
                   />
+                </div>
+                <div className="relative w-full sm:w-auto">
+                  <MdDateRange className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                   <DatePicker
                     selected={customDate.end}
                     onChange={(date) =>
                       setCustomDate((prev) => ({ ...prev, end: date }))
                     }
-                    selectsEnd
-                    startDate={customDate.start}
-                    endDate={customDate.end}
                     minDate={customDate.start}
                     placeholderText="End Date"
-                    className="rounded text-center px-4 py-4 w-full bg-white shadow-xl no-blink-cursor"
-                    onClick={(e) => e.currentTarget.focus()}
+                    className="input input-bordered w-full sm:w-48 rounded-xl border-slate-300 bg-slate-50 pl-12 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
                   />
                 </div>
-              )}
-            </div>
+              </>
+            )}
 
-              {/* Post */}
-            <div className="posts-con relative w-full">
-              <p className="absolute top-2 left-5 text-[#807a7a] text-sm">Posts</p>
+            {/* Market Select */}
+            <div className="relative w-full sm:w-auto sm:min-w-[220px]">
+              <label className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 pointer-events-none z-10">
+                Market
+              </label>
               <select
-                className="rounded px-4 pb-2 pt-7 w-full bg-white shadow-xl"
+                value={selectedMarket}
+                onChange={(e) => setSelectedMarket(e.target.value)}
+                className="select select-bordered w-full rounded-xl border-slate-300 bg-slate-50 pl-20 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
               >
                 <option value="All">All</option>
-                <option value="Today">กาดหน้ามอ</option>
-                <option value="Yesterday">กาดในมอ</option>
+                {markets.map((market, index) => (
+                    <option key={index} value={market.id}>
+                      {market.kad_name}
+                    </option>
+                  ))}
               </select>
-
             </div>
-
-
           </div>
 
-          <div className="1line-con flex gap-10 min-h-50 mb-8">
-            <div className="total-revenue-con set-center flex-col w-100 h-auto rounded-xl bg-white shadow-2xl">
-              <div className="icon-con size-12 rounded-full bg-[#fe8052] set-center">
-                <BiTrendingUp className="size-7 " />
-              </div>
-              <p className="text-xl font-semibold m-1">Total Revenue</p>
-              <p className="text-3xl font-bold m-1">฿220,015</p>
-              {/* <p className="text-md font-semibold">Last 24 Hours</p> */}
-            </div>
+          {/* 🎨 4. Stat Cards Grid (Line 1) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <StatCard
+              title="Total Revenue"
+              value={
+                stats
+                  ? `฿${stats.totalRevenue.toLocaleString()}`
+                  : loading
+                  ? "Loading..."
+                  : "-"
+              }
+              icon={<BiTrendingUp className="size-6 text-white" />}
+              iconBg="bg-gradient-to-r from-orange-400 to-orange-500"
+            />
 
             <PostChart10Days />
 
-            <div className="pending-revenue-con set-center flex-col w-100 h-auto rounded-xl bg-white shadow-2xl">
-              <div className="icon-con size-12 rounded-full bg-[#3ef3b6] set-center">
-                <MdOutlinePending className="size-7 " />
-              </div>
-              <p className="text-xl font-semibold m-1">Pending Revenue</p>
-              <p className="text-3xl font-bold m-1">฿2,546</p>
-              {/* <p className="text-md font-semibold">Cash Flow</p> */}
-            </div>
+            <StatCard
+              title="Pending Revenue"
+              value={
+                stats
+                  ? `฿${stats.pendingRevenue.toLocaleString()}`
+                  : loading
+                  ? "Loading..."
+                  : "-"
+              }
+              icon={<MdOutlinePending className="size-6 text-white" />}
+              iconBg="bg-gradient-to-r from-teal-400 to-emerald-500"
+            />
           </div>
 
-          <div className="2line-con flex gap-10 max-h-50 mb-8">
-            <div className="paid-out-to-shoppers-con set-center flex-col p-8 w-full rounded-xl bg-white shadow-2xl">
-              <div className="icon-con size-12 rounded-full bg-[#fc7782] set-center">
-                <LuShoppingCart className="size-7 " />
-              </div>
-              <p className="text-xl font-semibold m-1">Paid Out To Shoppers</p>
-              <p className="text-3xl font-bold m-1">฿174,210</p>
-              {/* <p className="text-md font-semibold">Last 24 Hours</p> */}
-            </div>
-
-            <div className="platform-fees-con set-center flex-col p-8 w-full rounded-xl bg-white shadow-2xl">
-              <div className="icon-con size-12 rounded-full bg-[#fdbd46] set-center">
-                <GiFlatPlatform className="size-7 " />
-              </div>
-              <p className="text-xl font-semibold m-1">Platform Fees (30%)</p>
-              <p className="text-3xl font-bold m-1">฿70,110</p>
-              {/* <p className="text-md font-semibold">Last 1 Month</p> */}
-            </div>
-
-            <div className="total-orders-con set-center flex-col p-8 w-full rounded-xl bg-white shadow-2xl">
-              <div className="icon-con size-12 rounded-full bg-[#af52de] set-center">
-                <MdOutlineBorderColor className="size-7 " />
-              </div>
-              <p className="text-xl font-semibold m-1">Total Orders</p>
-              <p className="text-3xl font-bold m-1">1,015</p>
-              {/* <p className="text-md font-semibold">All</p> */}
-            </div>
+          {/* 🎨 5. Stat Cards Grid (Line 2) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <StatCard
+              title="Paid Out To Shoppers"
+              value={
+                stats
+                  ? `฿${stats.paidOutToShoppers.toLocaleString()}`
+                  : loading
+                  ? "Loading..."
+                  : "-"
+              }
+              icon={<LuShoppingCart className="size-6 text-white" />}
+              iconBg="bg-gradient-to-r from-pink-500 to-red-500"
+            />
+            <StatCard
+              title="Platform Fees (30%)"
+              value={
+                stats
+                  ? `฿${stats.platformFees.toLocaleString()}`
+                  : loading
+                  ? "Loading..."
+                  : "-"
+              }
+              icon={<GiFlatPlatform className="size-6 text-white" />}
+              iconBg="bg-gradient-to-r from-yellow-400 to-amber-500"
+            />
+            <StatCard
+              title="Total Orders"
+              value={stats ? stats.totalOrders : loading ? "Loading..." : "-"}
+              icon={<MdOutlineBorderColor className="size-6 text-white" />}
+              iconBg="bg-gradient-to-r from-purple-500 to-indigo-500"
+            />
           </div>
 
-          <div className="3line-con flex gap-10 max-h-20">
-            <div className="avaliable-con set-center py-15 flex-col p-8 w-full rounded-xl bg-[#007aff] shadow-2xl">
-              <p className="text-xl font-semibold m-1">Avaliabled</p>
-              <p className="text-3xl font-bold m-1">2,492</p>
-            </div>
-
-            <div className="ordering-con set-center py-15 flex-col p-8 w-full rounded-xl bg-[#ffcc00] shadow-2xl">
-              <p className="text-xl font-semibold m-1">Ordering</p>
-              <p className="text-3xl font-bold m-1">204</p>
-            </div>
-
-            <div className="complete-con set-center py-15 flex-col p-8 w-full rounded-xl bg-[#34c759] shadow-2xl">
-              <p className="text-xl font-semibold m-1">Completed</p>
-              <p className="text-3xl font-bold m-1">1,203</p>
-            </div>
-
-            <div className="disable-con set-center py-15 flex-col p-8 w-full rounded-xl bg-[#ff3b30] shadow-2xl">
-              <p className="text-xl font-semibold m-1">Disabled</p>
-              <p className="text-3xl font-bold m-1">198</p>
-            </div>
+          {/* 🎨 6. Status Grid (3 Columns) */}
+          <div className="grid grid-cols-3 gap-6">
+            {/* Row 1 */}
+            <StatusCard
+              title="Available"
+              value={stats?.statusCounts?.[1] || 0}
+              bgColor="bg-blue-600"
+            />
+            <StatusCard
+              title="Rider Received"
+              value={stats?.statusCounts?.[2] || 0}
+              bgColor="bg-sky-500"
+            />
+            <StatusCard
+              title="Ordering"
+              value={stats?.statusCounts?.[3] || 0}
+              bgColor="bg-orange-500"
+            />
+            {/* Row 2 */}
+            <StatusCard
+              title="Order Received"
+              value={stats?.statusCounts?.[4] || 0}
+              bgColor="bg-yellow-500"
+            />
+            <StatusCard
+              title="Complete"
+              value={stats?.statusCounts?.[5] || 0}
+              bgColor="bg-green-500"
+            />
+            <StatusCard
+              title="Reporting"
+              value={stats?.statusCounts?.[6] || 0}
+              bgColor="bg-cyan-500"
+            />
+            {/* Row 3 */}
+            <StatusCard
+              title="Reject"
+              value={stats?.statusCounts?.[7] || 0}
+              bgColor="bg-red-500"
+            />
+            <StatusCard
+              title="Successfully"
+              value={stats?.statusCounts?.[8] || 0}
+              bgColor="bg-lime-500"
+            />
+            <StatusCard
+              title="Reported"
+              value={stats?.statusCounts?.[9] || 0}
+              bgColor="bg-purple-600"
+            />
           </div>
         </div>
       </div>
     </>
   );
 }
+
+// 🎨 7. Helper Component for Stat Cards (ปรับเป็นจัดกลาง)
+const StatCard = ({ title, value, icon, iconBg }) => (
+  <div className="card bg-white rounded-2xl shadow-xl p-6 h-full flex flex-col items-center justify-center">
+    <div
+      className={`icon-con size-10 rounded-lg flex items-center justify-center ${iconBg} shadow-lg mb-4`}
+    >
+      {icon}
+    </div>
+    <div className="text-center">
+      <p className="text-sm font-semibold text-slate-500 m-0">{title}</p>
+      <p className="text-3xl font-bold m-0 text-slate-900">{value}</p>
+    </div>
+  </div>
+);
+
+// 🎨 8. Helper Component for Status Cards (ปรับสี/ขอบ)
+const StatusCard = ({ title, value, bgColor }) => (
+  <div
+    className={`flex flex-col items-center justify-center p-6 rounded-2xl shadow-lg text-white h-23 ${bgColor}`}
+  >
+    <p className="text-lg font-semibold m-0 opacity-90">{title}</p>
+    <p className="text-3xl font-bold m-0">{value}</p>
+  </div>
+);
 
 export default Dashboard;

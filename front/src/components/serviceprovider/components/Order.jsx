@@ -5,6 +5,14 @@ import { useOrders } from "../hooks/useOrder";
 import dayjs from "dayjs";
 import "../DaisyUI.css";
 
+const API_BASE = "http://localhost:5000";
+
+const resolveImg = (src) => {
+  if (!src) return ""; // หรือ fallback เป็น default avatar ใน JSX
+  if (src.startsWith("data:") || src.startsWith("http")) return src;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_BASE}${path}`;
+};
 
 const FoodCard = ({ order, onRequestConfirm }) => {
   return (
@@ -13,12 +21,8 @@ const FoodCard = ({ order, onRequestConfirm }) => {
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
           <img
-            src={
-              order.avatar
-                ? `http://localhost:5000/uploads/${order.avatar}`
-                : order.profileImg || "https://i.pravatar.cc/150"
-            }
-            alt="avatar"
+            src={resolveImg(order.avatar || order.profileImg) || "https://i.pravatar.cc/150"}
+            alt={order.nickname || order.name}
             className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
           />
           <div>
@@ -30,13 +34,11 @@ const FoodCard = ({ order, onRequestConfirm }) => {
             </div>
           </div>
         </div>
-
         <div className="flex flex-col items-end">
           <div
-            className={`badge ${order.status_name === "Available"
-              ? "badge-success"
-              : "badge-info"
-              }`}
+            className={`badge ${
+              order.status_name === "Available" ? "badge-success" : "badge-info"
+            }`}
           >
             {order.status_name || order.status || ""}
           </div>
@@ -86,6 +88,7 @@ const FoodCard = ({ order, onRequestConfirm }) => {
     </div>
   );
 };
+
 
 const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searchQuery }) => {
   const { orders, loading, error, setOrders } = useOrders(status);

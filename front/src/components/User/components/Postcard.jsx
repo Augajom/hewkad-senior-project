@@ -82,7 +82,7 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
       </div>
 
       {/* Edit/Delete ปุ่ม */}
-      <div className={isOwner ? 'mt-4 flex justify-end gap-2' : 'hidden'}>
+      <div className={isOwner ? 'mt-4 mb-2 mr-2 flex justify-end gap-2' : 'hidden'}>
         <button
           className="btn btn-sm btn-error text-white"
           onClick={() => setConfirmAction('delete')}

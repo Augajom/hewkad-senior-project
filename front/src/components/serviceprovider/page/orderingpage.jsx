@@ -10,7 +10,14 @@ const statusColors = {
   "Reported": "bg-red-500 text-white",
 };
 
-const API_URL = "http://localhost:5000"; // เปลี่ยนเป็นโดเมนจริงตอน deploy
+const API_URL = "http://localhost:5000";
+
+const resolveImg = (src) => {
+  if (!src) return ""; // หรือ fallback เป็น default avatar ใน JSX
+  if (src.startsWith("data:") || src.startsWith("http")) return src;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_URL}${path}`;
+};
 
 const OrderingCard = ({ order, onStatusUpdate }) => {
   const fileInputRef = useRef(null);
@@ -57,8 +64,8 @@ const OrderingCard = ({ order, onStatusUpdate }) => {
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
           <img
-            src={order.avatar ? `${API_URL}/uploads/${order.avatar}` : order.profileImg || "https://i.pravatar.cc/150"}
-            alt="avatar"
+            src={resolveImg(order.avatar || order.profileImg) || "https://i.pravatar.cc/150"}
+            alt={order.nickname || order.name}
             className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
           />
           <div>
