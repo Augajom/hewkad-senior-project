@@ -274,7 +274,7 @@ export default function Home() {
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-500">
-            ไม่พบโพสต์ที่ตรงกับเงื่อนไข
+            ไม่พบโพสต์
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
