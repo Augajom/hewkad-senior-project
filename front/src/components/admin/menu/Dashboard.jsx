@@ -1,115 +1,175 @@
-import React, { useMemo, useState } from "react";
-import AdminLayout from "../AdminLayout.jsx";
+import React, { useEffect, useState } from "react";
+import Nav from "../nav";
+// Graph
+import PostChart10Days from "./features/PostChart10Days";
+// Icon
+import { BiTrendingUp } from "react-icons/bi";
+import { MdOutlinePending } from "react-icons/md";
+import { LuShoppingCart } from "react-icons/lu";
+import { GiFlatPlatform } from "react-icons/gi";
+import { MdOutlineBorderColor } from "react-icons/md";
+import { MdDateRange } from "react-icons/md";
+// Date-Range
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { MdOutlineBorderColor, MdDateRange, MdOutlinePending } from "react-icons/md";
-import { BiTrendingUp } from "react-icons/bi";
 
-const formatCurrencyTHB = (n) =>
-  new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(n ?? 0);
-
-export default function AdminDashboard() {
+function Dashboard() {
   const [dateRange, setDateRange] = useState("All");
   const [customDate, setCustomDate] = useState({ start: null, end: null });
-  const [postFilter, setPostFilter] = useState("All");
-
-  const stats = useMemo(
-    () => [
-      { icon: <BiTrendingUp className="text-xl" />, title: "Total Revenue", value: formatCurrencyTHB(220015), color: "bg-orange-500/90" },
-      { icon: <MdOutlinePending className="text-xl" />, title: "Pending Revenue", value: formatCurrencyTHB(2546), color: "bg-emerald-500/90" },
-      { icon: <MdOutlineBorderColor className="text-xl" />, title: "Total Orders", value: "1,015", color: "bg-violet-500/90" },
-    ],
-    []
-  );
 
   return (
-    <AdminLayout title="Dashboard">
-      <div className="grid md:grid-cols-2 gap-4 mb-8">
-        <div className="relative">
-          <p className="absolute top-2 left-4 text-gray-400 text-xs">Date Range</p>
-          <MdDateRange className="absolute left-4 bottom-3 text-gray-500" />
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="w-full bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-11 pt-7 pb-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-          >
-            <option>All</option>
-            <option>Today</option>
-            <option>Yesterday</option>
-            <option>This Week</option>
-            <option>Last Week</option>
-            <option>This Month</option>
-            <option>Last Month</option>
-            <option>This Year</option>
-            <option>Last Year</option>
-            <option>Custom Range</option>
-          </select>
+    <>
+      <Nav />
+      <div className="h-screen flex items-start justify-center bg-[#F1F1F1] text-black">
+        <div className="container mx-auto mt-5 px-20">
 
-          {dateRange === "Custom Range" && (
-            <div className="flex gap-2 mt-2">
-              <DatePicker
-                selected={customDate.start}
-                onChange={(d) => setCustomDate((p) => ({ ...p, start: d }))}
-                selectsStart
-                startDate={customDate.start}
-                endDate={customDate.end}
-                placeholderText="Start"
-                className="w-full bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-4 py-2"
-                calendarClassName="!bg-[#171a1f] !text-gray-100"
-              />
-              <DatePicker
-                selected={customDate.end}
-                onChange={(d) => setCustomDate((p) => ({ ...p, end: d }))}
-                selectsEnd
-                startDate={customDate.start}
-                endDate={customDate.end}
-                minDate={customDate.start}
-                placeholderText="End"
-                className="w-full bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-4 py-2"
-                calendarClassName="!bg-[#171a1f] !text-gray-100"
-              />
+          <div className="filter-con flex gap-5 mb-5">
+
+            {/* Date Range */}
+            <div className="date-range-con flex gap-2 relative w-full">
+              <p className="absolute top-2 left-5 text-[#807a7a] text-sm">Date Range</p>
+              <MdDateRange className="absolute bottom-3 left-5"/>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="rounded px-9 pb-2 pt-7 w-full bg-white shadow-xl"
+              >
+                <option value="All">All</option>
+                <option value="Today">Today</option>
+                <option value="Yesterday">Yesterday</option>
+                <option value="This Week">This Week</option>
+                <option value="Last Week">Last Week</option>
+                <option value="This Month">This Month</option>
+                <option value="Last Month">Last Month</option>
+                <option value="This Year">This Year</option>
+                <option value="Last Year">Last Year</option>
+                <option value="Custom Range">Custom Range</option>
+              </select>
+
+              {/* โชว์ Date Picker ถ้าเลือก Custom Range */}
+              {dateRange === "Custom Range" && (
+                <div className="flex flex-row gap-2">
+                  <DatePicker
+                    selected={customDate.start}
+                    onChange={(date) =>
+                      setCustomDate((prev) => ({ ...prev, start: date }))
+                    }
+                    selectsStart
+                    startDate={customDate.start}
+                    endDate={customDate.end}
+                    placeholderText="Start Date"
+                    className="rounded text-center px-4 py-4 w-full bg-white shadow-xl no-blink-cursor"
+                    onClick={(e) => e.currentTarget.focus()}
+                  />
+                  <DatePicker
+                    selected={customDate.end}
+                    onChange={(date) =>
+                      setCustomDate((prev) => ({ ...prev, end: date }))
+                    }
+                    selectsEnd
+                    startDate={customDate.start}
+                    endDate={customDate.end}
+                    minDate={customDate.start}
+                    placeholderText="End Date"
+                    className="rounded text-center px-4 py-4 w-full bg-white shadow-xl no-blink-cursor"
+                    onClick={(e) => e.currentTarget.focus()}
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div className="relative">
-          <p className="absolute top-2 left-4 text-gray-400 text-xs">Posts</p>
-          <select
-            value={postFilter}
-            onChange={(e) => setPostFilter(e.target.value)}
-            className="w-full bg-[#171a1f] text-gray-100 border border-gray-800 rounded-xl px-4 pt-7 pb-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-          >
-            <option>All</option>
-            <option>กาดหน้ามอ</option>
-            <option>กาดในมอ</option>
-          </select>
-        </div>
-      </div>
+              {/* Post */}
+            <div className="posts-con relative w-full">
+              <p className="absolute top-2 left-5 text-[#807a7a] text-sm">Posts</p>
+              <select
+                className="rounded px-4 pb-2 pt-7 w-full bg-white shadow-xl"
+              >
+                <option value="All">All</option>
+                <option value="Today">กาดหน้ามอ</option>
+                <option value="Yesterday">กาดในมอ</option>
+              </select>
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        {stats.map((box, i) => (
-          <div
-            key={i}
-            className="bg-[#171a1f] border border-gray-800 rounded-2xl p-6 flex items-center gap-4 hover:border-indigo-600/40 transition"
-          >
-            <div className={`w-12 h-12 ${box.color} rounded-xl grid place-items-center text-white`}>{box.icon}</div>
-            <div>
-              <p className="text-xs text-gray-400">{box.title}</p>
-              <p className="text-2xl font-bold text-gray-100">{box.value}</p>
+            </div>
+
+
+          </div>
+
+          <div className="1line-con flex gap-10 min-h-50 mb-8">
+            <div className="total-revenue-con set-center flex-col w-100 h-auto rounded-xl bg-white shadow-2xl">
+              <div className="icon-con size-12 rounded-full bg-[#fe8052] set-center">
+                <BiTrendingUp className="size-7 " />
+              </div>
+              <p className="text-xl font-semibold m-1">Total Revenue</p>
+              <p className="text-3xl font-bold m-1">฿220,015</p>
+              {/* <p className="text-md font-semibold">Last 24 Hours</p> */}
+            </div>
+
+            <PostChart10Days />
+
+            <div className="pending-revenue-con set-center flex-col w-100 h-auto rounded-xl bg-white shadow-2xl">
+              <div className="icon-con size-12 rounded-full bg-[#3ef3b6] set-center">
+                <MdOutlinePending className="size-7 " />
+              </div>
+              <p className="text-xl font-semibold m-1">Pending Revenue</p>
+              <p className="text-3xl font-bold m-1">฿2,546</p>
+              {/* <p className="text-md font-semibold">Cash Flow</p> */}
             </div>
           </div>
-        ))}
-      </div>
 
-      <div className="rounded-2xl overflow-hidden border border-gray-800 bg-[#171a1f]">
-        <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
-          <h3 className="text-gray-100 font-semibold">Overview</h3>
-          <span className="text-xs text-gray-400">Filtered: {postFilter} • {dateRange}</span>
-        </div>
-        <div className="p-5 text-sm text-gray-400">
-          ไม่มีข้อมูลแสดงในส่วนนี้ กดเลือกช่วงวันที่/โพสต์เพื่อดูภาพรวมรายละเอียด
+          <div className="2line-con flex gap-10 max-h-50 mb-8">
+            <div className="paid-out-to-shoppers-con set-center flex-col p-8 w-full rounded-xl bg-white shadow-2xl">
+              <div className="icon-con size-12 rounded-full bg-[#fc7782] set-center">
+                <LuShoppingCart className="size-7 " />
+              </div>
+              <p className="text-xl font-semibold m-1">Paid Out To Shoppers</p>
+              <p className="text-3xl font-bold m-1">฿174,210</p>
+              {/* <p className="text-md font-semibold">Last 24 Hours</p> */}
+            </div>
+
+            <div className="platform-fees-con set-center flex-col p-8 w-full rounded-xl bg-white shadow-2xl">
+              <div className="icon-con size-12 rounded-full bg-[#fdbd46] set-center">
+                <GiFlatPlatform className="size-7 " />
+              </div>
+              <p className="text-xl font-semibold m-1">Platform Fees (30%)</p>
+              <p className="text-3xl font-bold m-1">฿70,110</p>
+              {/* <p className="text-md font-semibold">Last 1 Month</p> */}
+            </div>
+
+            <div className="total-orders-con set-center flex-col p-8 w-full rounded-xl bg-white shadow-2xl">
+              <div className="icon-con size-12 rounded-full bg-[#af52de] set-center">
+                <MdOutlineBorderColor className="size-7 " />
+              </div>
+              <p className="text-xl font-semibold m-1">Total Orders</p>
+              <p className="text-3xl font-bold m-1">1,015</p>
+              {/* <p className="text-md font-semibold">All</p> */}
+            </div>
+          </div>
+
+          <div className="3line-con flex gap-10 max-h-20">
+            <div className="avaliable-con set-center py-15 flex-col p-8 w-full rounded-xl bg-[#007aff] shadow-2xl">
+              <p className="text-xl font-semibold m-1">Avaliabled</p>
+              <p className="text-3xl font-bold m-1">2,492</p>
+            </div>
+
+            <div className="ordering-con set-center py-15 flex-col p-8 w-full rounded-xl bg-[#ffcc00] shadow-2xl">
+              <p className="text-xl font-semibold m-1">Ordering</p>
+              <p className="text-3xl font-bold m-1">204</p>
+            </div>
+
+            <div className="complete-con set-center py-15 flex-col p-8 w-full rounded-xl bg-[#34c759] shadow-2xl">
+              <p className="text-xl font-semibold m-1">Completed</p>
+              <p className="text-3xl font-bold m-1">1,203</p>
+            </div>
+
+            <div className="disable-con set-center py-15 flex-col p-8 w-full rounded-xl bg-[#ff3b30] shadow-2xl">
+              <p className="text-xl font-semibold m-1">Disabled</p>
+              <p className="text-3xl font-bold m-1">198</p>
+            </div>
+          </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }
+
+export default Dashboard;

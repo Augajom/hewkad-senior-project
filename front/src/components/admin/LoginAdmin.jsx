@@ -15,12 +15,43 @@ function LoginAdmin() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  // ⛔ ปิดระบบ login จริง — ข้ามไป Dashboard ทันที
-  navigate('/Dashboard');
-};
+    try {
+      // 🔐 ยิง API ไป backend
+      const res = await axios.post(
+        'http://localhost:5000/login',
+        form,
+        {
+          withCredentials: true,
+        }
+      );
+
+      // ✅ Login สำเร็จ
+      await Swal.fire({
+        icon: 'success',
+        title: 'Login Success',
+        text: `Welcome ${res.data.user.username}!`,
+        showConfirmButton: false,
+        timer: 1500,
+      });
+
+      navigate('/Dashboard');
+
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: err.response?.data?.message || 'Invalid username or password',
+        confirmButtonColor: '#0e240d',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="set-center min-h-screen bg-white">
