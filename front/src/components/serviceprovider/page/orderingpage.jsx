@@ -141,11 +141,11 @@ const OrderingList = () => {
 
   const handleNavigate = (page) => {
     switch (page) {
-      case "home": window.location.href = "/service/main"; break;
+      case "home": window.location.href = "/service/home"; break;
       case "ordering": window.location.href = "/service/ordering"; break;
       case "history": window.location.href = "/service/history"; break;
       case "chat": window.location.href = "/service/chat"; break;
-      default: window.location.href = "/service/main";
+      default: window.location.href = "/service/home";
     }
   };
 

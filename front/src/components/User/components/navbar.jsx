@@ -66,7 +66,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
                 </button>
               </Link>
 
-              <Link to="/messages">
+              <Link to="/user/chat">
                 <button
                   className={`btn btn-ghost btn-circle ${
                     isActive("/messages") ? "text-cyan-600" : "text-slate-900 hover:text-cyan-600"

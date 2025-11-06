@@ -66,13 +66,26 @@ router.post('/posts', verifyToken, async (req, res) => {
       product,
       service_fee,
       price,
-      status_id,
       delivery,
       delivery_at
     } = req.body;
 
+    // 2. ดึง user_id จาก token
     const user_id = req.user.id;
-    const profile_id = user_id; 
+
+    // 3. ค้นหา profile_id ที่ถูกต้อง 🚨
+    const [profileRows] = await db.promise().query(
+      'SELECT id FROM profile WHERE user_id = ?',
+      [user_id]
+    );
+
+    // 4. เช็กว่าเจอโปรไฟล์หรือไม่
+    if (profileRows.length === 0) {
+      return res.status(404).json({ message: "Profile not found for this user." });
+    }
+    const profile_id = profileRows[0].id; 
+    
+    const status_id = 1; 
 
     const newPost = await Post.create(
       kad_id,
@@ -80,9 +93,9 @@ router.post('/posts', verifyToken, async (req, res) => {
       product,
       service_fee,
       price,
-      user_id,
+      user_id, 
       profile_id,
-      status_id,
+      status_id, 
       delivery,
       delivery_at
     );
@@ -90,7 +103,8 @@ router.post('/posts', verifyToken, async (req, res) => {
     res.status(201).json(newPost);
   } catch (err) {
     console.error('Create post error:', err);
-    res.status(500).json({ message: err.message });
+    // ❌ อย่าส่ง err.message ตรงๆ ให้ส่ง Error object ที่มี code ด้วย
+    res.status(500).json({ message: "Database error", error: err });
   }
 });
 

@@ -55,6 +55,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 app.use('/login', loginRoute);
 app.use('/logout', logoutRoute)
 
+// live-chat-get-token
+app.get('/me', verifyToken, (req, res) => {
+  res.json(req.user); 
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
