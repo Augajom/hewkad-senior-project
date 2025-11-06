@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useNavigate, Link } from 'react-router-dom';
-// 🎨 Import Icons
 import { FiUser, FiLock } from 'react-icons/fi';
 
 function LoginAdmin() {
@@ -38,7 +37,6 @@ function LoginAdmin() {
         text: `Welcome ${res.data.user.username}!`,
         showConfirmButton: false,
         timer: 1500,
-        // 🎨 Styled SweetAlert
         background: '#fff',
         customClass: {
           popup: 'rounded-xl shadow-lg',
@@ -53,7 +51,7 @@ function LoginAdmin() {
         icon: 'error',
         title: 'Login Failed',
         text: err.response?.data?.message || 'Invalid username or password',
-        confirmButtonColor: '#d33', // 🎨 สีปุ่ม Error
+        confirmButtonColor: '#d33',
         background: '#fff',
         customClass: {
           popup: 'rounded-xl shadow-lg',
@@ -65,32 +63,24 @@ function LoginAdmin() {
   };
 
   return (
-    // 🎨 1. Gradient Background
     <div className="set-center min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      
-      {/* 🎨 2. Relative container for logo */}
       <div className="relative">
         
-        {/* 🎨 3. Logo (Floating on top) */}
         <img
           src="/src/assets/logo.svg"
           alt="logo"
-          className="absolute left-1/2 -translate-x-1/2 -top-20 w-40 z-10" // 🎨 Positioned on top
+          className="absolute left-1/2 -translate-x-1/2 -top-20 w-40 z-10"
         />
-
-        {/* 🎨 4. Glassmorphism Card */}
-        <div className="login-con w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/50 p-8"> {/* 🎨 pt-28 to make space for logo */}
+        <div className="login-con w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/50 p-8">
           
           <form
             onSubmit={handleSubmit}
             className="input-con flex flex-col items-center"
           >
-            {/* 🎨 5. Styled Title */}
             <p className="font-bold text-3xl mb-8 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
               LOGIN ADMIN
             </p>
 
-            {/* 🎨 6. Styled Inputs with Icons */}
             <div className="relative w-full mb-4">
               <FiUser className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
               <input
@@ -117,7 +107,6 @@ function LoginAdmin() {
               />
             </div>
             
-            {/* 🎨 7. Styled Gradient Buttons */}
             <div className="btn-con flex w-full gap-4 mt-4">
               <button
                 type="submit"

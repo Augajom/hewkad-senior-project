@@ -1,6 +1,5 @@
 /* DatePickerStyles.css */
 
-/* 🎨 Style the popup container */
 .react-datepicker-popper {
   z-index: 50 !important; /* Make sure it appears above other elements */
 }
@@ -15,7 +14,6 @@
   padding: 8px !important;
 }
 
-/* 🎨 Style the header */
 .react-datepicker__header {
   background-color: transparent !important;
   border-bottom: none !important;
@@ -31,24 +29,22 @@
   font-weight: 600 !important;
 }
 
-/* 🎨 Style navigation arrows */
 .react-datepicker__navigation-icon::before {
   border-color: #334155 !important; /* text-slate-700 */
   border-width: 2px 2px 0 0 !important;
   height: 8px !important;
   width: 8px !important;
 }
+
 .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
   border-color: #0f172a !important; /* text-slate-900 */
 }
 
-/* 🎨 Style day names */
 .react-datepicker__day-name {
   color: #475569 !important; /* text-slate-600 */
   font-weight: 600 !important;
 }
 
-/* 🎨 Style individual days */
 .react-datepicker__day {
   color: #334155 !important; /* text-slate-700 */
   border-radius: 0.75rem !important; /* rounded-xl */

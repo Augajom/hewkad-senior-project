@@ -59,12 +59,11 @@ function Nav() {
       <nav
         className={`fixed top-0 left-0 h-screen z-50 shadow-xl border-r border-slate-200/50
           transition-transform duration-300 ease-in-out
-          w-80 bg-white/80 backdrop-blur-xl ${ // 🎨 1. ปรับสไตล์พื้นหลังและขนาด
+          w-80 bg-white/80 backdrop-blur-xl ${
           isCollapsed ? "-translate-x-full" : "translate-x-0"
         }`}
       >
         <div className="relative h-full flex flex-col">
-          {/* 🎨 2. ปุ่ม Toggle Sidebar ใหม่ */}
           <button
             onClick={toggleSidebar}
             className="absolute top-1/2 -translate-y-1/2 -right-5 z-50 w-10 h-10 rounded-full flex items-center justify-center 
@@ -76,13 +75,11 @@ function Nav() {
               <FiChevronLeft className="w-6 h-6" />
             )}
           </button>
-
-          {/* 🎨 3. ส่วนหัว: Logo + Market Toggle */}
           <div className="p-4 flex items-center justify-between border-b border-slate-200/50">
             <div className="flex items-center gap-2">
               <img
                 src="/src/assets/logo.svg"
-                className="size-10" // 🎨 ปรับขนาด Logo
+                className="size-10"
                 alt="Logo"
               />
               <span className="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
@@ -90,8 +87,6 @@ function Nav() {
               </span>
             </div>
           </div>
-
-          {/* 🎨 5. โปรไฟล์ สไตล์ Gradient */}
           <div className="profile-con flex flex-col items-center p-6 border-b border-slate-200/50">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 p-1 shadow-lg shadow-indigo-500/30 mb-4">
               <div className="w-full h-full rounded-full overflow-hidden bg-white">
@@ -110,7 +105,6 @@ function Nav() {
             </div>
           </div>
 
-          {/* 🎨 6. เมนู (ใช้ Component NavLink) */}
           <div className="menu-con flex-grow p-4 space-y-2 overflow-y-auto">
             <NavLink
               to="/Dashboard"
@@ -150,7 +144,6 @@ function Nav() {
             />
           </div>
           
-          {/* 🎨 7. ปุ่ม Logout (อยู่ล่างสุด) */}
           <div className="logout-con p-4 border-t border-slate-200/50">
             <button
               onClick={() => setShowLogoutModal(true)}
@@ -162,7 +155,6 @@ function Nav() {
           </div>
         </div>
 
-        {/* 🎨 8. Modal สไตล์ Glassmorphism */}
         {showLogoutModal && (
           <dialog className="modal modal-open bg-black/50 backdrop-blur-sm">
             <div className="modal-box bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-sm text-slate-900">

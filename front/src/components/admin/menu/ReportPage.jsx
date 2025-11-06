@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../AdminLayout.jsx";
 import { CiSearch } from "react-icons/ci";
-import { IoMdClose } from "react-icons/io"; // 🎨 Import icon
+import { IoMdClose } from "react-icons/io";
 import axios from "axios";
 import Nav from "../nav";
 
@@ -77,7 +77,7 @@ export default function ReportPage() {
   const openModal = (report) => {
     setSelectedReport(report);
     setResolvedDetail(report.resolved_detail || "");
-    setFile(null); // 🎨 Clear file on new modal open
+    setFile(null);
     setModalOpen(true);
   };
 
@@ -136,17 +136,14 @@ export default function ReportPage() {
   return (
     <>
       <Nav />
-      {/* 🎨 1. Gradient Background */}
       <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto flex flex-col items-center">
             
-            {/* 🎨 2. Styled Title */}
             <h1 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
               Report Management
             </h1>
 
-            {/* 🎨 3. Search Bar (Icon inside) */}
             <div className="relative w-full sm:w-96 mb-8">
               <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
               <input
@@ -158,11 +155,9 @@ export default function ReportPage() {
               />
             </div>
 
-            {/* 🎨 4. Table Container (Glassmorphism) */}
             <div className="overflow-x-auto w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-6">
               <table className="w-full text-sm text-center text-slate-800">
                 
-                {/* 🎨 5. Table Head (Styled) */}
                 <thead className="bg-transparent text-slate-600 uppercase text-xs">
                   <tr className="border-b border-slate-300">
                     <th className="px-4 py-3">Order ID</th>
@@ -175,8 +170,6 @@ export default function ReportPage() {
                     <th className="px-4 py-3">Action</th>
                   </tr>
                 </thead>
-
-                {/* 🎨 6. Table Body (Styled) */}
                 <tbody>
                   {filteredReports.length > 0 ? (
                     filteredReports.map((report) => (
@@ -219,7 +212,6 @@ export default function ReportPage() {
                         </td>
                         <td className="p-4">
                           
-                          {/* 🎨 7. Gradient Buttons in Table */}
                           {report.status_id === 6 ? (
                             <button
                               onClick={() => handleOpenModal(report)}
@@ -256,15 +248,13 @@ export default function ReportPage() {
         </div>
       </div>
 
-      {/* 🎨 8. Modal (Glassmorphism) */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-[999]">
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-lg relative">
             <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
               Resolve Report Order {selectedReport.order_id}
             </h2>
-            
-            {/* 🎨 9. Styled Form in Modal */}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <textarea
                 rows="4"

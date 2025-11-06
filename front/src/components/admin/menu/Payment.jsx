@@ -79,17 +79,14 @@ export default function AdminPayments() {
                 filteredOrders.map((order) => (
                   <div
                     key={order.order_id}
-                    // 🎨 4. เปลี่ยน Card เป็นสไตล์ "Solid White" ตามรูป
                     className="card bg-white rounded-3xl shadow-2xl" 
                   >
                     <div className="card-body p-8">
                       
-                      {/* 🎨 5. Title (ตัวหนา สีเข้ม) */}
                       <h2 className="text-2xl font-bold text-slate-900 mb-4">
                         Order: {order.customer_username}
                       </h2>
 
-                      {/* 🎨 6. Status Badge (แบบ Pill) */}
                       <div className="flex items-center gap-2 mb-6">
                         <span className="text-base font-medium text-slate-500">Status:</span>
                         <span
@@ -103,7 +100,6 @@ export default function AdminPayments() {
                         </span>
                       </div>
 
-                      {/* 🎨 7. Details (จัด Layout ใหม่ตามรูป) */}
                       <div className="details-con space-y-4 text-base mb-8">
                         <div>
                           <p className="text-sm font-medium text-slate-500">Service Provider:</p>
@@ -123,7 +119,6 @@ export default function AdminPayments() {
                         </div>
                       </div>
 
-                      {/* 🎨 8. Solid Gradient Buttons (ตามรูป) */}
                       <div className="btn-con w-full space-y-3">
                         <button
                           onClick={() => showUserPayment(order, order.order_id)}

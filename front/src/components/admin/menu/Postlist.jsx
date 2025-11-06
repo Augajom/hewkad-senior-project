@@ -64,12 +64,10 @@ function Postlist() {
   return (
     <>
       <Nav />
-      {/* 🎨 Apply the gradient background */}
       <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto flex flex-col items-center">
-            
-            {/* 🎨 Filter - Styled with glassmorphism and label-inside (Unchanged) */}
+
             <div className="filter-con flex flex-col sm:flex-row items-center gap-6 w-full justify-center mb-8 p-6 bg-white/70 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-lg">
               
               {/* Markets Select (Label inside) */}
@@ -104,7 +102,6 @@ function Postlist() {
               </div>
             </div>
 
-            {/* 🎨 Card Grid */}
             <div className="card-con grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl mx-auto">
               {filteredPosts.length > 0 ? (
                 filteredPosts.map((post) => (
@@ -112,18 +109,14 @@ function Postlist() {
                     key={post.id}
                     className="card relative bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 overflow-hidden" 
                   >
-                    {/* 🎨 Price Tag (Bottom Right) */}
                     <p className="absolute text-red-600 text-3xl font-bold bottom-6 right-6 z-10">
                       {Math.round(
                         (post.service_fee - calPlatformFees(post.service_fee)) + post.price
                       )}
                       <span className="text-xl ml-1">฿</span>
                     </p>
-
-                    {/* 🎨 Adjusted padding: Added pb-20 to make space for the absolute price */}
                     <div className="card-body p-6 pt-6 px-6">
                       
-                      {/* 🎨 Profile Section (with Status on right) */}
                       <div className="profile-con flex justify-between items-center mb-4">
                         
                         {/* Left side: Avatar + Name */}
@@ -149,7 +142,6 @@ function Postlist() {
                           </div>
                         </div>
 
-                        {/* 🎨 Right side: Status Badge (MOVED HERE) */}
                         <div className="status-con">
                           <div
                             className={`badge text-white font-semibold px-4 py-3 rounded-lg border-none ${

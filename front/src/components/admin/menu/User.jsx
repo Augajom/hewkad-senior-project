@@ -236,7 +236,6 @@ export default function AdminUsers() {
   return (
     <>
       <Nav />
-      {/* 🎨 Apply the gradient background from your examples */}
       <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto flex flex-col items-center">

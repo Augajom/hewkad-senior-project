@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Nav from "../nav";
 import { CiSearch } from "react-icons/ci";
-import { IoMdClose } from "react-icons/io"; // 🎨 Import icon
+import { IoMdClose } from "react-icons/io";
 import axios from "axios";
 
 function Activity() {
@@ -18,7 +18,7 @@ function Activity() {
         const url =
           pageType === "History"
             ? "http://localhost:5000/admin/history"
-            : "http://localhost:5000/admin/report"; // ✅ endpoint report
+            : "http://localhost:5000/admin/report";
         const { data } = await axios.get(url, { withCredentials: true });
         setOrders(data.orders);
       } catch (err) {
@@ -26,7 +26,7 @@ function Activity() {
       }
     };
     fetchOrders();
-  }, [pageType]); // ✅ ดึงใหม่เมื่อเปลี่ยนหน้า
+  }, [pageType]);
 
   // ฟังก์ชันเปิด/ปิด modal
   const openSlipModal = (url) => {
@@ -43,7 +43,7 @@ function Activity() {
   const filteredOrders = orders.filter((order) => {
     const query = search.toLowerCase();
 
-    // แปลงค่าต่างๆ เป็น string และ lowercase ก่อนตรวจ
+    // แปลงค่าต่างๆ เป็น string และ lowercase
     return (
       order.order_id?.toString().toLowerCase().includes(query) ||
       order.customer_name?.toLowerCase().includes(query) ||
@@ -66,10 +66,10 @@ function Activity() {
 
     if (s.includes("complete") || s.includes("successfully"))
       return "text-green-600 font-semibold"; // ✅ เขียว
-    if (s.includes("reported")) return "text-red-600 font-semibold"; // 🔴 แดง
-    if (s.includes("ordering")) return "text-orange-500 font-semibold"; // 🟠 ส้ม
-    if (s.includes("rider received")) return "text-sky-500 font-semibold"; // 🔵 ฟ้า
-    if (s.includes("order received")) return "text-blue-600 font-semibold"; // 🔷 น้ำเงิน
+    if (s.includes("reported")) return "text-red-600 font-semibold";
+    if (s.includes("ordering")) return "text-orange-500 font-semibold";
+    if (s.includes("rider received")) return "text-sky-500 font-semibold";
+    if (s.includes("order received")) return "text-blue-600 font-semibold";
 
     return "text-gray-600";
   };
@@ -86,15 +86,12 @@ function Activity() {
   return (
     <>
       <Nav />
-      {/* 🎨 1. Gradient Background */}
       <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto flex flex-col items-center">
             
-            {/* 🎨 2. Filter Bar (Glassmorphism) */}
             <div className="filter-con flex flex-col sm:flex-row items-center gap-6 w-full justify-center mb-8 p-6 bg-white/70 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-lg">
 
-              {/* 🎨 4. Search Input (Styled) */}
               <div className="relative w-full sm:w-96">
                 <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                 <input
@@ -107,10 +104,8 @@ function Activity() {
               </div>
             </div>
 
-            {/* 🎨 5. Table Container (Glassmorphism) */}
             <div className="overflow-x-auto w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-6">
               <table className="w-full text-sm text-center text-slate-800">
-                {/* 🎨 6. Table Head (Styled) */}
                 <thead className="bg-transparent text-slate-600 uppercase text-xs">
                   <tr className="border-b border-slate-300">
                     <th className="px-4 py-3">Order ID</th>
@@ -125,7 +120,6 @@ function Activity() {
                     <th className="px-4 py-3">Slip File</th>
                   </tr>
                 </thead>
-                {/* 🎨 7. Table Body (Styled) */}
                 <tbody>
                   {filteredOrders.length > 0 ? (
                     filteredOrders.map((order) => {
@@ -178,7 +172,6 @@ function Activity() {
                           </td>
                           <td className="p-4">
                             {order.slip_filename ? (
-                              // 🎨 8. Gradient Button for Slip
                               <button
                                 className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
                                 onClick={() =>
@@ -207,7 +200,6 @@ function Activity() {
               </table>
             </div>
 
-            {/* 🎨 9. Modal Popup (Glassmorphism) */}
             {modalOpen && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[999]">
                 <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 max-w-xl w-full relative">

@@ -13,8 +13,8 @@ import { MdDateRange } from "react-icons/md";
 // Date-Range
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-// 🎨 Custom CSS to style react-datepicker
-import "../css/DatePickerStyles.css"; // (ใช้ไฟล์เดิมจากครั้งที่แล้ว)
+
+import "../css/DatePickerStyles.css";
 
 const formatCurrencyTHB = (n) =>
   new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(n ?? 0);
@@ -167,12 +167,9 @@ export default function AdminDashboard() {
   return (
     <>
       <Nav />
-      {/* 🎨 1. Background (Solid Light Gray) */}
       <div className="min-h-screen flex items-start justify-center bg-slate-100 text-slate-900">
         <div className="container mx-auto mt-5 px-4 sm:px-10 lg:px-20">
-          {/* 🎨 2. Filter Bar (Solid White) */}
           <div className="filter-con flex flex-col sm:flex-row items-center flex-wrap gap-6 w-full justify-center mb-8 p-6 bg-white rounded-2xl shadow-xl">
-            {/* 🎨 3. Date Range Select (Solid inputs) */}
             <div className="relative w-full sm:w-auto sm:min-w-[220px]">
               <label className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 pointer-events-none z-10">
                 Date Range
@@ -244,7 +241,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* 🎨 4. Stat Cards Grid (Line 1) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <StatCard
               title="Total Revenue"
@@ -275,7 +271,6 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* 🎨 5. Stat Cards Grid (Line 2) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <StatCard
               title="Paid Out To Shoppers"
@@ -309,7 +304,6 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* 🎨 6. Status Grid (3 Columns) */}
           <div className="grid grid-cols-3 gap-6">
             {/* Row 1 */}
             <StatusCard
@@ -367,7 +361,6 @@ export default function AdminDashboard() {
   );
 }
 
-// 🎨 7. Helper Component for Stat Cards (ปรับเป็นจัดกลาง)
 const StatCard = ({ title, value, icon, iconBg }) => (
   <div className="card bg-white rounded-2xl shadow-xl p-6 h-full flex flex-col items-center justify-center">
     <div
@@ -382,7 +375,6 @@ const StatCard = ({ title, value, icon, iconBg }) => (
   </div>
 );
 
-// 🎨 8. Helper Component for Status Cards (ปรับสี/ขอบ)
 const StatusCard = ({ title, value, bgColor }) => (
   <div
     className={`flex flex-col items-center justify-center p-6 rounded-2xl shadow-lg text-white h-23 ${bgColor}`}
