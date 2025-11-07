@@ -251,29 +251,29 @@ export default function ReportPage() {
         </div>
       </div>
       {viewModal.open && (
-  <dialog className="modal modal-open">
-    <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black max-w-md w-full">
-      <h3 className="font-bold text-lg text-center mb-4">{viewModal.title}</h3>
+        <dialog className="modal modal-open">
+          <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black max-w-md w-full">
+            <h3 className="font-bold text-lg text-center mb-4">{viewModal.title}</h3>
 
-      <div className="flex justify-center mb-6">
-        <img
-          src={viewModal.fileUrl}
-          alt={viewModal.title}
-          className="max-w-full max-h-[400px] object-contain rounded"
-        />
-      </div>
+            <div className="flex justify-center mb-6">
+              <img
+                src={viewModal.fileUrl}
+                alt={viewModal.title}
+                className="max-w-full max-h-[400px] object-contain rounded"
+              />
+            </div>
 
-      <div className="flex justify-center">
-        <button
-          className="btn btn-error text-white px-8 py-3 rounded-full"
-          onClick={() => setViewModal({ open: false, fileUrl: "", title: "" })}
-        >
-          ปิด
-        </button>
-      </div>
-    </div>
-  </dialog>
-)}
+            <div className="flex justify-center">
+              <button
+                className="btn btn-error text-white px-8 py-3 rounded-full"
+                onClick={() => setViewModal({ open: false, fileUrl: "", title: "" })}
+              >
+                ปิด
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
 
       {modalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-[999]">
@@ -299,17 +299,19 @@ export default function ReportPage() {
                 onChange={(e) => setFile(e.target.files[0])}
               />
               <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/30 hover:shadow-red-500/50"
-                >
-                  Cancel
-                </button>
+                {!submitting && (
+                  <button
+                    type="button"
+                    onClick={() => setModalOpen(false)}
+                    className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/30 hover:shadow-red-500/50"
+                  >
+                    Cancel
+                  </button>
+                )}
                 <button
                   type="submit"
                   className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30 hover:shadow-emerald-500/50"
-                  disabled={submitting} // ✅ disable ขณะ loading
+                  disabled={submitting}
                 >
                   {submitting ? "Submitting..." : "Submit Resolution"}
                 </button>
