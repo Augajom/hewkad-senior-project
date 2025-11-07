@@ -273,13 +273,7 @@ router.put(
       const postId = await Orderingnoti.getPostIdByOrderId(orderId);
       const owner = await Orderingnoti.getOwnerEmailByPostId(postId);
 
-      // 3️⃣ ส่ง email แจ้งลูกค้า
-      sendReportResolvedEmail(
-        owner.email,
-        owner.nickname,
-        owner.product,
-        owner.store_name
-      );
+      
 
       res.json({ message: "Report resolved and email sent successfully" });
     } catch (err) {
