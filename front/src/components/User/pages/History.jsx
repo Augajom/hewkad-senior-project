@@ -1,121 +1,126 @@
-import React, { useEffect, useMemo, useState } from "react";
-import Navbar from "../components/navbar";
-import HistoryPostCard from "../components/HistoryPostCard";
+import React, { useEffect, useState } from 'react';
+import Navbar from '../components/navbar';
+import HistoryPostCard from '../components/HistoryPostCard';
 import { SlArrowDown } from "react-icons/sl";
-import "../DaisyUI.css";
-
-const API = "http://localhost:5000";
+import '../DaisyUI.css';
 
 export default function History() {
   const [posts, setPosts] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("Complete");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All");
 
-  const fetchPosts = async (status = "Complete") => {
+  // ✅ ดึงโพสต์ตามสถานะ หรือทั้งหมด
+  const fetchPosts = async (statusFilter = "All") => {
     setLoading(true);
     setError(null);
+
     try {
-      const res = await fetch(`${API}/customer/history/${encodeURIComponent(status)}`, {
-        method: "GET",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Unauthorized: Please login");
-        throw new Error("Failed to fetch posts");
-      }
-      const data = await res.json();
-      setPosts(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setError(e.message || "Something went wrong");
-      setPosts([]);
+      // ✅ ถ้าเลือก "All" จะดึงทั้งหมดตั้งแต่ 5–9
+      const statuses =
+        statusFilter === "All"
+          ? ["Complete", "Reporting", "Reject", "Successfully", "Reported"]
+          : [statusFilter];
+
+      const results = await Promise.all(
+        statuses.map((status) =>
+          fetch(`http://localhost:5000/customer/history/${status}`, {
+            method: "GET",
+            credentials: "include",
+          }).then((res) => {
+            if (!res.ok) {
+              if (res.status === 401)
+                throw new Error("Unauthorized: Please login");
+              throw new Error(`Failed to fetch ${status} posts`);
+            }
+            return res.json();
+          })
+        )
+      );
+
+      // รวมผลลัพธ์ทั้งหมด
+      const combinedPosts = results.flat();
+
+      setPosts(combinedPosts);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPosts(statusFilter);
-  }, [statusFilter]);
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return posts;
-    const q = search.toLowerCase();
-    return posts.filter((p) =>
-      Object.values(p).some((v) => v && v.toString().toLowerCase().includes(q))
-    );
-  }, [posts, search]);
+    fetchPosts();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Navbar onSearchSubmit={setSearch} />
+    <div className="min-h-screen bg-white">
+      <Navbar />
 
-      {/* Sticky filter header */}
-      <header className="sticky top-16 z-40 bg-white/70 backdrop-blur-xl border-b border-slate-200/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            {/* Dropdown */}
-            <div className="dropdown">
-              <div tabIndex={0} className="btn bg-white/90 text-slate-900 rounded-xl">
-                <SlArrowDown className="mr-2" /> Filter by Status
-              </div>
-              <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-white rounded-2xl w-56 text-slate-900">
-                {["Complete", "Reported", "Pending"].map((s) => (
-                  <li key={s}><button onClick={() => setStatusFilter(s)}>{s}</button></li>
-                ))}
-              </ul>
-            </div>
+      {/* Dropdown filter status */}
+      <div className="mt-5 ml-6">
+        <div className="dropdown">
+          <div tabIndex={0} className="btn m-1 bg-white text-black">
+            <SlArrowDown /> Filter by Status
           </div>
-
-          {/* Search input */}
-          <div className="w-full md:w-80">
-            <input
-              type="text"
-              placeholder="Search in history…"
-              className="input input-bordered w-full bg-white/90 text-slate-900 rounded-xl"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <ul
+            tabIndex={0}
+            className="dropdown-content menu p-2 shadow bg-white rounded-box w-52"
+          >
+            <li className="text-black">
+              <button onClick={() => { setSelectedStatus("All"); fetchPosts("All"); }}>
+                All (5–9)
+              </button>
+            </li>
+            <li className="text-black">
+              <button onClick={() => { setSelectedStatus("Complete"); fetchPosts("Complete"); }}>
+                Complete (5)
+              </button>
+            </li>
+            <li className="text-black">
+              <button onClick={() => { setSelectedStatus("Reporting"); fetchPosts("Reporting"); }}>
+                Reporting (6)
+              </button>
+            </li>
+            <li className="text-black">
+              <button onClick={() => { setSelectedStatus("Reject"); fetchPosts("Reject"); }}>
+                Reject (7)
+              </button>
+            </li>
+            <li className="text-black">
+              <button onClick={() => { setSelectedStatus("Successfully"); fetchPosts("Successfully"); }}>
+                Successfully (8)
+              </button>
+            </li>
+            <li className="text-black">
+              <button onClick={() => { setSelectedStatus("Reported"); fetchPosts("Reported"); }}>
+                Reported (9)
+              </button>
+            </li>
+          </ul>
         </div>
-      </header>
+      </div>
 
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h3 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-          History
+      <div className="p-8 container mx-auto">
+        <h3 className="text-2xl font-bold text-center mb-6 text-black">
+          History {selectedStatus !== "All" ? `- ${selectedStatus}` : ""}
         </h3>
 
-        <div className="p-4 sm:p-6">
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-80 w-full max-w-xs sm:max-w-sm rounded-2xl bg-white/60 border border-slate-200 animate-pulse m-2" />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-6">
-              <div className="text-red-600 font-semibold text-lg">เกิดข้อผิดพลาด</div>
-              <div className="text-slate-600 text-center max-w-md">{error}</div>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-500 max-w-md mx-auto">
-              ยังไม่มีรายการ
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
-              {filtered.map((post) => (
-                <HistoryPostCard
-                  key={post.id}
-                  post={post}
-                  className="w-full max-w-xs sm:max-w-sm p-4 rounded-2xl shadow-md bg-white m-2"
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+        {loading ? (
+          <p className="text-center text-gray-500">Loading...</p>
+        ) : error ? (
+          <p className="text-center text-red-500">{error}</p>
+        ) : posts.length === 0 ? (
+          <p className="text-center text-gray-500">ยังไม่มีรายการ</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+            {posts.map((post) => (
+              <HistoryPostCard key={post.id} post={post} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

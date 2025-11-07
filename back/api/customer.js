@@ -287,28 +287,49 @@ router.post("/upload-slip", upload.single("files"), async (req, res) => {
 });
 
 
-// POST /customer/reports
-router.post('/reports', verifyToken, async (req, res) => {
-  try {
-    const { post_id, reason_id, detail } = req.body;
-    const reporter_id = req.user.id;
 
-    if (!post_id || !reason_id) {
-      return res.status(400).json({ message: 'Missing fields' });
+
+
+
+
+
+// ====================
+// 📌 POST /reports
+// ====================
+router.post('/reports', verifyToken, (req, res, next) => {
+  const fs = require('fs');
+  const multer = require('multer');
+  const path = require('path');
+
+  const reportDir = path.join(__dirname, '..', 'uploads', 'reports');
+  if (!fs.existsSync(reportDir)) fs.mkdirSync(reportDir, { recursive: true });
+
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, reportDir),
+    filename: (req, file, cb) => {
+      if (!req.user || !req.user.id) return cb(new Error("User ID undefined"));
+      const uniqueSuffix = Date.now() + path.extname(file.originalname);
+      cb(null, `report_${req.user.id}_${uniqueSuffix}`);
     }
+  });
 
-    // สร้าง report
-    await Report.create(post_id, reporter_id, reason_id, detail);
+  const upload = multer({ storage }).single('image');
+  upload(req, res, (err) => {
+    if (err) return res.status(500).json({ message: err.message });
+    next();
+  });
+}, async (req, res) => {
+  // route logic
+  const { post_id, reason_id, detail } = req.body;
+  const reporter_id = req.user.id;
+  const report_file = req.file ? `/uploads/reports/${req.file.filename}` : null;
 
-    // อัปเดตสถานะโพสต์และ order เป็น Reported
-    const result = await Ordering.updateStatus(post_id, 'Reported');
+  await Report.create(post_id, reporter_id, reason_id, detail, report_file);
+  await Ordering.updateStatus(post_id, 'Reporting');
 
-    res.json({ success: true, message: 'Report submitted and status updated', data: result });
-  } catch (err) {
-    console.error("Report error:", err);
-    res.status(500).json({ message: err.message });
-  }
+  res.json({ success: true, message: 'Report submitted successfully' });
 });
+
 
 // GET /customer/reports/:postId
 router.get('/reports/:postId', verifyToken, async (req, res) => {
