@@ -12,43 +12,29 @@ export default function History() {
 
   // ✅ ดึงโพสต์ตามสถานะ หรือทั้งหมด
   const fetchPosts = async (statusFilter = "All") => {
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    try {
-      // ✅ ถ้าเลือก "All" จะดึงทั้งหมดตั้งแต่ 5–9
-      const statuses =
-        statusFilter === "All"
-          ? ["Complete", "Reporting", "Reject", "Successfully", "Reported"]
-          : [statusFilter];
+  try {
+    const url =
+      statusFilter === "All"
+        ? "http://localhost:5000/customer/history/All"
+        : `http://localhost:5000/customer/history/${statusFilter}`;
 
-      const results = await Promise.all(
-        statuses.map((status) =>
-          fetch(`http://localhost:5000/customer/history/${status}`, {
-            method: "GET",
-            credentials: "include",
-          }).then((res) => {
-            if (!res.ok) {
-              if (res.status === 401)
-                throw new Error("Unauthorized: Please login");
-              throw new Error(`Failed to fetch ${status} posts`);
-            }
-            return res.json();
-          })
-        )
-      );
+    const res = await fetch(url, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch posts");
 
-      // รวมผลลัพธ์ทั้งหมด
-      const combinedPosts = results.flat();
+    const data = await res.json();
 
-      setPosts(combinedPosts);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // ไม่ต้อง filter ซ้ำแล้ว เพราะ backend จัดการแล้ว
+    setPosts(data);
+  } catch (err) {
+    console.error(err);
+    setError(err.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchPosts();
@@ -70,32 +56,22 @@ export default function History() {
           >
             <li className="text-black">
               <button onClick={() => { setSelectedStatus("All"); fetchPosts("All"); }}>
-                All (5–9)
+                All
               </button>
             </li>
             <li className="text-black">
               <button onClick={() => { setSelectedStatus("Complete"); fetchPosts("Complete"); }}>
-                Complete (5)
+                Complete
               </button>
             </li>
             <li className="text-black">
               <button onClick={() => { setSelectedStatus("Reporting"); fetchPosts("Reporting"); }}>
-                Reporting (6)
-              </button>
-            </li>
-            <li className="text-black">
-              <button onClick={() => { setSelectedStatus("Reject"); fetchPosts("Reject"); }}>
-                Reject (7)
-              </button>
-            </li>
-            <li className="text-black">
-              <button onClick={() => { setSelectedStatus("Successfully"); fetchPosts("Successfully"); }}>
-                Successfully (8)
+                Reporting
               </button>
             </li>
             <li className="text-black">
               <button onClick={() => { setSelectedStatus("Reported"); fetchPosts("Reported"); }}>
-                Reported (9)
+                Reported
               </button>
             </li>
           </ul>

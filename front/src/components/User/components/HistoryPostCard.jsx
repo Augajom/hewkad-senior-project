@@ -5,11 +5,10 @@ const HistoryPostCard = ({ post, className = "" }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReasons, setReportReasons] = useState([]);
   const [reportForm, setReportForm] = useState({ report: "", details: "" });
-  const [status, setStatus] = useState(post.status_id === 8 ? "Complete" : post.status);
+  const [status, setStatus] = useState(post.status);
   const [showProofModal, setShowProofModal] = useState(false);
   const total = (post.price || 0) + (post.service_fee || 0);
 
-  // ดึงเหตุผลจาก backend
   useEffect(() => {
     const fetchReasons = async () => {
       try {
@@ -27,8 +26,8 @@ const HistoryPostCard = ({ post, className = "" }) => {
   }, []);
 
   const getBadgeClass = (status) => {
-    if (status === 'Complete') return 'badge-success';
-    if (status === 'Reported') return 'badge-error';
+    if (status === 'Complete' || status === 'Successfully') return 'badge-success';
+    if (status === 'Reported' || status === 'Reject') return 'badge-error';
     return 'badge-neutral';
   };
 
@@ -51,7 +50,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
         throw new Error(text || "Failed to submit report");
       }
 
-      const data = await res.json();
+      await res.json();
       setStatus("Reported");
       setShowReportModal(false);
       alert("Report submitted successfully!");
@@ -65,6 +64,8 @@ const HistoryPostCard = ({ post, className = "" }) => {
     const { name, value } = e.target;
     setReportForm((prev) => ({ ...prev, [name]: value }));
   };
+
+  const isReported = post.status_id === 9;
 
   return (
     <div className={`card bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black ${className}`}>
@@ -80,7 +81,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
                 : 'https://i.pravatar.cc/150'
             }
             alt="avatar"
-            className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
+            className="w-10 h-10 rounded-full object-cover"
           />
           <div>
             <div className="font-bold text-base">{post.nickname || 'ไม่ระบุชื่อ'}</div>
@@ -96,7 +97,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
         </div>
       </div>
 
-      {/* ข้อมูลสินค้า */}
+      {/* Content */}
       <div className="mt-4 text-sm space-y-1">
         <p><span className="font-semibold">สถานที่ส่ง</span> : {post.deliveryLocation || '-'}</p>
         <p><span className="font-semibold">ชื่อร้าน</span> : {post.store_name || '-'}</p>
@@ -114,30 +115,43 @@ const HistoryPostCard = ({ post, className = "" }) => {
 
         <div className="flex flex-col gap-2 justify-end items-end">
           <div className="flex gap-2">
-            <button className="btn btn-error text-white" onClick={() => setShowReportModal(true)}>
-              Report
-            </button>
+            {/* 🔒 ซ่อนปุ่ม Report ถ้าเป็น Reported */}
+            {!isReported && (
+              <button className="btn btn-error text-white" onClick={() => setShowReportModal(true)}>
+                Report
+              </button>
+            )}
           </div>
-          <button className="btn btn-link text-blue-600 underline self-start" onClick={() => setShowProofModal(true)}>
-            View Proof Of Delivery
+
+          {/* 🔁 เปลี่ยนข้อความตามสถานะ */}
+          <button
+            className="btn btn-link text-blue-600 underline self-start"
+            onClick={() => setShowProofModal(true)}
+          >
+            {isReported ? "View Refund Proof" : "View Proof Of Delivery"}
           </button>
         </div>
       </div>
 
-      {/* Proof Modal */}
-      {showProofModal && post.proof_url && (
+      {/* Proof / Refund Proof Modal */}
+      {showProofModal && (
         <dialog className="modal modal-open">
           <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
-            <h3 className="font-bold text-lg text-center mb-4">Proof</h3>
+            <h3 className="font-bold text-lg text-center mb-4">
+              {isReported ? "Refund Proof" : "Proof of Delivery"}
+            </h3>
             <div className="flex justify-center mb-6">
               <img
-                src={`http://localhost:5000${post.proof_url}`}
+                src={`http://localhost:5000${isReported ? post.resolved_file : post.proof_url}`}
                 alt="Proof"
                 className="max-w-full max-h-[400px] object-contain rounded"
               />
             </div>
             <div className="flex justify-center">
-              <button className="btn btn-error text-white px-8 py-3 rounded-full" onClick={() => setShowProofModal(false)}>
+              <button
+                className="btn btn-error text-white px-8 py-3 rounded-full"
+                onClick={() => setShowProofModal(false)}
+              >
                 ปิด
               </button>
             </div>
