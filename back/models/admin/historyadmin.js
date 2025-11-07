@@ -79,6 +79,7 @@ SELECT
   rp.detail AS report_detail,
   rp.\`Resloved detail\` AS resolved_detail,
   rp.resolved_file, -- ✅ เพิ่มตรงนี้
+  rp.report_file,
 
   -- Order & Status info
   o.status_id,

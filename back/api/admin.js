@@ -9,6 +9,8 @@ const historyadmin = require('../models/admin/historyadmin');
 const Report = require("../models/admin/Report");
 const manageUser = require('../models/admin/manageUser');
 const getPost = require('../models/admin/getPost');
+const Orderingnoti = require("../models/customer/Orderingnoti");
+const { sendReportResolvedEmail } = require('../utils/NotiReportEmail');
 
 
 router.get('/', (req, res) => {
@@ -255,19 +257,37 @@ const resolvedStorage = multer.diskStorage({
 });
 const resolvedUpload = multer({ storage: resolvedStorage });
 
-router.put("/report/:orderId/resolve", resolvedUpload.single("file"), async (req, res) => {
-  const { orderId } = req.params;
-  const { resolved_detail } = req.body;
-  const filePath = req.file ? `/Files/Resolved/${req.file.filename}` : null;
+router.put(
+  "/report/:orderId/resolve",
+  resolvedUpload.single("file"),
+  async (req, res) => {
+    const { orderId } = req.params;
+    const { resolved_detail } = req.body;
+    const filePath = req.file ? `/Files/Resolved/${req.file.filename}` : null;
 
-  try {
-    await Report.resolveReport(orderId, resolved_detail, filePath);
-    res.json({ message: "Report updated successfully" });
-  } catch (err) {
-    console.error("❌ Error resolving report:", err);
-    res.status(500).json({ error: "Failed to update report" });
+    try {
+      // 1️⃣ อัปเดต report + status ของ order และ post เป็น 9
+      await Report.resolveReport(orderId, resolved_detail, filePath, "Reported");
+
+      // 2️⃣ ดึงข้อมูล owner ของ post เพื่อนำไปส่ง email
+      const postId = await Orderingnoti.getPostIdByOrderId(orderId);
+      const owner = await Orderingnoti.getOwnerEmailByPostId(postId);
+
+      // 3️⃣ ส่ง email แจ้งลูกค้า
+      sendReportResolvedEmail(
+        owner.email,
+        owner.nickname,
+        owner.product,
+        owner.store_name
+      );
+
+      res.json({ message: "Report resolved and email sent successfully" });
+    } catch (err) {
+      console.error("❌ Error resolving report:", err);
+      res.status(500).json({ error: "Failed to update report" });
+    }
   }
-});
+);
 
 router.get("/users", async (req, res) => {
   try {
