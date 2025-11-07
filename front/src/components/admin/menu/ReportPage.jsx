@@ -28,6 +28,8 @@ export default function ReportPage() {
   const [resolvedDetail, setResolvedDetail] = useState("");
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [viewModal, setViewModal] = useState({ open: false, fileUrl: "", title: "" });
 
   const load = async () => {
     try {
@@ -60,20 +62,34 @@ export default function ReportPage() {
     formData.append("resolved_detail", resolvedDetail);
     if (file) formData.append("file", file);
 
+    const shouldReopen = [2, 3, 4].includes(selectedReport.reason_id);
+    if (shouldReopen) formData.append("change_status", "Ordering");
+
     try {
+      setSubmitting(true); // ✅ เริ่ม loading
+
       await axios.put(
         `${API}/admin/report/${selectedReport.order_id}/resolve`,
         formData,
         { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
       );
-      alert("แก้ไขรายงานสำเร็จ! ลูกค้าจะได้รับอีเมลแจ้งเตือน");
+
+      if (shouldReopen) {
+        alert("รายงานนี้ต้องแก้งานอีกครั้ง! Rider จะได้รับอีเมลแจ้งเตือนให้ไปแก้งาน");
+      } else {
+        alert("แก้ไขรายงานสำเร็จ! ลูกค้าจะได้รับอีเมลแจ้งเตือน");
+      }
+
       setModalOpen(false);
-      load(); // reload reports
+      load();
     } catch (err) {
       console.error("Error updating report:", err);
       alert("เกิดข้อผิดพลาดในการอัปเดตข้อมูล");
+    } finally {
+      setSubmitting(false); // ✅ จบ loading
     }
   };
+
 
   const filteredReports = useMemo(() => {
     const q = search.toLowerCase();
@@ -169,16 +185,17 @@ export default function ReportPage() {
                         <td className="p-4 text-center">{report.report_detail || "-"}</td>
 
                         {/* เพิ่ม column report_file */}
+                        {/* Column Report File */}
                         <td className="p-4 text-center">
                           {report.report_file ? (
-                            <a
-                              href={`http://localhost:5000${report.report_file}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
+                            <button
+                              onClick={() =>
+                                setViewModal({ open: true, fileUrl: `http://localhost:5000${report.report_file}`, title: "Report File" })
+                              }
+                              className="text-blue-600 underline hover:text-blue-800 text-sm cursor-pointer"
                             >
                               View Report
-                            </a>
+                            </button>
                           ) : (
                             "-"
                           )}
@@ -201,14 +218,18 @@ export default function ReportPage() {
                               Resolve
                             </button>
                           ) : report.resolved_file ? (
-                            <a
-                              href={`http://localhost:5000${report.resolved_file}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() =>
+                                setViewModal({
+                                  open: true,
+                                  fileUrl: `http://localhost:5000${report.resolved_file}`,
+                                  title: "Resolved File",
+                                })
+                              }
                               className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/20"
                             >
                               View File
-                            </a>
+                            </button>
                           ) : (
                             "-"
                           )}
@@ -229,6 +250,30 @@ export default function ReportPage() {
           </div>
         </div>
       </div>
+      {viewModal.open && (
+  <dialog className="modal modal-open">
+    <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black max-w-md w-full">
+      <h3 className="font-bold text-lg text-center mb-4">{viewModal.title}</h3>
+
+      <div className="flex justify-center mb-6">
+        <img
+          src={viewModal.fileUrl}
+          alt={viewModal.title}
+          className="max-w-full max-h-[400px] object-contain rounded"
+        />
+      </div>
+
+      <div className="flex justify-center">
+        <button
+          className="btn btn-error text-white px-8 py-3 rounded-full"
+          onClick={() => setViewModal({ open: false, fileUrl: "", title: "" })}
+        >
+          ปิด
+        </button>
+      </div>
+    </div>
+  </dialog>
+)}
 
       {modalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-[999]">
@@ -264,8 +309,9 @@ export default function ReportPage() {
                 <button
                   type="submit"
                   className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30 hover:shadow-emerald-500/50"
+                  disabled={submitting} // ✅ disable ขณะ loading
                 >
-                  Submit Resolution
+                  {submitting ? "Submitting..." : "Submit Resolution"}
                 </button>
               </div>
             </form>
