@@ -1,24 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 
-import {
-  Camera,
-  LogOut,
-  Edit3,
-  Save,
-  X,
-  Upload,
-  Check,
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  CreditCard,
-  FileText,
-  RefreshCw,
-} from "lucide-react";
+import { Camera, LogOut, Edit3, Save, X, Upload, Check, User, Phone, Mail, MapPin, CreditCard, FileText, RefreshCw } from "lucide-react";
 
 import Navbar from "../components/navbar";
-import Swal from "sweetalert2";
 
 const API_BASE = "http://localhost:5000";
 
@@ -85,9 +69,7 @@ export default function ProfilePage() {
   const loadProfile = useCallback(async () => {
     setLoaded(false);
     try {
-      const res = await fetch(`${API_BASE}/profile?t=${Date.now()}`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE}/profile?t=${Date.now()}`, { credentials: "include" });
       if (res.status === 401) return;
       if (!res.ok) throw new Error("Failed to load profile");
       const d = await res.json();
@@ -117,8 +99,7 @@ export default function ProfilePage() {
   }, [loadProfile]);
 
   const handleEdit = () => setEditMode(true);
-  const handleChange = (e) =>
-    setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
+  const handleChange = (e) => setEditUser((p) => ({ ...p, [e.target.name]: e.target.value ?? "" }));
   const handleCancel = () => {
     setEditUser(user);
     setEditMode(false);
@@ -176,8 +157,7 @@ export default function ProfilePage() {
         body: form,
       });
       const ct = res.headers.get("content-type") || "";
-      if (!ct.includes("application/json"))
-        throw new Error("Bad response from server");
+      if (!ct.includes("application/json")) throw new Error("Bad response from server");
       const data = await res.json();
       if (!res.ok || !data?.ok || !data?.url) throw new Error("Upload failed");
       setEditUser((p) => ({ ...p, picture: data.url }));
@@ -214,8 +194,7 @@ export default function ProfilePage() {
         throw new Error(`Bad response ${res.status}: ${text.slice(0, 200)}`);
       }
       const data = await res.json();
-      if (!res.ok || !data?.ok)
-        throw new Error(data?.error || "Failed to save profile");
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "Failed to save profile");
       await loadProfile();
       setSaveSuccess(true);
       setTimeout(() => {
@@ -232,35 +211,28 @@ export default function ProfilePage() {
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
   const handleSwitchRole = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/customer/check-role`, {
-        method: "GET",
-        credentials: "include",
-      });
-      const data = await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/customer/check-role`, {
+      method: "GET",
+      credentials: "include",
+    });
+    const data = await res.json();
 
-      if (data.hasServiceRole) {
-        window.location.href = "/service/profile";
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Access Denied",
-          html: 'You do not have permission to access<br>the Service Provider role.',
-          confirmButtonColor: "#3B82F6",
-        });
-      }
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Could not verify your roles. Please try again later.",
-      });
+    // ถ้ามี role service ให้ไป /service/profile
+    if (data.hasServiceRole) {
+      window.location.href = "/service/profile";
+    } else {
+      window.location.href = "/user/profile";
     }
-  };
+  } catch (err) {
+    alert("ไม่สามารถตรวจสอบ role ได้");
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Navbar />
+     <Navbar />
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-slate-200/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -295,8 +267,10 @@ export default function ProfilePage() {
         </div>
       </header>
 
+  
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
           <div className="lg:col-span-4">
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8 sticky top-24">
               <div className="flex flex-col items-center">
@@ -304,16 +278,11 @@ export default function ProfilePage() {
                 <div className="relative group mb-6">
                   <div className="w-40 h-40 rounded-full bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 p-1 shadow-2xl shadow-indigo-500/40">
                     <div className="w-full h-full rounded-full overflow-hidden bg-white">
-                      {(
-                        editMode
-                          ? avatarPreview || editUser.picture || user.picture
-                          : user.picture
-                      ) ? (
+                      {(editMode ? avatarPreview || editUser.picture || user.picture : user.picture) ? (
                         <img
                           src={
                             editMode
-                              ? avatarPreview ||
-                                resolveImg(editUser.picture || user.picture)
+                              ? avatarPreview || resolveImg(editUser.picture || user.picture)
                               : resolveImg(user.picture)
                           }
                           alt="avatar"
@@ -327,10 +296,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   {editMode && (
-                    <label
-                      htmlFor="profileUpload"
-                      className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer flex items-center justify-center"
-                    >
+                    <label htmlFor="profileUpload" className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer flex items-center justify-center">
                       <Camera className="w-8 h-8 text-white" />
                     </label>
                   )}
@@ -348,13 +314,13 @@ export default function ProfilePage() {
                   />
                 </div>
 
+                
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2 text-center">
                   {user.fullName || "No Name"}
                 </h2>
-                <p className="text-slate-500 text-sm mb-6 text-center">
-                  {user.email || "No Email"}
-                </p>
+                <p className="text-slate-500 text-sm mb-6 text-center">{user.email || "No Email"}</p>
 
+                
                 {!editMode ? (
                   <button
                     onClick={handleEdit}
@@ -400,15 +366,15 @@ export default function ProfilePage() {
             </div>
           </div>
 
+         
           <div className="lg:col-span-8 space-y-6">
+           
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Personal Information
-                </h3>
+                <h3 className="text-xl font-bold text-slate-900">Personal Information</h3>
               </div>
 
               <div className="space-y-6  text-black">
@@ -462,14 +428,13 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
                   <CreditCard className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Payment Information
-                </h3>
+                <h3 className="text-xl font-bold text-slate-900">Payment Information</h3>
               </div>
 
               <div className="space-y-6">
@@ -504,14 +469,13 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            
             <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Identification Document
-                </h3>
+                <h3 className="text-xl font-bold text-slate-900">Identification Document</h3>
               </div>
 
               {editMode ? (
@@ -557,9 +521,7 @@ export default function ProfilePage() {
                   />
                 </div>
               ) : (
-                <div className="text-center py-8 text-slate-400">
-                  No document uploaded
-                </div>
+                <div className="text-center py-8 text-slate-400">No document uploaded</div>
               )}
             </div>
           </div>
@@ -573,12 +535,8 @@ export default function ProfilePage() {
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center mx-auto mb-6">
               <LogOut className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-center text-slate-900 mb-3">
-              Confirm Logout
-            </h3>
-            <p className="text-center text-slate-600 mb-8">
-              Are you sure you want to logout?
-            </p>
+            <h3 className="text-2xl font-bold text-center text-slate-900 mb-3">Confirm Logout</h3>
+            <p className="text-center text-slate-600 mb-8">Are you sure you want to logout?</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
@@ -600,24 +558,11 @@ export default function ProfilePage() {
   );
 }
 
-function InfoField({
-  icon,
-  label,
-  name,
-  value,
-  displayValue,
-  editMode,
-  onChange,
-  readonly,
-  multiline,
-  options,
-}) {
+function InfoField({ icon, label, name, value, displayValue, editMode, onChange, readonly, multiline, options }) {
   return (
     <div className="group">
       <label className=" flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
-        <span className="text-slate-400 group-hover:text-blue-500 transition-colors">
-          {icon}
-        </span>
+        <span className="text-slate-400 group-hover:text-blue-500 transition-colors">{icon}</span>
         {label}
       </label>
 
@@ -654,14 +599,11 @@ function InfoField({
           />
         )
       ) : (
-        <div
-          className={`px-4 py-3 rounded-xl ${
-            readonly ? "bg-slate-50" : "bg-white/50"
-          } border border-slate-200 text-slate-900`}
-        >
+        <div className={`px-4 py-3 rounded-xl ${readonly ? 'bg-slate-50' : 'bg-white/50'} border border-slate-200 text-slate-900`}>
           {displayValue || <span className="text-slate-400">Not provided</span>}
         </div>
       )}
     </div>
   );
 }
+
