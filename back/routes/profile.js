@@ -7,7 +7,7 @@ const multer = require('multer');
 const express = require('express');
 const banksModel = require('../models/customer/bank'); // โมเดล banks สำหรับดึง bank list
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+const UPLOAD_DIR = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -128,7 +128,7 @@ router.put('/', maybeUpload, async (req, res) => {
 
     const exists = !!pRows.length;
     const current = pRows[0] || {};
-    let newAvatarUrl = req.file?.filename ? `/uploads/${req.file.filename}` : null;
+    let newAvatarUrl = req.file?.filename ? `/uploads/avatars/${req.file.filename}` : null;
 
     const pictureToSave = normalizePicture(firstNonEmpty(newAvatarUrl, picture, current.picture, req.user.picture));
 
