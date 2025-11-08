@@ -7,7 +7,7 @@ const multer = require('multer');
 const express = require('express');
 const banksModel = require('../models/customer/bank'); // โมเดล banks สำหรับดึง bank list
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
+const UPLOAD_DIR = path.join(__dirname, '..', 'public', 'uploads', 'identity');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -254,7 +254,7 @@ router.put('/identity', maybeIdentityUpload, async (req, res) => {
 
     let newIdentityUrl = null;
     if (req.file?.filename) {
-      newIdentityUrl = `/uploads/${req.file.filename}`;
+      newIdentityUrl = `/uploads/identity/${req.file.filename}`;
     }
 
     const bodyIdentity = (req.body?.identity ?? '').trim() || null;
