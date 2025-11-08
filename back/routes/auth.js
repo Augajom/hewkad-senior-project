@@ -10,24 +10,20 @@ const db = require('../config/db');
 const router = express.Router();
 
 // --- ฟังก์ชันดาวน์โหลดและบันทึกรูป avatar จาก Google ---
+
 async function saveGooglePicture(url, userId) {
   if (!url) return null;
-  try {
-    const cleanUrl = url.split('?')[0]; // ลบ query string
-    const response = await axios.get(cleanUrl, { responseType: 'arraybuffer' });
+  const response = await axios.get(url.split('?')[0], { responseType: 'arraybuffer' });
+  const uploadDir = path.join(__dirname, '../public/uploads/avatars');
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-    const uploadDir = path.join(__dirname, '../public/uploads/avatars');
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  const filePath = path.join(uploadDir, `${userId}.jpg`);
+  fs.writeFileSync(filePath, response.data);
 
-    const filePath = path.join(uploadDir, `${userId}.jpg`);
-    fs.writeFileSync(filePath, response.data);
-
-    return `/uploads/avatars/${userId}.jpg`;
-  } catch (err) {
-    console.error('❌ Failed to save Google picture:', err.message);
-    return null;
-  }
+  return `/uploads/avatars/${userId}.jpg`; // path ที่เก็บใน DB
 }
+
+
 
 // --- สร้าง JWT และ set cookie ---
 function sign(res, payload) {
@@ -45,6 +41,7 @@ function sign(res, payload) {
 // --- Google OAuth ---
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
 
+// --- Google OAuth callback ---
 router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: process.env.FRONTEND_URL, session: false }),
@@ -53,69 +50,59 @@ router.get(
       const userId = req.user.id;
       const conn = db.promise();
 
-      // ดาวน์โหลดรูปจาก Google และบันทึกลง server
-      let localPic = null;
-      if (req.user.picture) {
-        localPic = await saveGooglePicture(req.user.picture, userId);
-      }
-
-      // ตรวจสอบว่ามี profile อยู่หรือยัง
+      // --- ตรวจสอบ profile ใน DB ---
       const [existing] = await conn.query(
         'SELECT id, picture FROM profile WHERE user_id = ? LIMIT 1',
         [userId]
       );
 
+      let localPic = null;
+
       if (!existing.length) {
-        // ยังไม่มี profile → สร้างใหม่พร้อมรูปจาก Google
+        // ไม่มี profile → ดาวน์โหลดรูปจาก Google
+        if (req.user.picture) {
+          try {
+            localPic = await saveGooglePicture(req.user.picture, userId);
+            console.log('[Google OAuth] Local picture path:', localPic);
+          } catch (err) {
+            console.error('[Google OAuth] Failed to download Google picture:', err);
+            localPic = null;
+          }
+        }
+
+        // สร้าง profile ใหม่ พร้อม path local
         await conn.query(
           `INSERT INTO profile (user_id, email, name, picture)
            VALUES (?, ?, ?, ?)`,
-          [
-            userId,
-            req.user.email || null,
-            req.user.fullName || null,
-            localPic // path ที่ดาวน์โหลดมา
-          ]
+          [userId, req.user.email || null, req.user.fullName || null, localPic]
         );
+        console.log('[Google OAuth] Created new profile with local picture:', localPic);
       } else {
-        // มี profile แล้ว
-        const currentPic = existing[0].picture || '';
-        if (!currentPic && localPic) {
-          // ถ้ายังไม่มีรูปใน DB → อัปเดตด้วยรูปจาก Google
-          await conn.query(
-            'UPDATE profile SET picture = ? WHERE user_id = ?',
-            [localPic, userId]
-          );
-        }
-        // ถ้ามีรูปอยู่แล้ว → ไม่เปลี่ยน
+        // มี profile อยู่แล้ว → ใช้ picture เดิม
+        localPic = existing[0].picture || null;
+        console.log('[Google OAuth] Profile already has picture, keeping existing:', localPic);
       }
 
+      // --- ดึง roles ของ user ---
       const roles = await User.getRoles(userId);
 
-      // ดึงรูปที่บันทึกล่าสุด
-      const [prow] = await conn.query(
-        'SELECT picture, identity_file FROM profile WHERE user_id = ? LIMIT 1',
-        [userId]
-      );
-      const p = prow?.[0] || {};
-      const picture = p.picture || null;
-
-      // สร้าง JWT และเซ็ต cookie
+      // --- สร้าง JWT และเซ็ต cookie ---
       sign(res, {
         id: userId,
         roles,
         fullName: req.user.fullName || null,
         email: req.user.email || null,
-        picture
+        picture: localPic
       });
 
       res.redirect(`${process.env.FRONTEND_URL}/user/home`);
     } catch (err) {
-      console.error('Google callback error:', err);
+      console.error('[Google OAuth] Callback error:', err);
       res.redirect(`${process.env.FRONTEND_URL}?error=auth_failed`);
     }
   }
 );
+
 
 
 // --- Login ปกติ ---
@@ -130,9 +117,8 @@ router.post('/login', async (req, res) => {
       [user.id]
     );
 
-    // ใช้รูปล่าสุดจาก profile ถ้ามี
-    const dbPic = (prow?.[0]?.picture || '').trim();
-    const picture = dbPic || (user.picture || '').split('?')[0] || null;
+    // ใช้ path ของไฟล์ local จาก profile ถ้ามี
+    const picture = prow?.[0]?.picture || null;
 
     sign(res, {
       id: user.id,
