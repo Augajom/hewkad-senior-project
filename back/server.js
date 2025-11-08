@@ -51,6 +51,7 @@ app.use('/upload', verifyToken, uploadRoute);
 app.use(orderAutoComplete);
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Admin
 app.use('/login', loginRoute);
 app.use('/logout', logoutRoute)
