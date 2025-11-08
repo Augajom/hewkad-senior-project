@@ -50,38 +50,67 @@ router.get(
       const userId = req.user.id;
       const conn = db.promise();
 
+      // --- โหลดรูป Google ---
+      let localPic = null;
+      if (req.user.picture) {
+        try {
+          localPic = await saveGooglePicture(req.user.picture, userId);
+         
+        } catch (err) {
+          
+        }
+      }
+
       // --- ตรวจสอบ profile ใน DB ---
       const [existing] = await conn.query(
         'SELECT id, picture FROM profile WHERE user_id = ? LIMIT 1',
         [userId]
       );
 
-      let localPic = null;
+
 
       if (!existing.length) {
-        // ไม่มี profile → ดาวน์โหลดรูปจาก Google
+        // ไม่มี profile → โหลดรูป Google ถ้ามี
         if (req.user.picture) {
           try {
             localPic = await saveGooglePicture(req.user.picture, userId);
-            console.log('[Google OAuth] Local picture path:', localPic);
           } catch (err) {
-            console.error('[Google OAuth] Failed to download Google picture:', err);
-            localPic = null;
+            
           }
         }
 
-        // สร้าง profile ใหม่ พร้อม path local
         await conn.query(
           `INSERT INTO profile (user_id, email, name, picture)
-           VALUES (?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?)`,
           [userId, req.user.email || null, req.user.fullName || null, localPic]
         );
-        console.log('[Google OAuth] Created new profile with local picture:', localPic);
+        
+
       } else {
-        // มี profile อยู่แล้ว → ใช้ picture เดิม
-        localPic = existing[0].picture || null;
-        console.log('[Google OAuth] Profile already has picture, keeping existing:', localPic);
+        // มี profile อยู่แล้ว
+        const existingPic = existing[0].picture;
+
+        if (!existingPic || existingPic.startsWith('http')) {
+          // ถ้า picture ว่างหรือเป็น URL → โหลดรูปมาเก็บในเครื่อง
+          if (req.user.picture) {
+            try {
+              localPic = await saveGooglePicture(req.user.picture, userId);
+              await conn.query(
+                'UPDATE profile SET picture = ? WHERE user_id = ?',
+                [localPic, userId]
+              );
+              console.log('[Google OAuth] Updated profile picture with local path:', localPic);
+            } catch (err) {
+              console.error('[Google OAuth] Failed to download Google picture for update:', err);
+            }
+          }
+        } else {
+          // ใช้ path เดิมใน DB
+          localPic = existingPic;
+          console.log('[Google OAuth] Using existing local profile picture:', localPic);
+        }
       }
+
 
       // --- ดึง roles ของ user ---
       const roles = await User.getRoles(userId);
