@@ -51,11 +51,15 @@ router.get(
   async (req, res) => {
     try {
       const userId = req.user.id;
-
-      // ดาวน์โหลด avatar จาก Google
-      const localPic = await saveGooglePicture(req.user.picture, userId);
-
       const conn = db.promise();
+
+      // ดาวน์โหลดรูปจาก Google และบันทึกลง server
+      let localPic = null;
+      if (req.user.picture) {
+        localPic = await saveGooglePicture(req.user.picture, userId);
+      }
+
+      // ตรวจสอบว่ามี profile อยู่หรือยัง
       const [existing] = await conn.query(
         'SELECT id, picture FROM profile WHERE user_id = ? LIMIT 1',
         [userId]
@@ -65,41 +69,38 @@ router.get(
         // ยังไม่มี profile → สร้างใหม่พร้อมรูปจาก Google
         await conn.query(
           `INSERT INTO profile (user_id, email, name, picture)
-     VALUES (?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?)`,
           [
             userId,
             req.user.email || null,
             req.user.fullName || null,
-            localPic || (req.user.picture || '').split('?')[0] || null
+            localPic // path ที่ดาวน์โหลดมา
           ]
         );
       } else {
         // มี profile แล้ว
         const currentPic = existing[0].picture || '';
-        if (!currentPic) {
-          // ยังไม่มีรูปใน DB → อัปเดตรูปจาก Google
-          if (localPic) {
-            await conn.query(
-              'UPDATE profile SET picture = ? WHERE user_id = ?',
-              [localPic, userId]
-            );
-          }
+        if (!currentPic && localPic) {
+          // ถ้ายังไม่มีรูปใน DB → อัปเดตด้วยรูปจาก Google
+          await conn.query(
+            'UPDATE profile SET picture = ? WHERE user_id = ?',
+            [localPic, userId]
+          );
         }
         // ถ้ามีรูปอยู่แล้ว → ไม่เปลี่ยน
       }
 
-
       const roles = await User.getRoles(userId);
 
-      // ดึง profile ล่าสุด
+      // ดึงรูปที่บันทึกล่าสุด
       const [prow] = await conn.query(
-        'SELECT picture FROM profile WHERE user_id = ? LIMIT 1',
+        'SELECT picture, identity_file FROM profile WHERE user_id = ? LIMIT 1',
         [userId]
       );
-      const dbPic = (prow?.[0]?.picture || '').trim();
-      const picture = dbPic || (req.user.picture || '').split('?')[0] || null;
+      const p = prow?.[0] || {};
+      const picture = p.picture || null;
 
-      // เซ็ต JWT
+      // สร้าง JWT และเซ็ต cookie
       sign(res, {
         id: userId,
         roles,
@@ -115,6 +116,7 @@ router.get(
     }
   }
 );
+
 
 // --- Login ปกติ ---
 router.post('/login', async (req, res) => {
