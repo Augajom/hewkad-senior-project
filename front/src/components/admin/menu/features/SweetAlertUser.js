@@ -239,7 +239,7 @@ export const showRejectVerify = async (userId, username) => {
   });
 };
 
-// Activity Page
+// History Page
 
 export const showUserSlip = (slipUrl) => {
   MySwal.fire({

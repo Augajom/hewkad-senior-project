@@ -10,23 +10,32 @@ function Activity() {
   const [orders, setOrders] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // ดึงข้อมูลตามหน้า (History / Report)
   useEffect(() => {
     const fetchOrders = async () => {
+      setLoading(true);
       try {
-        const url =
-          pageType === "History"
-            ? "http://localhost:5000/admin/history"
-            : "http://localhost:5000/admin/report";
-        const { data } = await axios.get(url, { withCredentials: true });
+        const { data } = await axios.get(
+          "http://localhost:5000/admin/history",
+          {
+            withCredentials: true,
+          }
+        );
+        console.log(
+          "Order status names:",
+          data.orders.map((o) => o.status_name)
+        );
         setOrders(data.orders);
       } catch (err) {
         console.error("Error fetching orders:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchOrders();
-  }, [pageType]);
+  }, []);
 
   // ฟังก์ชันเปิด/ปิด modal
   const openSlipModal = (url) => {
@@ -37,6 +46,15 @@ function Activity() {
   const closeModal = () => {
     setModalOpen(false);
     setSelectedSlip(null);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    const d = new Date(dateString);
+    return d.toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   };
 
   // Filter ตาม search
@@ -61,17 +79,21 @@ function Activity() {
   });
   // สี status
   const getOrderStatusClass = (status) => {
-    if (!status) return "text-gray-600";
+    if (!status) return "text-gray-600 bg-gray-100 px-3 py-1 rounded-lg";
     const s = status.toLowerCase();
 
-    if (s.includes("complete") || s.includes("successfully"))
-      return "text-green-600 font-semibold"; // ✅ เขียว
-    if (s.includes("reported")) return "text-red-600 font-semibold";
-    if (s.includes("ordering")) return "text-orange-500 font-semibold";
-    if (s.includes("rider received")) return "text-sky-500 font-semibold";
-    if (s.includes("order received")) return "text-blue-600 font-semibold";
+    if (s.includes("complete"))
+      return "text-green-700 bg-green-100 px-3 py-1 rounded-lg";
+    if (s.includes("reporting"))
+      return "text-yellow-700 bg-yellow-100 px-3 py-1 rounded-lg";
+    if (s.includes("reject"))
+      return "text-red-700 bg-red-100 px-3 py-1 rounded-lg";
+    if (s.includes("successfully"))
+      return "text-emerald-700 bg-emerald-100 px-3 py-1 rounded-lg";
+    if (s.includes("reported"))
+      return "text-red-700 bg-red-100 px-3 py-1 rounded-lg";
 
-    return "text-gray-600";
+    return "text-gray-600 bg-gray-100 px-3 py-1 rounded-lg";
   };
 
   // สีสถานะ payment
@@ -89,9 +111,7 @@ function Activity() {
       <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto flex flex-col items-center">
-            
             <div className="filter-con flex flex-col sm:flex-row items-center gap-6 w-full justify-center mb-8 p-6 bg-white/70 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-lg">
-
               <div className="relative w-full sm:w-96">
                 <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                 <input
@@ -121,7 +141,16 @@ function Activity() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.length > 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan="10"
+                        className="py-10 text-slate-500 animate-pulse"
+                      >
+                        กำลังโหลดข้อมูล...
+                      </td>
+                    </tr>
+                  ) : filteredOrders.length > 0 ? (
                     filteredOrders.map((order) => {
                       const fee = parseFloat(order.order_service_fee || 0);
                       const revenue = fee * 0.3; // ✅ Revenue 30%
@@ -133,8 +162,10 @@ function Activity() {
                           className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/50"
                         >
                           <td className="p-4">{order.order_id}</td>
-                          <td className="p-4">{order.ordered_date}</td>
-                          <td className ="p-4">
+                          <td className="p-4">
+                            {formatDate(order.ordered_date)}
+                          </td>
+                          <td className="p-4">
                             {order.customer_name || "-"}
                             <div className="text-slate-400 text-xs">
                               {order.customer_email || "-"}
@@ -202,10 +233,10 @@ function Activity() {
 
             {modalOpen && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[999]">
-                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 max-w-xl w-full relative">
+                <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-4 w-[90%] sm:w-[500px] md:w-[600px] max-h-[85vh] overflow-auto">
                   <button
-                    className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-white shadow-lg text-red-500 text-2xl font-bold flex items-center justify-center hover:bg-red-100 transition-all z-10"
                     onClick={closeModal}
+                    className="absolute top-3 right-3 text-2xl text-red-500 hover:text-red-700 transition-all cursor-pointer"
                   >
                     <IoMdClose />
                   </button>
@@ -213,7 +244,7 @@ function Activity() {
                     <img
                       src={selectedSlip}
                       alt="Slip"
-                      className="max-h-[80vh] w-auto mx-auto rounded-lg"
+                      className="rounded-xl mx-auto max-h-[75vh] object-contain"
                     />
                   )}
                 </div>

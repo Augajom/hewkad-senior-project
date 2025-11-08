@@ -9,13 +9,21 @@ const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 const StatusChip = ({ status_id }) => {
   const isResolved = [5, 8, 9].includes(status_id); // ✅ 9 เป็น Resolved
   const isUnresolved = [6].includes(status_id);
-  const label = isResolved ? "Resolved" : isUnresolved ? "Unresolved" : "Unknown";
+  const label = isResolved
+    ? "Resolved"
+    : isUnresolved
+    ? "Unresolved"
+    : "Unknown";
   const cls = isResolved
     ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30"
     : isUnresolved
-      ? "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30"
-      : "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/30";
-  return <span className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}>{label}</span>;
+    ? "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30"
+    : "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/30";
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}>
+      {label}
+    </span>
+  );
 };
 
 export default function ReportPage() {
@@ -29,12 +37,18 @@ export default function ReportPage() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [viewModal, setViewModal] = useState({ open: false, fileUrl: "", title: "" });
+  const [viewModal, setViewModal] = useState({
+    open: false,
+    fileUrl: "",
+    title: "",
+  });
 
   const load = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get(`${API}/admin/report`, { withCredentials: true });
+      const { data } = await axios.get(`${API}/admin/report`, {
+        withCredentials: true,
+      });
       setReports(Array.isArray(data.reports) ? data.reports : []);
     } catch {
       setReports([]);
@@ -71,11 +85,16 @@ export default function ReportPage() {
       await axios.put(
         `${API}/admin/report/${selectedReport.order_id}/resolve`,
         formData,
-        { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
 
       if (shouldReopen) {
-        alert("รายงานนี้ต้องแก้งานอีกครั้ง! Rider จะได้รับอีเมลแจ้งเตือนให้ไปแก้งาน");
+        alert(
+          "รายงานนี้ต้องแก้งานอีกครั้ง! Rider จะได้รับอีเมลแจ้งเตือนให้ไปแก้งาน"
+        );
       } else {
         alert("แก้ไขรายงานสำเร็จ! ลูกค้าจะได้รับอีเมลแจ้งเตือน");
       }
@@ -89,7 +108,6 @@ export default function ReportPage() {
       setSubmitting(false); // ✅ จบ loading
     }
   };
-
 
   const filteredReports = useMemo(() => {
     const q = search.toLowerCase();
@@ -112,16 +130,27 @@ export default function ReportPage() {
     });
 
     if (statusFilter !== "All") {
-      if (statusFilter === "Resolved") list = list.filter((r) => [5, 8, 9].includes(r.status_id));
-      if (statusFilter === "Unresolved") list = list.filter((r) => [6,].includes(r.status_id));
+      if (statusFilter === "Resolved")
+        list = list.filter((r) => [5, 8, 9].includes(r.status_id));
+      if (statusFilter === "Unresolved")
+        list = list.filter((r) => [6].includes(r.status_id));
     }
 
-    if (sortBy === "Newest") list.sort((a, b) => new Date(b.date || b.created_at || 0) - new Date(a.date || a.created_at || 0));
-    if (sortBy === "Oldest") list.sort((a, b) => new Date(a.date || a.created_at || 0) - new Date(b.date || b.created_at || 0));
+    if (sortBy === "Newest")
+      list.sort(
+        (a, b) =>
+          new Date(b.date || b.created_at || 0) -
+          new Date(a.date || a.created_at || 0)
+      );
+    if (sortBy === "Oldest")
+      list.sort(
+        (a, b) =>
+          new Date(a.date || a.created_at || 0) -
+          new Date(b.date || b.created_at || 0)
+      );
 
     return list;
   }, [reports, search, statusFilter, sortBy]);
-
 
   const getStatusClass = (status) => {
     if ([5, 8, 9].includes(status)) return "text-green-600 font-semibold"; // ✅ 9 เป็น Resolved
@@ -176,13 +205,19 @@ export default function ReportPage() {
                         <td className="p-4">{report.date || "-"}</td>
                         <td className="p-4">
                           {report.customer_name || "-"}
-                          <div className="text-slate-400 text-xs">{report.customer_email || "-"}</div>
+                          <div className="text-slate-400 text-xs">
+                            {report.customer_email || "-"}
+                          </div>
                         </td>
                         <td className="p-4">
                           {report.rider_name || "-"}
-                          <div className="text-slate-400 text-xs">{report.rider_email || "-"}</div>
+                          <div className="text-slate-400 text-xs">
+                            {report.rider_email || "-"}
+                          </div>
                         </td>
-                        <td className="p-4 text-center">{report.report_detail || "-"}</td>
+                        <td className="p-4 text-center">
+                          {report.report_detail || "-"}
+                        </td>
 
                         {/* เพิ่ม column report_file */}
                         {/* Column Report File */}
@@ -190,7 +225,11 @@ export default function ReportPage() {
                           {report.report_file ? (
                             <button
                               onClick={() =>
-                                setViewModal({ open: true, fileUrl: `http://localhost:5000${report.report_file}`, title: "Report File" })
+                                setViewModal({
+                                  open: true,
+                                  fileUrl: `http://localhost:5000${report.report_file}`,
+                                  title: "Report File",
+                                })
                               }
                               className="text-blue-600 underline hover:text-blue-800 text-sm cursor-pointer"
                             >
@@ -201,13 +240,19 @@ export default function ReportPage() {
                           )}
                         </td>
 
-                        <td className="p-4 text-center">{report.resolved_detail || "-"}</td>
-                        <td className={`p-4 ${getStatusClass(report.status_id)}`}>
-                          {report.status_id === 5 || report.status_id === 8 || report.status_id === 9
+                        <td className="p-4 text-center">
+                          {report.resolved_detail || "-"}
+                        </td>
+                        <td
+                          className={`p-4 ${getStatusClass(report.status_id)}`}
+                        >
+                          {report.status_id === 5 ||
+                          report.status_id === 8 ||
+                          report.status_id === 9
                             ? "Resolved"
-                            : [6,].includes(report.status_id)
-                              ? "Unresolved"
-                              : "-"}
+                            : [6].includes(report.status_id)
+                            ? "Unresolved"
+                            : "-"}
                         </td>
                         <td className="p-4">
                           {report.status_id === 6 ? (
@@ -244,7 +289,6 @@ export default function ReportPage() {
                     </tr>
                   )}
                 </tbody>
-
               </table>
             </div>
           </div>
@@ -253,7 +297,9 @@ export default function ReportPage() {
       {viewModal.open && (
         <dialog className="modal modal-open">
           <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black max-w-md w-full">
-            <h3 className="font-bold text-lg text-center mb-4">{viewModal.title}</h3>
+            <h3 className="font-bold text-lg text-center mb-4">
+              {viewModal.title}
+            </h3>
 
             <div className="flex justify-center mb-6">
               <img
@@ -266,7 +312,9 @@ export default function ReportPage() {
             <div className="flex justify-center">
               <button
                 className="btn btn-error text-white px-8 py-3 rounded-full"
-                onClick={() => setViewModal({ open: false, fileUrl: "", title: "" })}
+                onClick={() =>
+                  setViewModal({ open: false, fileUrl: "", title: "" })
+                }
               >
                 ปิด
               </button>

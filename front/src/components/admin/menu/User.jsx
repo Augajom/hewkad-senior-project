@@ -71,23 +71,9 @@ function UserCard({ user, permitted, onTogglePermit }) {
   );
 }
 
-const MOCK_USERS = [
-  { id: "u1", name: "Pongsakorn Srisawat", handle: "user01" },
-  { id: "u2", name: "S Intharalib", handle: "user02" },
-  { id: "u3", name: "Kanchana P.", handle: "user03" },
-  { id: "u5", name: "Suda K.", handle: "suda" },
-  { id: "u6", name: "Thanawat T.", handle: "thanawat" },
-  { id: "u7", name: "Darin L.", handle: "darin" },
-  { id: "u8", name: "Boss Dev", handle: "boss" },
-];
-
 export default function AdminUsers() {
   const MySwal = withReactContent(Swal);
   const [pageType, setPageType] = useState("User");
-  const [query, setQuery] = useState("");
-  const [permitMap, setPermitMap] = useState(
-    Object.fromEntries(MOCK_USERS.map((u) => [u.id, true]))
-  );
 
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -141,7 +127,11 @@ export default function AdminUsers() {
 
   const filteredUsers = users.filter((user) => {
     const userName = user?.name || "";
-    return userName.toLowerCase().includes(search.toLowerCase());
+    const email = user?.email || "";
+    return (
+      userName.toLowerCase().includes(search.toLowerCase()) ||
+      email.toLowerCase().includes(search.toLowerCase())
+    );
   });
 
   // ✅ pagination logic
@@ -264,7 +254,10 @@ export default function AdminUsers() {
                   placeholder="Search here..."
                   className="input input-bordered w-full rounded-xl border-slate-300 bg-white/50 pl-12 text-slate-900 transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
             </div>

@@ -54,7 +54,7 @@ const router = createBrowserRouter([
     element: <Payment />
   },
   {
-    path: "Activity",
+    path: "History",
     element: <Activity />
   },
   {
