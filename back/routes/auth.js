@@ -9,13 +9,11 @@ const db = require('../config/db');
 
 const router = express.Router();
 
-/**
- * 🧩 ฟังก์ชันดาวน์โหลดและบันทึกรูป avatar จาก Google
- */
+// --- ฟังก์ชันดาวน์โหลดและบันทึกรูป avatar จาก Google ---
 async function saveGooglePicture(url, userId) {
   if (!url) return null;
   try {
-    const cleanUrl = url.split('?')[0]; // ลบ query ที่อาจหมดอายุ
+    const cleanUrl = url.split('?')[0]; // ลบ query string
     const response = await axios.get(cleanUrl, { responseType: 'arraybuffer' });
 
     const uploadDir = path.join(__dirname, '../public/uploads/avatars');
@@ -24,7 +22,6 @@ async function saveGooglePicture(url, userId) {
     const filePath = path.join(uploadDir, `${userId}.jpg`);
     fs.writeFileSync(filePath, response.data);
 
-    // คืนค่า URL ที่ frontend ใช้งานได้
     return `/uploads/avatars/${userId}.jpg`;
   } catch (err) {
     console.error('❌ Failed to save Google picture:', err.message);
@@ -32,9 +29,7 @@ async function saveGooglePicture(url, userId) {
   }
 }
 
-/**
- * 🔑 สร้าง JWT แล้วเซ็ต cookie
- */
+// --- สร้าง JWT และ set cookie ---
 function sign(res, payload) {
   const token = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '1d' });
   const isProd = process.env.NODE_ENV === 'production';
@@ -42,22 +37,14 @@ function sign(res, payload) {
     httpOnly: true,
     sameSite: isProd ? 'none' : 'lax',
     secure: isProd,
-    maxAge: 24 * 60 * 60 * 1000 // 1 วัน
+    maxAge: 24 * 60 * 60 * 1000,
   });
   return token;
 }
 
-/**
- * 🚀 เริ่มต้น Google OAuth
- */
-router.get(
-  '/google',
-  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
-);
+// --- Google OAuth ---
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
 
-/**
- * 🔁 Callback หลังจาก Google Login
- */
 router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: process.env.FRONTEND_URL, session: false }),
@@ -65,19 +52,20 @@ router.get(
     try {
       const userId = req.user.id;
 
-      // ✅ ดาวน์โหลด avatar จาก Google
+      // ดาวน์โหลด avatar จาก Google
       const localPic = await saveGooglePicture(req.user.picture, userId);
 
-      // ✅ ตรวจสอบว่ามี profile อยู่หรือยัง
-      const [existsRows] = await db.promise().query(
-        'SELECT id FROM profile WHERE user_id = ? LIMIT 1',
+      const conn = db.promise();
+      const [existing] = await conn.query(
+        'SELECT id, picture FROM profile WHERE user_id = ? LIMIT 1',
         [userId]
       );
 
-      if (!existsRows.length) {
-        await db.promise().query(
+      if (!existing.length) {
+        // ยังไม่มี profile → สร้างใหม่พร้อมรูปจาก Google
+        await conn.query(
           `INSERT INTO profile (user_id, email, name, picture)
-           VALUES (?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?)`,
           [
             userId,
             req.user.email || null,
@@ -85,23 +73,33 @@ router.get(
             localPic || (req.user.picture || '').split('?')[0] || null
           ]
         );
-      } else if (localPic) {
-        // ✅ ถ้ามีแล้ว อัปเดตรูปใหม่
-        await db.promise().query(
-          'UPDATE profile SET picture = ? WHERE user_id = ?',
-          [localPic, userId]
-        );
+      } else {
+        // มี profile แล้ว
+        const currentPic = existing[0].picture || '';
+        if (!currentPic) {
+          // ยังไม่มีรูปใน DB → อัปเดตรูปจาก Google
+          if (localPic) {
+            await conn.query(
+              'UPDATE profile SET picture = ? WHERE user_id = ?',
+              [localPic, userId]
+            );
+          }
+        }
+        // ถ้ามีรูปอยู่แล้ว → ไม่เปลี่ยน
       }
 
+
       const roles = await User.getRoles(userId);
-      const [prow] = await db.promise().query(
-        'SELECT picture, identity_file FROM profile WHERE user_id = ? LIMIT 1',
+
+      // ดึง profile ล่าสุด
+      const [prow] = await conn.query(
+        'SELECT picture FROM profile WHERE user_id = ? LIMIT 1',
         [userId]
       );
-      const p = prow?.[0] || {};
-      const picture = p.picture || (req.user.picture || '').split('?')[0] || null;
+      const dbPic = (prow?.[0]?.picture || '').trim();
+      const picture = dbPic || (req.user.picture || '').split('?')[0] || null;
 
-      // ✅ เซ็ต JWT cookie
+      // เซ็ต JWT
       sign(res, {
         id: userId,
         roles,
@@ -118,9 +116,7 @@ router.get(
   }
 );
 
-/**
- * 🔐 Login ปกติ (email/password)
- */
+// --- Login ปกติ ---
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -131,8 +127,10 @@ router.post('/login', async (req, res) => {
       'SELECT picture FROM profile WHERE user_id = ? LIMIT 1',
       [user.id]
     );
+
+    // ใช้รูปล่าสุดจาก profile ถ้ามี
     const dbPic = (prow?.[0]?.picture || '').trim();
-    const picture = (dbPic || user.picture || '').split('?')[0] || null;
+    const picture = dbPic || (user.picture || '').split('?')[0] || null;
 
     sign(res, {
       id: user.id,
@@ -149,9 +147,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-/**
- * 👤 ดึงข้อมูลผู้ใช้จาก token
- */
+// --- ดึงข้อมูลผู้ใช้จาก token ---
 router.get('/me', async (req, res) => {
   try {
     const token = req.cookies?.token;
@@ -170,7 +166,7 @@ router.get('/me', async (req, res) => {
       fullName: decoded.fullName,
       email: decoded.email,
       roles: decoded.roles,
-      picture: decoded.picture,
+      picture: profile.picture || decoded.picture || null,
       profile_id: profile.profile_id || null,
       identityFile: profile.identity_file || null
     });
@@ -180,9 +176,7 @@ router.get('/me', async (req, res) => {
   }
 });
 
-/**
- * 🧭 ตรวจสอบ token ว่าถูกต้องไหม
- */
+// --- ตรวจสอบ token ---
 router.get('/check', (req, res) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ message: 'No token' });
@@ -195,9 +189,7 @@ router.get('/check', (req, res) => {
   }
 });
 
-/**
- * 🚪 Logout
- */
+// --- Logout ---
 router.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ ok: true });

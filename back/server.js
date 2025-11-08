@@ -38,7 +38,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(passport.initialize());
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use("/Files", express.static(path.join(__dirname, "Files")));
 app.use("/Files", express.static("Files"));
 
