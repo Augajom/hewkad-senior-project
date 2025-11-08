@@ -131,7 +131,7 @@ function Nav() {
               currentPath={location.pathname}
             />
             <NavLink
-              to="/Activity"
+              to="/History"
               icon={<FaRegFileAlt className="w-6 h-6" />}
               label="HISTORY"
               currentPath={location.pathname}

@@ -15,7 +15,7 @@ export default function AdminLayout({ title, children }) {
   const menu = [
     { to: "/dashboard", label: "Dashboard", icon: <FiHome /> },
     { to: "/user", label: "Users", icon: <FiUsers /> },
-    { to: "/activity", label: "Activity", icon: <FiSettings /> },
+    { to: "/History", label: "History", icon: <FiSettings /> },
     { to: "/payment", label: "Payment", icon: <MdOutlinePayment /> },
     { to: "/postlist", label: "Postlist", icon: <MdListAlt /> },
     { to: "/report", label: "Report", icon: <MdReport /> },
