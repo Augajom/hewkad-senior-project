@@ -39,7 +39,7 @@ router.get('/kad', async (req, res) => {
 router.get('/posts', async (req, res) => {
   try {
     const status = req.query.status || 'Available';
-    
+
     // เรียกจาก model
     const postsList = await Post.getAll();
 
@@ -83,9 +83,9 @@ router.post('/posts', verifyToken, async (req, res) => {
     if (profileRows.length === 0) {
       return res.status(404).json({ message: "Profile not found for this user." });
     }
-    const profile_id = profileRows[0].id; 
-    
-    const status_id = 1; 
+    const profile_id = profileRows[0].id;
+
+    const status_id = 1;
 
     const newPost = await Post.create(
       kad_id,
@@ -93,9 +93,9 @@ router.post('/posts', verifyToken, async (req, res) => {
       product,
       service_fee,
       price,
-      user_id, 
+      user_id,
       profile_id,
-      status_id, 
+      status_id,
       delivery,
       delivery_at
     );
@@ -173,33 +173,35 @@ router.delete('/posts/:postId', verifyToken, async (req, res) => {
 // ===================
 // GET history by status
 // ===================
-router.get('/history/:status', verifyToken, async (req, res) => {
+router.get("/history/:status", verifyToken, async (req, res) => {
   try {
-    const status = req.params.status;
+    const { status } = req.params;
     const userId = req.user.id;
 
-    // เรียก method ใหม่ที่ join proof_url
+    // status "All" = ดึงทุกโพสต์
     const posts = await History.getByStatus(status, userId);
 
     res.json(posts);
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to fetch history' });
+    console.error("❌ Error fetching history:", err);
+    res.status(500).json({ message: "Failed to fetch history" });
   }
 });
 
-router.get('/ordering', verifyToken, async (req, res) => {
-    try {
-        const { status } = req.query; // รับ status จาก query
-        const statuses = status ? [status] : ['Rider Received', 'Ordering', 'Order Received'];
 
-        const posts = await Ordering.getByStatus(statuses, req.user.id);
-        res.json(posts);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
-    }
+
+
+router.get('/ordering', verifyToken, async (req, res) => {
+  try {
+    const { status } = req.query; // รับ status จาก query
+    const statuses = status ? [status] : ['Rider Received', 'Ordering', 'Order Received'];
+
+    const posts = await Ordering.getByStatus(statuses, req.user.id);
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // router.put('/orders/:id', async (req, res) => {
@@ -256,8 +258,8 @@ router.get("/payment/qr/:orderId", async (req, res) => {
 
       const payload = require("promptpay-qr")(promptPayId, { amount });
       const QRCode = require("qrcode");
-      
-const qrImage = await QRCode.toDataURL(payload);
+
+      const qrImage = await QRCode.toDataURL(payload);
 
       res.json({ success: true, amount, qr: qrImage });
     });
@@ -398,17 +400,17 @@ cron.schedule('*/10 * * * *', async () => {
     WHERE s.status_name = 'Order Received'
       AND TIMESTAMPDIFF(HOUR, o.completed_at, NOW()) >= 3
   `;
-  
+
   db.query(sql, async (err, results) => {
     if (err) {
       console.error('❌ Error checking orders:', err);
       return;
     }
-    
+
     if (results.length === 0) return; // ไม่มีออเดอร์ครบเวลา
-    
+
     console.log(`🔄 Found ${results.length} orders to auto-complete...`);
-    
+
     for (const order of results) {
       try {
         await Ordering.updateStatus(order.post_id, 'Complete');

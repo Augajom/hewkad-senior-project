@@ -4,12 +4,12 @@ import '../DaisyUI.css';
 const HistoryPostCard = ({ post, className = "" }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReasons, setReportReasons] = useState([]);
-  const [reportForm, setReportForm] = useState({ report: "", details: "" });
-  const [status, setStatus] = useState(post.status_id === 8 ? "Complete" : post.status);
+  const [reportForm, setReportForm] = useState({ report: "", details: "", image: null });
+  const [status, setStatus] = useState(post.status);
   const [showProofModal, setShowProofModal] = useState(false);
   const total = (post.price || 0) + (post.service_fee || 0);
 
-  // ดึงเหตุผลจาก backend
+  // โหลดเหตุผลจาก DB
   useEffect(() => {
     const fetchReasons = async () => {
       try {
@@ -27,23 +27,27 @@ const HistoryPostCard = ({ post, className = "" }) => {
   }, []);
 
   const getBadgeClass = (status) => {
-    if (status === 'Complete') return 'badge-success';
-    if (status === 'Reported') return 'badge-error';
+    if (status === 'Complete' || status === 'Successfully') return 'badge-success';
+    if (status === 'Reported' || status === 'Reject') return 'badge-error';
     return 'badge-neutral';
   };
 
+  // ส่ง report แบบมีไฟล์
   const handleReportSubmit = async (e) => {
     e.preventDefault();
     try {
+      const formData = new FormData();
+      formData.append("post_id", post.id);
+      formData.append("reason_id", reportForm.report);
+      formData.append("detail", reportForm.details);
+      if (reportForm.image) {
+        formData.append("image", reportForm.image);
+      }
+
       const res = await fetch("http://localhost:5000/customer/reports", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          post_id: post.id,
-          reason_id: reportForm.report,
-          detail: reportForm.details,
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -51,12 +55,13 @@ const HistoryPostCard = ({ post, className = "" }) => {
         throw new Error(text || "Failed to submit report");
       }
 
-      const data = await res.json();
+      await res.json();
       setStatus("Reported");
       setShowReportModal(false);
       alert("Report submitted successfully!");
+      window.location.reload();
     } catch (err) {
-      console.error(err);
+      console.error("Report error:", err);
       alert(err.message);
     }
   };
@@ -72,15 +77,9 @@ const HistoryPostCard = ({ post, className = "" }) => {
       <div className="flex justify-between items-start">
         <div className="flex gap-3">
           <img
-            src={
-              post.avatar
-                ? post.avatar.startsWith("http")
-                  ? post.avatar
-                  : `http://localhost:5000${post.avatar}`
-                : 'https://i.pravatar.cc/150'
-            }
+            src={post.avatar ? (post.avatar.startsWith("http") ? post.avatar : `http://localhost:5000${post.avatar}`) : 'https://i.pravatar.cc/150'}
             alt="avatar"
-            className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
+            className="w-10 h-10 rounded-full object-cover"
           />
           <div>
             <div className="font-bold text-base">{post.nickname || 'ไม่ระบุชื่อ'}</div>
@@ -90,13 +89,11 @@ const HistoryPostCard = ({ post, className = "" }) => {
 
         <div className="flex flex-col items-end">
           <div className={`badge ${getBadgeClass(status)}`}>{status}</div>
-          <div className="text-red-600 font-bold text-xl mt-1">
-            {post.service_fee ? `${post.service_fee} ฿` : '0 ฿'}
-          </div>
+          <div className="text-red-600 font-bold text-xl mt-1">{post.service_fee ? `${post.service_fee} ฿` : '0 ฿'}</div>
         </div>
       </div>
 
-      {/* ข้อมูลสินค้า */}
+      {/* Content */}
       <div className="mt-4 text-sm space-y-1">
         <p><span className="font-semibold">สถานที่ส่ง</span> : {post.deliveryLocation || '-'}</p>
         <p><span className="font-semibold">ชื่อร้าน</span> : {post.store_name || '-'}</p>
@@ -113,25 +110,24 @@ const HistoryPostCard = ({ post, className = "" }) => {
         </div>
 
         <div className="flex flex-col gap-2 justify-end items-end">
-          <div className="flex gap-2">
-            <button className="btn btn-error text-white" onClick={() => setShowReportModal(true)}>
-              Report
-            </button>
-          </div>
+          <button className="btn btn-error text-white" onClick={() => setShowReportModal(true)}>
+            Report
+          </button>
+
           <button className="btn btn-link text-blue-600 underline self-start" onClick={() => setShowProofModal(true)}>
-            View Proof Of Delivery
+            {status === 'Reported' ? "View Refund Proof" : "View Proof Of Delivery"}
           </button>
         </div>
       </div>
 
       {/* Proof Modal */}
-      {showProofModal && post.proof_url && (
+      {showProofModal && (
         <dialog className="modal modal-open">
           <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black">
-            <h3 className="font-bold text-lg text-center mb-4">Proof</h3>
+            <h3 className="font-bold text-lg text-center mb-4">{status === 'Reported' ? "Refund Proof" : "Proof of Delivery"}</h3>
             <div className="flex justify-center mb-6">
               <img
-                src={`http://localhost:5000${post.proof_url}`}
+                src={`http://localhost:5000${status === 'Reported' ? post.resolved_file : post.proof_url}`}
                 alt="Proof"
                 className="max-w-full max-h-[400px] object-contain rounded"
               />
@@ -163,19 +159,38 @@ const HistoryPostCard = ({ post, className = "" }) => {
                   <option key={reason.id} value={reason.id}>{reason.title}</option>
                 ))}
               </select>
+
               <input
                 type="text"
                 name="details"
                 placeholder="รายละเอียด"
                 className="input input-bordered w-full text-black bg-white"
                 value={reportForm.details}
+                autoComplete="off"
                 onChange={handleReportInputChange}
                 required
               />
+              {reportForm.report === "1" && (
+                  <p className="text-red-600 text-sm">
+                    กรุณาอัปเดตโปรไฟล์ เบอร์โทรศัพท์ และบัญชีธนาคารของคุณก่อน
+                  </p>
+                )}
+
+              {(reportForm.report === "2" || reportForm.report === "3" || reportForm.report === "4") && (
+                <div className="flex flex-col items-start gap-2">
+                  <label htmlFor="reportImage" className="text-sm font-semibold text-gray-700">อัพโหลดรูปภาพ</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="reportImage"
+                    className="file-input file-input-bordered w-full bg-white text-black"
+                    onChange={(e) => setReportForm((prev) => ({ ...prev, image: e.target.files[0] }))}
+                  />
+                </div>
+              )}
+
               <div className="modal-action flex justify-center gap-3 mt-6">
-                <button type="button" className="btn btn-ghost bg-red-500 text-white" onClick={() => setShowReportModal(false)}>
-                  Cancel
-                </button>
+                <button type="button" className="btn btn-ghost bg-red-500 text-white" onClick={() => setShowReportModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-success text-black">Submit</button>
               </div>
             </form>
