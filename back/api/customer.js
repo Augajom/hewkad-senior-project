@@ -16,6 +16,7 @@ const { sendOrderReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
 const getName = require('../models/getName')
 const cron = require("node-cron");
+const Rating = require('../models/customer/rating');
 
 const upload = multer();
 
@@ -390,6 +391,23 @@ router.get('/name', verifyToken, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch fullName' });
   }
 });
+
+
+router.post('/rate', verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  // จาก token 
+  const { orderId, rating, comment } = req.body; if (!orderId || !rating)
+    return res.status(400).json({ message: "Missing data" });
+  try {
+    const result = await Rating.create(userId, orderId, rating, comment);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message }); // ส่ง error จริงกลับไป
+  }
+});
+
+
 
 cron.schedule('*/10 * * * *', async () => {
   console.log('🕐 Checking for orders older than 3 hours...');
