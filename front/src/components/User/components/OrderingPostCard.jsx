@@ -481,6 +481,7 @@ const OrderingPostCard = ({ post }) => {
                   name="details"
                   placeholder="รายละเอียด"
                   className="input input-bordered w-full text-black bg-white"
+                  autoComplete="off"
                   value={reportForm.details}
                   onChange={handleReportInputChange}
                   required
