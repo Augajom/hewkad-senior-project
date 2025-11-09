@@ -229,9 +229,9 @@ export default function AdminUsers() {
       <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto flex flex-col items-center">
-            {/* 🔍 Filter - Styled with glassmorphism */}
+            {/* Filter */}
             <div className="filter-con flex flex-col sm:flex-row items-center gap-6 w-full justify-center mb-8 p-6 bg-white/70 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-lg">
-              {/* Page Select (Label inside) */}
+              {/* Page Select */}
               <div className="relative w-full sm:w-56">
                 <label className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 pointer-events-none z-10">
                   Page
@@ -246,7 +246,7 @@ export default function AdminUsers() {
                 </select>
               </div>
 
-              {/* Search Input (Icon inside) */}
+              {/* Search Input */}
               <div className="relative w-full sm:w-80">
                 <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                 <input
@@ -262,7 +262,7 @@ export default function AdminUsers() {
               </div>
             </div>
 
-            {/* 🧍 User Page - Styled with glassmorphism cards */}
+            {/* User Page */}
             {pageType === "User" ? (
               <>
                 <div className="card-con grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl mx-auto">
@@ -361,7 +361,7 @@ export default function AdminUsers() {
                   )}
                 </div>
 
-                {/* 📄 Pagination - Styled with theme */}
+                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex justify-center mt-10 gap-2">
                     {Array.from({ length: totalPages }, (_, i) => (
@@ -381,119 +381,193 @@ export default function AdminUsers() {
                 )}
               </>
             ) : (
-              // 📑 Request Page - Styled with glassmorphism table container
-              <div className="overflow-x-auto w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-6">
-                <table className="table w-full text-center">
-                  {/* Head */}
-                  <thead>
-                    <tr className="border-b border-slate-300">
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        User ID
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Date
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Name
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Phone
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Address
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Bank
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Acc. Num
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Acc. Owner
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        File
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Verify
-                      </th>
-                      <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
-                        Reject
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {request.length > 0 ? (
-                      request.map((req, index) => (
-                        <tr
-                          key={index}
-                          className="hover:bg-slate-50/50 border-b border-slate-200 last:border-b-0"
-                        >
-                          <td className="py-3 px-2 text-slate-800">
-                            {req.user_id}
-                          </td>
-                          <td className="py-3 px-2 text-slate-800">
-                            {new Date(req.update_at).toLocaleDateString(
-                              "th-TH"
-                            )}
-                          </td>
-                          <td className="py-3 px-2 text-slate-800">
-                            {req.name}
-                          </td>
-                          <td className="py-3 px-2 text-slate-800">
-                            {req.phone_num}
-                          </td>
-                          <td className="py-3 px-2 text-slate-800">
-                            {req.address}
-                          </td>
-                          <td className="py-3 px-2 text-slate-800">
-                            {req.bank_name}
-                          </td>
-                          <td className="py-3 px-2 text-slate-800">
-                            {req.acc_number}
-                          </td>
-                          <td className="py-3 px-2 text-slate-800">
-                            {req.acc_owner}
-                          </td>
-                          <td>
-                            <button
-                              onClick={() => showUserLicense(req.identity_file)}
-                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
-                            >
-                              View
-                            </button>
-                          </td>
-                          <td>
-                            <button
-                              onClick={() =>
-                                showConfirmVerify(req.user_id, req.name)
-                              }
-                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/20"
-                            >
-                              Confirm
-                            </button>
-                          </td>
-                          <td>
-                            <button
-                              onClick={() =>
-                                showRejectVerify(req.user_id, req.name)
-                              }
-                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/20"
-                            >
-                              Reject
-                            </button>
+              <div className="w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 overflow-hidden">
+                
+                {/* --- 1. Desktop Table --- */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="table w-full text-center">
+                    {/* Head */}
+                    <thead>
+                      <tr className="border-b border-slate-300">
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          User ID
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Date
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Name
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Phone
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Address
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Bank
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Acc. Num
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Acc. Owner
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          File
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Verify
+                        </th>
+                        <th className="pb-4 pt-2 text-sm font-semibold text-slate-600 uppercase tracking-wider bg-transparent">
+                          Reject
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {request.length > 0 ? (
+                        request.map((req, index) => (
+                          <tr
+                            key={index}
+                            className="hover:bg-slate-50/50 border-b border-slate-200 last:border-b-0"
+                          >
+                            <td className="py-3 px-2 text-slate-800">
+                              {req.user_id}
+                            </td>
+                            <td className="py-3 px-2 text-slate-800">
+                              {new Date(req.update_at).toLocaleDateString(
+                                "th-TH"
+                              )}
+                            </td>
+                            <td className="py-3 px-2 text-slate-800">
+                              {req.name}
+                            </td>
+                            <td className="py-3 px-2 text-slate-800">
+                              {req.phone_num}
+                            </td>
+                            <td className="py-3 px-2 text-slate-800">
+                              {req.address}
+                            </td>
+                            <td className="py-3 px-2 text-slate-800">
+                              {req.bank_name}
+                            </td>
+                            <td className="py-3 px-2 text-slate-800">
+                              {req.acc_number}
+                            </td>
+                            <td className="py-3 px-2 text-slate-800">
+                              {req.acc_owner}
+                            </td>
+                            <td>
+                              <button
+                                onClick={() => showUserLicense(req.identity_file)}
+                                className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                              >
+                                View
+                              </button>
+                            </td>
+                            <td>
+                              <button
+                                onClick={() =>
+                                  showConfirmVerify(req.user_id, req.name)
+                                }
+                                className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/20"
+                              >
+                                Confirm
+                              </button>
+                            </td>
+                            <td>
+                              <button
+                                onClick={() =>
+                                  showRejectVerify(req.user_id, req.name)
+                                }
+                                className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/20"
+                              >
+                                Reject
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="11" className="text-slate-500 py-6">
+                            No requests found.
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="11" className="text-slate-500 py-6">
-                          No requests found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* --- 2. Mobile Card List --- */}
+                <div className="md:hidden divide-y divide-slate-200">
+                  {request.length > 0 ? (
+                    request.map((req, index) => (
+                      <div key={index} className="p-4">
+                        {/* Top: Name/Date */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <div className="font-semibold text-slate-900">{req.name}</div>
+                            <div className="text-sm text-slate-500">ID: {req.user_id}</div>
+                          </div>
+                          <div className="text-sm text-slate-500 text-right flex-shrink-0">
+                            {new Date(req.update_at).toLocaleDateString("th-TH")}
+                          </div>
+                        </div>
+                        
+                        {/* Middle: Details */}
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between gap-4">
+                            <span className="text-slate-500">Phone</span>
+                            <span className="text-slate-800 font-medium text-right">{req.phone_num || '-'}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-slate-500">Address</span>
+                            <span className="text-slate-800 font-medium text-right truncate">{req.address || '-'}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-slate-500">Bank</span>
+                            <span className="text-slate-800 font-medium text-right">{req.bank_name || '-'}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-slate-500">Acc. Number</span>
+                            <span className="text-slate-800 font-medium text-right">{req.acc_number || '-'}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-slate-500">Acc. Owner</span>
+                            <span className="text-slate-800 font-medium text-right truncate">{req.acc_owner || '-'}</span>
+                          </div>
+                        </div>
+
+                        {/* Bottom: Buttons */}
+                        <div className="mt-4 grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => showUserLicense(req.identity_file)}
+                            className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => showConfirmVerify(req.user_id, req.name)}
+                            className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/20"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => showRejectVerify(req.user_id, req.name)}
+                            className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/20"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-slate-500 text-center p-6">
+                      No requests found.
+                    </p>
+                  )}
+                </div>
+
               </div>
             )}
           </div>

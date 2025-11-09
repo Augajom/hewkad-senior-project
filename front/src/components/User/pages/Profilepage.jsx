@@ -4,6 +4,8 @@ import { Camera, LogOut, Edit3, Save, X, Upload, Check, User, Phone, Mail, MapPi
 
 import Navbar from "../components/navbar";
 
+import Swal from "sweetalert2";
+
 const API_BASE = "http://localhost:5000";
 
 function resolveImg(src) {
@@ -211,23 +213,31 @@ export default function ProfilePage() {
   }, [editUser, loadProfile, avatarPreview, isSaving]);
 
   const handleSwitchRole = async () => {
-  try {
-    const res = await fetch(`${API_BASE}/customer/check-role`, {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await res.json();
+    try {
+      const res = await fetch(`${API_BASE}/customer/check-role`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await res.json();
 
-    // ถ้ามี role service ให้ไป /service/profile
-    if (data.hasServiceRole) {
-      window.location.href = "/service/profile";
-    } else {
-      window.location.href = "/user/profile";
+      if (data.hasServiceRole) {
+        window.location.href = "/service/profile";
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Access Denied",
+          html: 'You do not have permission to access<br>the Service Provider role.',
+          confirmButtonColor: "#3B82F6",
+        });
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Could not verify your roles. Please try again later.",
+      });
     }
-  } catch (err) {
-    alert("ไม่สามารถตรวจสอบ role ได้");
-  }
-};
+  };
 
 
   return (
@@ -250,10 +260,10 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSwitchRole}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
+                className="sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
-                Switch Role
+                <span className="hidden sm:inline">Switch Role</span>
               </button>
               <button
                 onClick={() => setShowLogoutModal(true)}

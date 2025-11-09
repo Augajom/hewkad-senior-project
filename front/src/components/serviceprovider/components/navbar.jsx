@@ -128,7 +128,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
 
             {/* Mobile toggle */}
             <button
-              className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/70 border border-slate-200 hover:bg-slate-100"
+              className="text-black md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/70 border border-slate-200 hover:bg-slate-100"
               onClick={() => setOpen((v) => !v)}
               aria-label="Toggle menu"
             >

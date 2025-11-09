@@ -17,7 +17,7 @@ export const showUserInfo = (user) => {
   MySwal.fire({
     title: '<div style="font-size:32px; font-weight:bold; color:#333;">INFORMATION</div>',
     html: `
-      <div style="display: flex; flex-direction: column; gap: 12px; font-size: 22px; color: #807a7a; text-align: left; padding-left: 4rem;">
+      <div style="display: flex; flex-direction: column; gap: 12px; font-size: 18px; color: #807a7a; text-align: left; padding-left: 4rem;">
         <div><b>Name:</b> ${user.name}</div>
         <div><b>Address:</b> ${user.address || '-'}</div>
         <div><b>Mobile Number:</b> ${user.phone_num || '-'}</div>

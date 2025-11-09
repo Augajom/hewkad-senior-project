@@ -71,7 +71,9 @@ const Dashboard = {
             const { status_id, order_price = 0, order_service_fee = 0 } = order;
             const platformFee = calPlatformFees(order_service_fee);
 
-            totalRevenue += order_price + order_service_fee;
+            if (status_id > 2) {
+              totalRevenue += order_price + order_service_fee;
+            }
 
             if (status_id === 5) {
               pendingRevenue += order_service_fee - platformFee + order_price;
@@ -85,7 +87,6 @@ const Dashboard = {
             statusCounts[status_id] = (statusCounts[status_id] || 0) + 1;
           });
 
-          // เพิ่มนับ “Available” จาก posts
           postResults.forEach(() => {
             statusCounts[1] = (statusCounts[1] || 0) + 1;
           });

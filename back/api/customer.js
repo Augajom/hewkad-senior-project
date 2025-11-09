@@ -205,26 +205,24 @@ router.get('/ordering', verifyToken, async (req, res) => {
   }
 });
 
-// router.put('/orders/:id', async (req, res) => {
-//   const orderId = req.params.id;
+router.put('/orders/:id', async (req, res) => {
+  const orderId = req.params.id;
 
-//   try {
-//     // ✅ อัปเดตสถานะ
-//     await Ordering.updateStatus(orderId, "Rider Received");
+  try {
+    await Ordering.updateStatus(orderId, "Ordering");
 
-//     // ✅ ดึงข้อมูลเจ้าของโพสต์
-//     const orderInfo = await Ordering.getOwnerEmail(orderId);
-//     const { email, nickname, product, store_name } = orderInfo;
+    const orderInfo = await Ordering.getOwnerEmail(orderId);
+    const { email, nickname, product, store_name } = orderInfo;
 
-//     // ✅ ส่งอีเมล
-//     await sendOrderReceivedEmail(email, nickname, product, store_name);
+    await sendOrderReceivedEmail(email, nickname, product, store_name);
 
-//     res.json({ success: true, message: "Order updated and email sent" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ success: false, message: err.message });
-//   }
-// });
+    res.json({ success: true, message: "Order updated and email sent" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.put('/confirmorder/:id', async (req, res) => {
   const orderId = req.params.id;
 

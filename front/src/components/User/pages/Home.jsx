@@ -269,12 +269,12 @@ export default function Home() {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="text-red-500 font-semibold mb-2">เกิดข้อผิดพลาด</div>
+            <div className="text-red-500 font-semibold mb-2">An error occurred.</div>
             <div className="text-slate-600">{error}</div>
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-500">
-            ไม่พบโพสต์
+            No posts found.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

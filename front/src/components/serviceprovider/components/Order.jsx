@@ -4,6 +4,19 @@ import ConfirmModal from "./ConfirmModal";
 import { useOrders } from "../hooks/useOrder";
 import dayjs from "dayjs";
 import "../DaisyUI.css";
+import { useNavigate } from "react-router-dom";
+import { db } from "../../../firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "../../../hooks/useAuth";
+
+const API_BASE = "http://localhost:5000";
+
+const resolveImg = (src) => {
+  if (!src) return "";
+  if (src.startsWith("data:") || src.startsWith("http")) return src;
+  const path = src.startsWith("/") ? src : `/${src}`;
+  return `${API_BASE}${path}`;
+};
 
 const FoodCard = ({ order, onRequestConfirm }) => {
   const avatar =
@@ -21,101 +34,191 @@ const FoodCard = ({ order, onRequestConfirm }) => {
       : "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200";
 
   return (
-    <div className="group relative rounded-2xl border border-zinc-200/70 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow">
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
+    <div className="relative bg-white shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl border border-gray-200 overflow-hidden">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex gap-3 min-w-0">
             <img
-              src={avatar}
+              src={
+                order.avatar
+                  ? order.avatar.startsWith("http")
+                    ? order.avatar
+                    : `http://localhost:5000${order.avatar}`
+                  : "https://i.pravatar.cc/150"
+              }
               alt="avatar"
-              className="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm"
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"
             />
             <div className="min-w-0">
-              <div className="font-semibold text-zinc-900 truncate">
+              <div className="font-semibold text-gray-900 truncate">
                 {order.nickname || order.name || "ไม่ระบุชื่อ"}
               </div>
-              <div className="text-xs text-zinc-500 truncate">
+              <div className="text-sm text-gray-500 truncate">
                 {order.username || "@username"}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusTone}`}>
-              {order.status_name || order.status || "-"}
+
+          <div className="flex flex-col items-end flex-shrink-0">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                order.status_name === "Available"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-blue-100 text-blue-800"
+              }`}
+            >
+              {order.status_name || order.status || ""}
             </span>
-            <div className="rounded-xl bg-zinc-900 text-white px-2.5 py-1 text-sm font-semibold shadow-sm">
+            <div className="text-red-600 font-bold text-xl mt-1">
               ฿{order.service_fee || order.fee || 0}
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-2 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-zinc-500">ตลาด</span>
-            <span className="font-medium text-zinc-800">{order.kad_name || "-"}</span>
+      {/* Order details */}
+      <div className="p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-gray-500">Store</p>
+            <p className="font-medium text-gray-900">
+              {order.store_name || order.shopName || "-"}
+            </p>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-zinc-500">ร้าน</span>
-            <span className="font-medium text-zinc-800 truncate">{order.store_name || "-"}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-zinc-500">สินค้า</span>
-            <span className="font-medium text-zinc-800 truncate">{order.product || "-"}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-zinc-500">ราคา</span>
-            <span className="font-semibold text-zinc-900">฿{order.price ?? "-"}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-zinc-500">ส่ง</span>
-            <span className="text-zinc-800">{order.delivery || order.kad_name || "-"}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-zinc-500">เวลา</span>
-            <span className="text-zinc-800">{order.delivery_at || "-"}</span>
+          <div>
+            <p className="text-xs text-gray-500">Market</p>
+            <p className="font-medium text-gray-900">{order.kad_name || "-"}</p>
           </div>
         </div>
 
-        <div className="mt-4">
-          <button
-            onClick={onRequestConfirm}
-            className="w-full rounded-xl bg-gradient-to-r from-rose-600 to-fuchsia-600 text-white py-2.5 text-sm font-semibold shadow-sm hover:opacity-95 active:opacity-90 transition"
-          >
-            HEW
-          </button>
+        <div>
+          <p className="text-xs text-gray-500">Product</p>
+          <p className="font-medium text-gray-900">
+            {order.product || order.item || "-"}
+          </p>
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-gray-500">Price</p>
+            <p className="font-medium text-gray-900">฿{order.price ?? "-"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Delivery Time</p>
+            <p className="font-medium text-gray-900">
+              {order.delivery_at || "-"}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs text-gray-500">Delivery Location</p>
+          <p className="font-medium text-gray-900">
+            {order.delivery || order.kad_name || "-"}
+          </p>
+        </div>
+      </div>
+
+      {/* ปุ่ม HEW */}
+      <div className="mt-2 mb-2 mr-2 flex justify-end">
+        <button
+          onClick={onRequestConfirm}
+          className="btn btn-sm btn-error text-white"
+        >
+          HEW
+        </button>
       </div>
       <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-black/5 group-hover:ring-black/10 transition" />
     </div>
   );
 };
 
-const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searchQuery }) => {
-  const { orders, loading, error, setOrders } = useOrders(status);
+const FoodCardList = ({
+  onConfirmOrder,
+  status = "Available",
+  selectedKad,
+  searchQuery,
+}) => {
+  const {
+    orders,
+    loading: loadingOrders,
+    error,
+    setOrders,
+  } = useOrders(status);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  const handleRequestConfirm = (order) => {
+    setSelectedOrder(order);
+    setModalVisible(true);
+  };
+
+  // FILTER: กรอง Orders ตาม Kad ที่เลือก
   const filteredOrders = useMemo(() => {
     let temp = Array.isArray(orders) ? orders : [];
     if (selectedKad && selectedKad.length > 0) {
       temp = temp.filter((o) => selectedKad.includes(o.kad_name));
     }
     if (searchQuery && searchQuery.trim() !== "") {
-      const q = searchQuery.toLowerCase();
-      const rec = (v) => {
-        if (v == null) return false;
-        if (typeof v === "object") return Object.values(v).some(rec);
-        return v.toString().toLowerCase().includes(q);
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = (obj) => {
+        return Object.values(obj).some((value) => {
+          if (value == null) return false;
+          if (typeof value === "object") return matchesSearch(value);
+          return value.toString().toLowerCase().includes(query);
+        });
       };
-      temp = temp.filter((o) => rec(o));
+      tempOrders = tempOrders.filter((order) => matchesSearch(order));
     }
     return temp;
   }, [orders, selectedKad, searchQuery]);
 
-  const handleRequestConfirm = (order) => {
-    setSelectedOrder(order);
-    setModalVisible(true);
-  };
+  const handleConfirm = async () => {
+    if (!selectedOrder || !rider) {
+      console.error("User (Rider) not found or order not selected.");
+      return;
+    }
+
+    if (loadingRider) {
+      console.log("Waiting for user auth...");
+      return;
+    }
+
+    if (!rider || !selectedOrder) {
+      console.error("User (Rider) not found or order not selected.");
+      return;
+    }
+
+    const customer_id = selectedOrder.user_id;
+    const rider_id = rider.id;
+    const chatRoomId =
+      customer_id < rider_id
+        ? `${customer_id}_${rider_id}`
+        : `${rider_id}_${customer_id}`;
+
+    try {
+      // สร้าง/อัปเดต ห้องแชทใน Firestore
+      const chatRef = doc(db, "chats", chatRoomId);
+      await setDoc(
+        chatRef,
+        {
+          participants: [customer_id, rider_id],
+          customer_id: customer_id,
+          rider_id: rider_id,
+          customer_name:
+            selectedOrder.nickname || selectedOrder.name || "ลูกค้า",
+          rider_name: rider.name || "ไรเดอร์",
+          customer_avatar: selectedOrder.avatar || null,
+          rider_avatar: rider.picture || null,
+          lastTimestamp: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      console.log(`Firebase Chat Room [${chatRoomId}] is ready.`);
+    } catch (firebaseErr) {
+      console.error("Error creating Firebase chat room:", firebaseErr);
+    }
 
   const handleConfirm = async () => {
     if (!selectedOrder) return;
@@ -133,16 +236,23 @@ const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searc
         }),
       });
       if (!res1.ok) throw new Error(`Create order failed: HTTP ${res1.status}`);
-      const data = await res1.json();
-      const newOrderId = data.order_id;
+      const orderData = await res1.json();
+      const newOrderId = orderData.order_id;
       if (!newOrderId) throw new Error("Invalid order ID");
-      await new Promise((r) => setTimeout(r, 150));
+      console.log("Order created:", orderData);
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      // 2️⃣ ส่งอีเมล + เปลี่ยน status ของโพสต์ (Step 2)
       try {
-        const res2 = await fetch(`http://localhost:5000/service/orders/${newOrderId}/notification`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
+        const res2 = await fetch(
+          `http://localhost:5000/service/orders/${newOrderId}/notification`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }
+        );
         if (!res2.ok) {
           await res2.text();
         }
@@ -150,8 +260,9 @@ const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searc
       const updated = { ...selectedOrder, status_name: "Rider Received" };
       onConfirmOrder(updated);
       setOrders((prev) => prev.filter((o) => o.id !== selectedOrder.id));
-    } catch (e) {
-      console.error(e);
+      navigate(`/service/chat/${chatRoomId}`);
+    } catch (err) {
+      console.error("Error creating order:", err);
     } finally {
       setModalVisible(false);
       setSelectedOrder(null);
@@ -175,22 +286,12 @@ const FoodCardList = ({ onConfirmOrder, status = "Available", selectedKad, searc
           </div>
         )}
 
-        {!loading && !error && filteredOrders.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/80 p-10 text-center text-zinc-600">
-            ไม่มีออเดอร์ในตลาดนี้
-          </div>
-        )}
-
-        {!loading && !error && filteredOrders.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredOrders.map((order) => (
-              <FoodCard
-                key={order.id}
-                order={order}
-                onRequestConfirm={() => handleRequestConfirm(order)}
-              />
-            ))}
-          </div>
+        {!loadingOrders && filteredOrders.length === 0 && (
+          <p className="text-gray-500 w-full text-left mt-10">
+            {error
+              ? `เกิดข้อผิดพลาด: ${error}`
+              : "There are no orders in this market."}
+          </p>
         )}
       </div>
 

@@ -81,7 +81,6 @@ function Postlist() {
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto flex flex-col items-center">
             <div className="filter-con flex flex-col sm:flex-row items-center gap-6 w-full justify-center mb-8 p-6 bg-white/70 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-lg">
-              {/* Markets Select (Label inside) */}
               <div className="relative w-full sm:w-64">
                 <label className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500 pointer-events-none z-10">
                   Market
@@ -100,7 +99,7 @@ function Postlist() {
                 </select>
               </div>
 
-              {/* Search Input (Icon inside) */}
+              {/* Search Input */}
               <div className="relative w-full sm:w-80">
                 <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                 <input
@@ -168,9 +167,7 @@ function Postlist() {
                           </div>
                         </div>
                       </div>
-                      {/* End profile-con */}
 
-                      {/* Details Section (No change, but now safe from price overlap) */}
                       <div className="details-con mt-2 space-y-2 text-base text-slate-800">
                         <div className="location">
                           <span className="font-semibold text-slate-600">
@@ -219,7 +216,7 @@ function Postlist() {
               )}
             </div>
 
-            {/* สำหรับปุ่ม Pagination */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-10 gap-2">
                 {Array.from({ length: totalPages }, (_, i) => (

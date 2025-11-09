@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Navbar from "./components/navbar";
 import "../../components/User/DaisyUI.css";
+import Swal from "sweetalert2";
 
 const API_BASE =
   (import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:5000";
@@ -286,10 +287,10 @@ export default function ServiceProfile() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSwitchRole}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
+                className="sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300 cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
-                Switch Role
+                <span className="hidden sm:inline">Switch Role</span>
               </button>
               <button
                 onClick={() => setShowLogoutModal(true)}

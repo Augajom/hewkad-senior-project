@@ -81,7 +81,7 @@ export default function HistoryPage() {
               {["All", "Complete", "Reported"].map((s) => (
                 <button
                   key={s}
-                  className={`tab ${statusFilter === s ? "tab-active text-cyan-700" : ""}`}
+                  className={`tab ${statusFilter === s ? "tab-active text-cyan-700" : "!text-gray-500"}`}
                   onClick={() => setStatusFilter(s)}
                 >
                   {s}
@@ -92,8 +92,8 @@ export default function HistoryPage() {
           <div className="w-full md:w-80">
             <input
               type="text"
-              placeholder="ค้นหาในประวัติ…"
-              className="input input-bordered w-full bg-white/90 text-slate-900 rounded-xl"
+              placeholder="Search in history"
+              className="input input-bordered border border-gray-400 w-full bg-white/90 text-slate-900 rounded-xl"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -103,7 +103,7 @@ export default function HistoryPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-          ประวัติการสั่งซื้อ
+          Order history
         </h2>
 
         {loading ? (
@@ -119,7 +119,7 @@ export default function HistoryPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-500">
-            ไม่มีประวัติการสั่งซื้อ
+            No order history.
           </div>
         ) : (
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 overflow-hidden">
@@ -152,7 +152,7 @@ export default function HistoryPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           {order.completed_at
-                            ? new Date(order.completed_at).toLocaleString("th-TH", {
+                            ? new Date(order.completed_at).toLocaleString("en-US", {
                                 dateStyle: "medium",
                                 timeStyle: "short",
                               })
@@ -172,29 +172,41 @@ export default function HistoryPage() {
                   <div key={order.order_id} className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-semibold">{order.store_name || "-"}</div>
-                        <div className="text-sm text-slate-600">{order.product || "-"}</div>
+                        <div className="text-black font-semibold">{order.store_name || "-"}</div>
+                        <div className="text-black text-sm text-slate-600">{order.product || "-"}</div>
                       </div>
-                      <span className={statusBadge(order.order_status)}>{order.order_status || "-"}</span>
+                      <span className={`${statusBadge(order.order_status)} flex-shrink-0`}>{order.order_status || "-"}</span>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                      <div className="text-slate-500">ลูกค้า</div>
-                      <div className="text-right">
-                        <div className="font-medium">{order.customer_name || "-"}</div>
-                        <div className="text-xs text-slate-500">{order.customer_username || "-"}</div>
+
+                    {/* ✅ FIX: เปลี่ยนจาก grid-cols-2 เป็น flex justify-between ในแต่ละแถว */}
+                    <div className="mt-3 space-y-2 text-sm">
+                      {/* แถวที่ 1: ลูกค้า */}
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-500">Customer</span>
+                        <div className="text-right">
+                          <div className="text-black font-medium truncate">{order.customer_name || "-"}</div>
+                          <div className="text-xs text-slate-500 truncate">{order.customer_username || "-"}</div>
+                        </div>
                       </div>
-                      <div className="text-slate-500">รวม</div>
-                      <div className="text-right font-semibold">{currency(total)}</div>
-                      <div className="text-slate-500">วันที่</div>
-                      <div className="text-right">
-                        {order.completed_at
-                          ? new Date(order.completed_at).toLocaleString("th-TH", {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            })
-                          : "-"}
+                      {/* แถวที่ 2: รวม */}
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-500">Total</span>
+                        <span className="text-black text-right font-semibold">{currency(total)}</span>
+                      </div>
+                      {/* แถวที่ 3: วันที่ */}
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-500">Date</span>
+                        <span className="text-right text-slate-600">
+                          {order.completed_at
+                            ? new Date(order.completed_at).toLocaleString("en-US", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })
+                            : "-"}
+                        </span>
                       </div>
                     </div>
+                    
                   </div>
                 );
               })}

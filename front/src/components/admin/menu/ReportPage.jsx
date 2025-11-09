@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import Nav from "../nav";
 import { CiSearch } from "react-icons/ci";
 import { IoMdClose } from "react-icons/io";
 import axios from "axios";
-import Nav from "../nav";
 
 const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
@@ -158,6 +158,13 @@ export default function ReportPage() {
     return "text-gray-500";
   };
 
+  const getStatusLabel = (status_id) => {
+    if (status_id === 5 || status_id === 8 || status_id === 9)
+      return "Resolved";
+    if (status_id === 6) return "Unresolved";
+    return "-";
+  };
+
   return (
     <>
       <Nav />
@@ -179,50 +186,200 @@ export default function ReportPage() {
               />
             </div>
 
-            <div className="overflow-x-auto w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-6">
-              <table className="w-full text-sm text-center text-slate-800">
-                <thead className="bg-transparent text-slate-600 uppercase text-xs">
-                  <tr className="border-b border-slate-300">
-                    <th className="px-4 py-3">Order ID</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Report By (Customer)</th>
-                    <th className="px-4 py-3">Report User (Rider)</th>
-                    <th className="px-4 py-3">Report Detail</th>
-                    <th className="px-4 py-3">Report File</th>
-                    <th className="px-4 py-3">Resolved Detail</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredReports.length > 0 ? (
-                    filteredReports.map((report) => (
-                      <tr
-                        key={report.order_id}
-                        className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/50"
-                      >
-                        <td className="p-4">{report.order_id}</td>
-                        <td className="p-4">{report.date || "-"}</td>
-                        <td className="p-4">
-                          {report.customer_name || "-"}
-                          <div className="text-slate-400 text-xs">
+            {/* Main */}
+            <div className="overflow-hidden w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50">
+              {/* --- 1. Desktop Table (Hidden on Mobile) --- */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm text-center text-slate-800">
+                  <thead className="bg-transparent text-slate-600 uppercase text-xs">
+                    <tr className="border-b border-slate-300">
+                      <th className="px-4 py-3">Order ID</th>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Report By (Customer)</th>
+                      <th className="px-4 py-3">Report User (Rider)</th>
+                      <th className="px-4 py-3">Report Detail</th>
+                      <th className="px-4 py-3">Report File</th>
+                      <th className="px-4 py-3">Resolved Detail</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td
+                          colSpan="9"
+                          className="py-10 text-slate-500 animate-pulse"
+                        >
+                          กำลังโหลดข้อมูล...
+                        </td>
+                      </tr>
+                    ) : filteredReports.length > 0 ? (
+                      filteredReports.map((report) => (
+                        <tr
+                          key={report.order_id}
+                          className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/50"
+                        >
+                          <td className="p-4">{report.order_id}</td>
+                          <td className="p-4">{report.date || "-"}</td>
+                          <td className="p-4">
+                            {report.customer_name || "-"}
+                            <div className="text-slate-400 text-xs">
+                              {report.customer_email || "-"}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            {report.rider_name || "-"}
+                            <div className="text-slate-400 text-xs">
+                              {report.rider_email || "-"}
+                            </div>
+                          </td>
+                          <td className="p-4 text-center">
+                            {report.report_detail || "-"}
+                          </td>
+                          <td className="p-4 text-center">
+                            {report.report_file ? (
+                              <button
+                                onClick={() =>
+                                  setViewModal({
+                                    open: true,
+                                    fileUrl: `http://localhost:5000${report.report_file}`,
+                                    title: "Report File",
+                                  })
+                                }
+                                className="text-blue-600 underline hover:text-blue-800 text-sm cursor-pointer"
+                              >
+                                View Report
+                              </button>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+
+                          <td className="p-4 text-center">
+                            {report.resolved_detail || "-"}
+                          </td>
+                          <td
+                            className={`p-4 ${getStatusClass(
+                              report.status_id
+                            )}`}
+                          >
+                            {getStatusLabel(report.status_id)}
+                          </td>
+                          <td className="p-4">
+                            {report.status_id === 6 ? (
+                              <button
+                                onClick={() => openModal(report)}
+                                className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                              >
+                                Resolve
+                              </button>
+                            ) : report.resolved_file ? (
+                              <button
+                                onClick={() =>
+                                  setViewModal({
+                                    open: true,
+                                    fileUrl: `http://localhost:5000${report.resolved_file}`,
+                                    title: "Resolved File",
+                                  })
+                                }
+                                className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/20"
+                              >
+                                View File
+                              </button>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="9" className="text-slate-500 py-10">
+                          ไม่มีรายงานในระบบ
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* --- 2. Mobile Card List --- */}
+              <div className="md:hidden divide-y divide-slate-200">
+                {loading ? (
+                  <div className="py-10 text-slate-500 animate-pulse text-center">
+                    กำลังโหลดข้อมูล...
+                  </div>
+                ) : filteredReports.length > 0 ? (
+                  filteredReports.map((report) => (
+                    <div key={report.order_id} className="p-4">
+                      {/* Top: ID, Date, Status */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                          <div className="font-semibold text-slate-900">
+                            ID: {report.order_id}
+                          </div>
+                          <div className="text-sm text-slate-500">
+                            {report.date || "-"}
+                          </div>
+                        </div>
+                        <span
+                          className={`${getStatusClass(
+                            report.status_id
+                          )} px-3 py-1 rounded-lg text-xs`}
+                        >
+                          {getStatusLabel(report.status_id)}
+                        </span>
+                      </div>
+
+                      {/* Details */}
+                      <div className="space-y-3 text-sm">
+                        {/* Customer */}
+                        <div>
+                          <div className="text-slate-500 text-xs mb-1">
+                            Report By (Customer)
+                          </div>
+                          <div className="text-slate-800 font-medium truncate">
+                            {report.customer_name || "-"}
+                          </div>
+                          <div className="text-slate-400 text-xs truncate">
                             {report.customer_email || "-"}
                           </div>
-                        </td>
-                        <td className="p-4">
-                          {report.rider_name || "-"}
-                          <div className="text-slate-400 text-xs">
+                        </div>
+                        {/* Rider */}
+                        <div>
+                          <div className="text-slate-500 text-xs mb-1">
+                            Report User (Rider)
+                          </div>
+                          <div className="text-slate-800 font-medium truncate">
+                            {report.rider_name || "-"}
+                          </div>
+                          <div className="text-slate-400 text-xs truncate">
                             {report.rider_email || "-"}
                           </div>
-                        </td>
-                        <td className="p-4 text-center">
-                          {report.report_detail || "-"}
-                        </td>
+                        </div>
+                        {/* Report Detail */}
+                        <div>
+                          <div className="text-slate-500 text-xs mb-1">
+                            Report Detail
+                          </div>
+                          <div className="text-slate-800 font-medium">
+                            {report.report_detail || "-"}
+                          </div>
+                        </div>
+                        {/* Resolved Detail */}
+                        <div>
+                          <div className="text-slate-500 text-xs mb-1">
+                            Resolved Detail
+                          </div>
+                          <div className="text-slate-800 font-medium">
+                            {report.resolved_detail || "-"}
+                          </div>
+                        </div>
 
-                        {/* เพิ่ม column report_file */}
-                        {/* Column Report File */}
-                        <td className="p-4 text-center">
-                          {report.report_file ? (
+                        {/* Files */}
+                        <div className="flex gap-4">
+                          {report.report_file && (
                             <button
                               onClick={() =>
                                 setViewModal({
@@ -233,36 +390,10 @@ export default function ReportPage() {
                               }
                               className="text-blue-600 underline hover:text-blue-800 text-sm cursor-pointer"
                             >
-                              View Report
+                              View Report File
                             </button>
-                          ) : (
-                            "-"
                           )}
-                        </td>
-
-                        <td className="p-4 text-center">
-                          {report.resolved_detail || "-"}
-                        </td>
-                        <td
-                          className={`p-4 ${getStatusClass(report.status_id)}`}
-                        >
-                          {report.status_id === 5 ||
-                          report.status_id === 8 ||
-                          report.status_id === 9
-                            ? "Resolved"
-                            : [6].includes(report.status_id)
-                            ? "Unresolved"
-                            : "-"}
-                        </td>
-                        <td className="p-4">
-                          {report.status_id === 6 ? (
-                            <button
-                              onClick={() => openModal(report)}
-                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
-                            >
-                              Resolve
-                            </button>
-                          ) : report.resolved_file ? (
+                          {report.resolved_file && (
                             <button
                               onClick={() =>
                                 setViewModal({
@@ -271,44 +402,52 @@ export default function ReportPage() {
                                   title: "Resolved File",
                                 })
                               }
-                              className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/20"
+                              className="text-orange-600 underline hover:text-orange-800 text-sm cursor-pointer"
                             >
-                              View File
+                              View Resolved File
                             </button>
-                          ) : (
-                            "-"
                           )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="9" className="text-slate-500 py-10">
-                        ไม่มีรายงานในระบบ
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </div>
+                      </div>
+
+                      {/* Bottom: Action Button */}
+                      {report.status_id === 6 && (
+                        <div className="mt-4">
+                          <button
+                            onClick={() => openModal(report)}
+                            className="btn btn-block border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                          >
+                            Resolve
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-slate-500 text-center p-6">
+                    ไม่มีรายงานในระบบ
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* View File Modal */}
       {viewModal.open && (
         <dialog className="modal modal-open">
-          <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black max-w-md w-full">
+          <div className="modal-box bg-white p-6 rounded-lg shadow-xl text-black max-w-md w-[90vw]">
             <h3 className="font-bold text-lg text-center mb-4">
               {viewModal.title}
             </h3>
-
             <div className="flex justify-center mb-6">
               <img
                 src={viewModal.fileUrl}
                 alt={viewModal.title}
-                className="max-w-full max-h-[400px] object-contain rounded"
+                className="max-w-full max-h-[60vh] object-contain rounded"
               />
             </div>
-
             <div className="flex justify-center">
               <button
                 className="btn btn-error text-white px-8 py-3 rounded-full"
@@ -323,9 +462,10 @@ export default function ReportPage() {
         </dialog>
       )}
 
+      {/* Resolve Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-[999]">
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-lg relative">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-[90vw] max-w-lg relative">
             <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
               Resolve Report Order {selectedReport?.order_id}
             </h2>
@@ -341,24 +481,26 @@ export default function ReportPage() {
               <input
                 type="file"
                 className="file-input file-input-bordered w-full rounded-xl border-slate-300 bg-white/50 text-black
-                           file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold 
-                           file:bg-gradient-to-r file:from-blue-600 file:to-indigo-600 file:text-white
-                           hover:file:opacity-90 file:cursor-pointer"
+                                file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold 
+                                file:bg-gradient-to-r file:from-blue-600 file:to-indigo-600 file:text-white
+                                hover:file:opacity-90 file:cursor-pointer"
                 onChange={(e) => setFile(e.target.files[0])}
               />
-              <div className="flex justify-end gap-3 pt-2">
+
+              {/* Buttons in Modal */}
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
                 {!submitting && (
                   <button
                     type="button"
                     onClick={() => setModalOpen(false)}
-                    className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/30 hover:shadow-red-500/50"
+                    className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 shadow-red-500/30 hover:shadow-red-500/50 w-full sm:w-auto"
                   >
                     Cancel
                   </button>
                 )}
                 <button
                   type="submit"
-                  className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30 hover:shadow-emerald-500/50"
+                  className="btn border-none text-white font-medium shadow-lg hover:scale-105 transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30 hover:shadow-emerald-500/50 w-full sm:w-auto"
                   disabled={submitting}
                 >
                   {submitting ? "Submitting..." : "Submit Resolution"}
