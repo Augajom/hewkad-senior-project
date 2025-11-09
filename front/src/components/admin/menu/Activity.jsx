@@ -124,111 +124,205 @@ function Activity() {
               </div>
             </div>
 
-            <div className="overflow-x-auto w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-6">
-              <table className="w-full text-sm text-center text-slate-800">
-                <thead className="bg-transparent text-slate-600 uppercase text-xs">
-                  <tr className="border-b border-slate-300">
-                    <th className="px-4 py-3">Order ID</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Rider (Service Provider)</th>
-                    <th className="px-4 py-3">Order Status</th>
-                    <th className="px-4 py-3">Price</th>
-                    <th className="px-4 py-3">Service Fee</th>
-                    <th className="px-4 py-3">Revenue</th>
-                    <th className="px-4 py-3">Status Payment</th>
-                    <th className="px-4 py-3">Slip File</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td
-                        colSpan="10"
-                        className="py-10 text-slate-500 animate-pulse"
-                      >
-                        กำลังโหลดข้อมูล...
-                      </td>
+            <div className="w-full bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 overflow-hidden">
+              
+              {/* --- 1. Desktop Table (Hidden on Mobile) --- */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm text-center text-slate-800">
+                  <thead className="bg-transparent text-slate-600 uppercase text-xs">
+                    <tr className="border-b border-slate-300">
+                      <th className="px-4 py-3">Order ID</th>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3">Rider (Service Provider)</th>
+                      <th className="px-4 py-3">Order Status</th>
+                      <th className="px-4 py-3">Price</th>
+                      <th className="px-4 py-3">Service Fee</th>
+                      <th className="px-4 py-3">Revenue</th>
+                      <th className="px-4 py-3">Status Payment</th>
+                      <th className="px-4 py-3">Slip File</th>
                     </tr>
-                  ) : filteredOrders.length > 0 ? (
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td
+                          colSpan="10"
+                          className="py-10 text-slate-500 animate-pulse"
+                        >
+                          กำลังโหลดข้อมูล...
+                        </td>
+                      </tr>
+                    ) : filteredOrders.length > 0 ? (
+                      filteredOrders.map((order) => {
+                        const fee = parseFloat(order.order_service_fee || 0);
+                        const revenue = fee * 0.3; // ✅ Revenue 30%
+                        const afterDeduct = fee - revenue; // ✅ Rider เหลือ 70%
+
+                        return (
+                          <tr
+                            key={order.order_id}
+                            className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/50"
+                          >
+                            <td className="p-4">{order.order_id}</td>
+                            <td className="p-4">
+                              {formatDate(order.ordered_date)}
+                            </td>
+                            <td className="p-4">
+                              {order.customer_name || "-"}
+                              <div className="text-slate-400 text-xs">
+                                {order.customer_email || "-"}
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              {order.rider_name || "-"}
+                              <div className="text-slate-400 text-xs">
+                                {order.rider_email || "-"}
+                              </div>
+                            </td>
+                            <td
+                              className={`p-4 ${getOrderStatusClass(
+                                order.status_name
+                              )}`}
+                            >
+                              {order.status_name || "-"}
+                            </td>
+                            <td className="p-4">{order.order_price || 0} ฿</td>
+                            <td className="p-4">{fee.toFixed(2)} ฿</td>
+                            <td className="p-4">
+                              <div className="font-semibold text-green-700">
+                                {revenue.toFixed(2)} ฿
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                Rider: {afterDeduct.toFixed(2)} ฿
+                              </div>
+                            </td>
+                            <td
+                              className={`p-4 ${getPaymentStatusClass(
+                                order.status_payment
+                              )}`}
+                            >
+                              {order.status_payment || "-"}
+                            </td>
+                            <td className="p-4">
+                              {order.slip_filename ? (
+                                <button
+                                  className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                                  onClick={() =>
+                                    openSlipModal(
+                                      `http://localhost:5000/Files/Payment/${order.slip_filename}`
+                                    )
+                                  }
+                                >
+                                  View Slip
+                                </button>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="10" className="text-slate-500 py-10">
+                          ไม่มีข้อมูลในหน้านี้
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* --- 2. Mobile Card List */}
+              <div className="md:hidden divide-y divide-slate-200">
+                 {loading ? (
+                    <div className="py-10 text-slate-500 animate-pulse text-center">
+                      กำลังโหลดข้อมูล...
+                    </div>
+                 ) : filteredOrders.length > 0 ? (
                     filteredOrders.map((order) => {
                       const fee = parseFloat(order.order_service_fee || 0);
-                      const revenue = fee * 0.3; // ✅ Revenue 30%
-                      const afterDeduct = fee - revenue; // ✅ Rider เหลือ 70%
+                      const revenue = fee * 0.3;
+                      const afterDeduct = fee - revenue;
 
                       return (
-                        <tr
-                          key={order.order_id}
-                          className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/50"
-                        >
-                          <td className="p-4">{order.order_id}</td>
-                          <td className="p-4">
-                            {formatDate(order.ordered_date)}
-                          </td>
-                          <td className="p-4">
-                            {order.customer_name || "-"}
-                            <div className="text-slate-400 text-xs">
-                              {order.customer_email || "-"}
+                        <div key={order.order_id} className="p-4">
+                          {/* Top: ID, Date, Status */}
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div>
+                              <div className="font-semibold text-slate-900">ID: {order.order_id}</div>
+                              <div className="text-sm text-slate-500">{formatDate(order.ordered_date)}</div>
                             </div>
-                          </td>
-                          <td className="p-4">
-                            {order.rider_name || "-"}
-                            <div className="text-slate-400 text-xs">
-                              {order.rider_email || "-"}
+                            <span className={`${getOrderStatusClass(order.status_name)} flex-shrink-0`}>
+                              {order.status_name || "-"}
+                            </span>
+                          </div>
+
+                          {/* Middle: Details */}
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between gap-4">
+                              <span className="text-slate-500">Customer</span>
+                              <div className="text-right">
+                                <div className="text-slate-800 font-medium truncate">{order.customer_name || '-'}</div>
+                                <div className="text-slate-400 text-xs truncate">{order.customer_email || '-'}</div>
+                              </div>
                             </div>
-                          </td>
-                          <td
-                            className={`p-4 ${getOrderStatusClass(
-                              order.status_name
-                            )}`}
-                          >
-                            {order.status_name || "-"}
-                          </td>
-                          <td className="p-4">{order.order_price || 0} ฿</td>
-                          <td className="p-4">{fee.toFixed(2)} ฿</td>
-                          <td className="p-4">
-                            <div className="font-semibold text-green-700">
-                              {revenue.toFixed(2)} ฿
+                             <div className="flex justify-between gap-4">
+                              <span className="text-slate-500">Rider</span>
+                              <div className="text-right">
+                                <div className="text-slate-800 font-medium truncate">{order.rider_name || '-'}</div>
+                                <div className="text-slate-400 text-xs truncate">{order.rider_email || '-'}</div>
+                              </div>
                             </div>
-                            <div className="text-xs text-slate-500">
-                              Rider: {afterDeduct.toFixed(2)} ฿
+                            <div className="flex justify-between gap-4">
+                              <span className="text-slate-500">Price</span>
+                              <span className="text-slate-800 font-medium">{order.order_price || 0} ฿</span>
                             </div>
-                          </td>
-                          <td
-                            className={`p-4 ${getPaymentStatusClass(
-                              order.status_payment
-                            )}`}
-                          >
-                            {order.status_payment || "-"}
-                          </td>
-                          <td className="p-4">
-                            {order.slip_filename ? (
-                              <button
-                                className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
-                                onClick={() =>
-                                  openSlipModal(
-                                    `http://localhost:5000/Files/Payment/${order.slip_filename}`
-                                  )
-                                }
-                              >
-                                View Slip
-                              </button>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                        </tr>
+                            <div className="flex justify-between gap-4">
+                              <span className="text-slate-500">Service Fee</span>
+                              <span className="text-slate-800 font-medium">{fee.toFixed(2)} ฿</span>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <span className="text-slate-500">Revenue</span>
+                              <div className="text-right">
+                                <div className="font-semibold text-green-700">{revenue.toFixed(2)} ฿</div>
+                                <div className="text-xs text-slate-500">Rider: {afterDeduct.toFixed(2)} ฿</div>
+                              </div>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <span className="text-slate-500">Payment</span>
+                              <span className={`${getPaymentStatusClass(order.status_payment)}`}>
+                                {order.status_payment || "-"}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Bottom: Action Button */}
+                          {order.slip_filename && (
+                             <div className="mt-4">
+                               <button
+                                  className="btn btn-block border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
+                                  onClick={() =>
+                                    openSlipModal(
+                                      `http://localhost:5000/Files/Payment/${order.slip_filename}`
+                                    )
+                                  }
+                                >
+                                  View Slip
+                                </button>
+                             </div>
+                          )}
+                        </div>
                       );
                     })
-                  ) : (
-                    <tr>
-                      <td colSpan="10" className="text-slate-500 py-10">
-                        ไม่มีข้อมูลในหน้านี้
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                 ) : (
+                    <p className="text-slate-500 text-center p-6">
+                      ไม่มีข้อมูลในหน้านี้
+                    </p>
+                 )}
+              </div>
+
             </div>
 
             {modalOpen && (

@@ -82,7 +82,7 @@ function ChatList() {
       {/* 🎨 2. Header ของแชท (สไตล์เดียวกับ Filter bar) */}
       <header className="sticky top-16 z-40 bg-white/70 backdrop-blur-xl border-b border-slate-200/50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-900">Your Chats</h1>
+          <h1 className="text-sm font-bold text-slate-900 md:text-xl">Your Chats</h1>
           <div className="w-full md:w-72">
             <div className="relative">
               <CiSearch className="absolute size-5 left-4 top-5 -translate-y-1/2 text-slate-400 z-10" />

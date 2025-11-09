@@ -72,24 +72,28 @@ const HistoryPostCard = ({ post, className = "" }) => {
   };
 
   return (
-    <div className={`card bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black ${className}`}>
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div className="flex gap-3">
+    <div className={`card w-full sm:w-[450px] md:w-[400px] lg:w-[450px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black ${className}`}>
+      {/* Header - Responsive */}
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex gap-3 min-w-0">
           <img
             src={post.avatar ? (post.avatar.startsWith("http") ? post.avatar : `http://localhost:5000${post.avatar}`) : 'https://i.pravatar.cc/150'}
             alt="avatar"
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover flex-shrink-0"
           />
-          <div>
-            <div className="font-bold text-base">{post.nickname || 'ไม่ระบุชื่อ'}</div>
-            <div className="text-sm text-gray-500">{post.username || '@username'}</div>
+          <div className="min-w-0">
+            <div className="font-bold text-base truncate">{post.nickname || 'ไม่ระบุชื่อ'}</div>
+            <div className="text-sm text-gray-500 truncate">{post.username || '@username'}</div>
           </div>
         </div>
 
-        <div className="flex flex-col items-end">
-          <div className={`badge ${getBadgeClass(status)}`}>{status}</div>
-          <div className="text-red-600 font-bold text-xl mt-1">{post.service_fee ? `${post.service_fee} ฿` : '0 ฿'}</div>
+        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+          <div className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${getBadgeClass(status)}`}>
+            {status}
+          </div>
+          <div className="text-red-600 font-bold text-xl truncate max-w-full">
+            {post.service_fee ? `${post.service_fee} ฿` : '0 ฿'}
+          </div>
         </div>
       </div>
 
@@ -103,18 +107,24 @@ const HistoryPostCard = ({ post, className = "" }) => {
         <p><span className="font-semibold">เวลาจัดส่ง</span> : {post.receivingTime || '-'}</p>
       </div>
 
-      {/* Bottom */}
-      <div className="mt-4 flex justify-between items-center gap-2">
+      {/* Bottom - Responsive */}
+      <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="text-gray-800 text-xl font-bold">
           <span className="font-semibold">Total :</span> {total} ฿
         </div>
 
-        <div className="flex flex-col gap-2 justify-end items-end">
-          <button className="btn btn-error text-white" onClick={() => setShowReportModal(true)}>
+        <div className="flex flex-col gap-2 w-full sm:w-auto">
+          <button 
+            className="btn btn-error text-white w-full sm:w-auto" 
+            onClick={() => setShowReportModal(true)}
+          >
             Report
           </button>
 
-          <button className="btn btn-link text-blue-600 underline self-start" onClick={() => setShowProofModal(true)}>
+          <button 
+            className="btn btn-link text-blue-600 underline" 
+            onClick={() => setShowProofModal(true)}
+          >
             {status === 'Reported' ? "View Refund Proof" : "View Proof Of Delivery"}
           </button>
         </div>
@@ -154,7 +164,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
                 onChange={handleReportInputChange}
                 required
               >
-                <option disabled value="">เลือกเหตุผล</option>
+                <option disabled value="">Select a reason</option>
                 {reportReasons.map((reason) => (
                   <option key={reason.id} value={reason.id}>{reason.title}</option>
                 ))}
@@ -163,7 +173,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
               <input
                 type="text"
                 name="details"
-                placeholder="รายละเอียด"
+                placeholder="details"
                 className="input input-bordered w-full text-black bg-white"
                 value={reportForm.details}
                 autoComplete="off"

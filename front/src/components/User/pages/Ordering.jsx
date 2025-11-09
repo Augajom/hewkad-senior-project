@@ -91,7 +91,7 @@ export default function Ordering({ currentUser }) {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h3 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-          รายการที่รับแล้ว
+          Items received
         </h3>
 
         {loading ? (
@@ -102,12 +102,12 @@ export default function Ordering({ currentUser }) {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="text-red-500 font-semibold mb-2">เกิดข้อผิดพลาด</div>
+            <div className="text-red-500 font-semibold mb-2">An error occurred.</div>
             <div className="text-slate-600">{error}</div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-500">
-            ยังไม่มีรายการ
+            There are no items yet.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">

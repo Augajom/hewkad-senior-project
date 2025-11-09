@@ -88,7 +88,7 @@ export default function History() {
         ) : error ? (
           <p className="text-center text-red-500">{error}</p>
         ) : posts.length === 0 ? (
-          <p className="text-center text-gray-500">ยังไม่มีรายการ</p>
+          <p className="text-center text-gray-500">There are no items yet.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
             {posts.map((post) => (

@@ -11,13 +11,6 @@ import Nav from "../nav";
 
 const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
-const currencyTHB = (n) =>
-  new Intl.NumberFormat("th-TH", {
-    style: "currency",
-    currency: "THB",
-    maximumFractionDigits: 0,
-  }).format(Number(n || 0));
-
 const StatusChip = ({ text }) => {
   const map = {
     Pending: "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30",
@@ -83,11 +76,9 @@ export default function AdminPayments() {
   return (
     <>
       <Nav />
-      {/* 1. พื้นหลัง Gradient (เหมือนเดิม) */}
       <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
         <div className="container mx-auto m-10">
           <div className="w-full mx-auto flex flex-col items-center">
-            {/* 2. Search Bar (สไตล์เดิม) */}
             <div className="relative w-full sm:w-96 mb-8">
               <CiSearch className="absolute size-5 left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
               <input
@@ -102,7 +93,7 @@ export default function AdminPayments() {
               />
             </div>
 
-            {/* 3. Card Grid */}
+            {/* Card Grid */}
             <div className="card-con grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl mx-auto">
               {currentOrders.length > 0 ? (
                 currentOrders.map((order) => (
@@ -193,7 +184,7 @@ export default function AdminPayments() {
               )}
             </div>
 
-            {/* ✅ Pagination */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-10 gap-2">
                 {Array.from({ length: totalPages }, (_, i) => (

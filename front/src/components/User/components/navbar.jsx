@@ -26,7 +26,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Link to="/" className="flex items-center gap-2">
+              <Link to="/user/home" className="flex items-center gap-2">
                 <img src="/src/assets/logo.png" alt="Logo" className="w-24 h-12 object-contain" />
               </Link>
             </div>
@@ -90,7 +90,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
             </nav>
 
             <button
-              className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/70 border border-slate-200 hover:bg-slate-100"
+              className="text-black md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/70 border border-slate-200 hover:bg-slate-100"
               onClick={() => setOpen((v) => !v)}
               aria-label="Toggle menu"
             >
@@ -134,10 +134,10 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
                 </div>
               </Link>
 
-              <Link to="/messages" onClick={() => setOpen(false)}>
+              <Link to="/user/chat" onClick={() => setOpen(false)}>
                 <div
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl ${
-                    isActive("/messages") ? "bg-cyan-50 text-cyan-700" : "hover:bg-slate-100 text-slate-900"
+                    isActive("/user/chat") ? "bg-cyan-50 text-cyan-700" : "hover:bg-slate-100 text-slate-900"
                   }`}
                 >
                   <MessageCircle className="w-5 h-5" />

@@ -14,7 +14,6 @@ const OrderingPostCard = ({ post }) => {
   const [reportReasons, setReportReasons] = useState([]);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
-
   // skipok
   const [slipOkData, setSlipOkData] = useState([]);
   const [slipFile, setSlipFile] = useState("");
@@ -96,15 +95,15 @@ const OrderingPostCard = ({ post }) => {
   // swal
   const successAlert = () => {
     Swal.fire({
-      title: 'ชำระเงินสำเร็จ',
-      text: 'ขอบคุณสำหรับการชำระเงิน',
-      icon: 'success',
+      title: "ชำระเงินสำเร็จ",
+      text: "ขอบคุณสำหรับการชำระเงิน",
+      icon: "success",
       timer: 3000,
       showConfirmButton: false,
     }).then(() => {
       handleConfirmPayment();
-    })
-  }
+    });
+  };
 
   // modal handlers
   const handleOpenSlipModal = () => {
@@ -219,7 +218,6 @@ const OrderingPostCard = ({ post }) => {
     }
   };
 
-
   const handleReportInputChange = (e) => {
     const { name, value } = e.target;
     setReportForm((prev) => ({ ...prev, [name]: value }));
@@ -228,38 +226,40 @@ const OrderingPostCard = ({ post }) => {
   return (
     <div className="card w-full sm:w-[450px] md:w-[400px] lg:w-[450px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div className="flex gap-3">
+      <div className="flex justify-between items-start gap-4"> 
+        <div className="flex gap-3 min-w-0">
           <img
             src={
               post.avatar
                 ? post.avatar.startsWith("http")
-                  ? post.avatar             // ถ้าเป็น URL เต็ม
-                  : `http://localhost:5000${post.avatar}` // ถ้าเป็น path local
-                : 'https://i.pravatar.cc/150' // default avatar
+                  ? post.avatar
+                  : `http://localhost:5000${post.avatar}`
+                : "https://i.pravatar.cc/150"
             }
             alt="avatar"
-            className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover"
+            className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover flex-shrink-0"
           />
-          <div>
-            <div className="font-bold text-base">
+          
+          <div className="min-w-0"> 
+            <div className="font-bold text-base truncate">
               {post.nickname || "ไม่ระบุชื่อ"}
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 truncate">
               {post.username || "@username"}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2 max-w-full">
+        <div className="flex flex-col items-end gap-2 flex-shrink-0"> 
           {status && (
             <div
-              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${status === "Ordering"
-                ? "badge-info"
-                : status === "Complete"
+              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${
+                status === "Ordering"
+                  ? "badge-info"
+                  : status === "Complete"
                   ? "badge-success"
                   : "badge-warning"
-                }`}
+              }`}
             >
               {status}
             </div>
@@ -298,36 +298,41 @@ const OrderingPostCard = ({ post }) => {
       </div>
 
       {/* Bottom */}
-      <div className="mt-4 flex justify-between items-center gap-2">
+      <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="text-gray-800 text-xl font-bold">
           <span className="font-semibold">Total :</span> {total} ฿
         </div>
 
         {/* Action Buttons */}
         {status === "Rider Received" && (
-          <button onClick={handleOpenQR} className="btn btn-info text-white">
+          <button
+            onClick={handleOpenQR}
+            className="btn btn-info text-white w-full sm:w-auto"
+          >
             Payment
           </button>
         )}
         {status === "Order Received" && (
-          <div className="flex flex-col gap-2 justify-end items-end">
-            <div className="flex gap-2">
+          <div className="flex flex-col items-center sm:items-end gap-2 w-full sm:w-auto">
+            {/* 1. Confirm/Report Button Row */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <button
                 onClick={handleConfirmOrder}
-                className="btn btn-success text-white"
+                className="btn btn-success text-white w-full sm:w-auto"
               >
                 Confirm
               </button>
               <button
                 onClick={() => setShowReportModal(true)}
-                className="btn btn-error text-white"
+                className="btn btn-error text-white w-full sm:w-auto"
               >
                 Report
               </button>
             </div>
 
+            {/* 2. View Proof Link */}
             <button
-              className="btn btn-link text-blue-600 underline self-start"
+              className="btn btn-link text-blue-600 underline"
               onClick={() => setShowProofModal(true)}
             >
               View Proof Of Delivery
@@ -341,7 +346,7 @@ const OrderingPostCard = ({ post }) => {
 
               <div className="flex justify-center mb-6">
                 <img
-                  src={`http://localhost:5000${post.proof_url}`} // ✅ proof_url มี /uploads/proofs/xxx
+                  src={`http://localhost:5000${post.proof_url}`}
                   alt="Proof"
                   className="max-w-full max-h-[400px] object-contain rounded"
                 />
@@ -352,7 +357,7 @@ const OrderingPostCard = ({ post }) => {
                   className="btn btn-error text-white px-8 py-3 rounded-full"
                   onClick={() => setShowProofModal(false)}
                 >
-                  ปิด
+                  Close
                 </button>
               </div>
             </div>
@@ -362,11 +367,13 @@ const OrderingPostCard = ({ post }) => {
         {status === "Ordering" && (
           <button
             onClick={() => setShowReportModal(true)}
-            className="btn btn-error text-white"
+            className="btn btn-error text-white w-full sm:w-auto"
           >
             Report
           </button>
         )}
+
+        {/* --- MODALS (ไม่เปลี่ยนแปลง) --- */}
 
         {/* QR Modal */}
         {showQRModal && (
@@ -386,13 +393,13 @@ const OrderingPostCard = ({ post }) => {
                 onClick={handleOpenSlipModal}
                 className="btn btn-success w-full mt-4"
               >
-                แนบสลิปการชำระเงิน
+                Attach payment slip
               </button>
               <button
                 onClick={() => setShowQRModal(false)}
                 className="btn btn-ghost w-full mt-2"
               >
-                ยกเลิก
+                Cancel
               </button>
             </div>
           </div>
@@ -403,7 +410,7 @@ const OrderingPostCard = ({ post }) => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg w-96 space-y-4 text-center shadow-xl">
               <h2 className="text-xl font-bold text-black">
-                แนบสลิปการชำระเงิน
+                Attach payment slip
               </h2>
               <form onSubmit={handleSubmit}>
                 <input
@@ -417,7 +424,7 @@ const OrderingPostCard = ({ post }) => {
                   htmlFor="slipUpload"
                   className="btn btn-outline btn-primary w-full cursor-pointer"
                 >
-                  เลือกไฟล์
+                  Select file
                 </label>
                 {slipFile && (
                   <img
@@ -430,21 +437,19 @@ const OrderingPostCard = ({ post }) => {
                   <p className="text-red-500 text-sm mt-2">{slipError}</p>
                 )}
                 <button className="btn btn-success w-full mt-4" type="submit">
-                  ส่งสลิป
+                  Send a slip
                 </button>
                 <button
                   onClick={() => setShowSlipModal(false)}
                   className="btn btn-ghost w-full mt-2"
                 >
-                  ยกเลิก
+                  Cancel
                 </button>
-
               </form>
             </div>
           </div>
         )}
 
-        {/* Report Modal */}
         {/* Report Modal */}
         {showReportModal && (
           <dialog className="modal modal-open">
@@ -466,7 +471,7 @@ const OrderingPostCard = ({ post }) => {
                   required
                 >
                   <option disabled value="">
-                    เลือกเหตุผล
+                    Select a reason
                   </option>
                   {reportReasons.map((reason) => (
                     <option key={reason.id} value={reason.id}>
@@ -479,7 +484,7 @@ const OrderingPostCard = ({ post }) => {
                 <input
                   type="text"
                   name="details"
-                  placeholder="รายละเอียด"
+                  placeholder="details"
                   className="input input-bordered w-full text-black bg-white"
                   autoComplete="off"
                   value={reportForm.details}
@@ -490,35 +495,35 @@ const OrderingPostCard = ({ post }) => {
                 {/* เงื่อนไขตาม id */}
                 {reportForm.report === "1" && (
                   <p className="text-red-600 text-sm">
-                    กรุณาอัปเดตโปรไฟล์ เบอร์โทรศัพท์ และบัญชีธนาคารของคุณก่อน
+                    Please update your profile, phone number and bank account first.
                   </p>
                 )}
 
                 {(reportForm.report === "2" ||
                   reportForm.report === "3" ||
                   reportForm.report === "4") && (
-                    <div className="flex flex-col items-start gap-2">
-                      <label
-                        htmlFor="reportImage"
-                        className="text-sm font-semibold text-gray-700"
-                      >
-                        อัพโหลดรูปภาพ (ของที่ผิด)
-                      </label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        id="reportImage"
-                        className="file-input file-input-bordered w-full bg-white text-black"
-                        placeholder="ขอดูภาพของที่ผิดหน่อย"
-                        onChange={(e) =>
-                          setReportForm((prev) => ({
-                            ...prev,
-                            image: e.target.files[0],
-                          }))
-                        }
-                      />
-                    </div>
-                  )}
+                  <div className="flex flex-col items-start gap-2">
+                    <label
+                      htmlFor="reportImage"
+                      className="text-sm font-semibold text-gray-700"
+                    >
+                      Upload a picture (of the wrong item)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="reportImage"
+                      className="file-input file-input-bordered w-full bg-white text-black"
+                      placeholder="ขอดูภาพของที่ผิดหน่อย"
+                      onChange={(e) =>
+                        setReportForm((prev) => ({
+                          ...prev,
+                          image: e.target.files[0],
+                        }))
+                      }
+                    />
+                  </div>
+                )}
 
                 {/* ปุ่ม */}
                 <div className="modal-action flex justify-center gap-3 mt-6">
@@ -544,7 +549,6 @@ const OrderingPostCard = ({ post }) => {
             onClose={() => setShowRatingModal(false)}
             onRated={(rating) => {
               console.log("Rated:", rating);
-              // อัปเดต UI ถ้าต้องการ
             }}
           />
         )}
@@ -552,6 +556,5 @@ const OrderingPostCard = ({ post }) => {
     </div>
   );
 };
-
 
 export default OrderingPostCard;

@@ -304,7 +304,7 @@ export default function AdminDashboard() {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Row 1 */}
             <StatusCard
               title="Available"
@@ -333,25 +333,25 @@ export default function AdminDashboard() {
               bgColor="bg-green-500"
             />
             <StatusCard
-              title="Reporting"
-              value={stats?.statusCounts?.[6] || 0}
-              bgColor="bg-cyan-500"
-            />
-            {/* Row 3 */}
-            <StatusCard
-              title="Reject"
-              value={stats?.statusCounts?.[7] || 0}
-              bgColor="bg-red-500"
-            />
-            <StatusCard
               title="Successfully"
               value={stats?.statusCounts?.[8] || 0}
               bgColor="bg-lime-500"
+            />
+            {/* Row 3 */}
+            <StatusCard
+              title="Reporting"
+              value={stats?.statusCounts?.[6] || 0}
+              bgColor="bg-cyan-500"
             />
             <StatusCard
               title="Reported"
               value={stats?.statusCounts?.[9] || 0}
               bgColor="bg-purple-600"
+            />
+            <StatusCard
+              title="Reject"
+              value={stats?.statusCounts?.[7] || 0}
+              bgColor="bg-red-500"
             />
           </div>
         </div>

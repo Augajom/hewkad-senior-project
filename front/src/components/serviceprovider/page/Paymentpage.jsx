@@ -55,7 +55,7 @@ const HistoryPage = () => {
         <div className="min-h-screen bg-white">
             <Navbar currentPage="history" />
             <div className="p-4">
-                <h2 className="text-lg text-black font-bold mb-4">ประวัติการสั่งซื้อ</h2>
+                <h2 className="text-lg text-black font-bold mb-4">Order history</h2>
                 <table className="w-full text-sm text-center text-black">
                     <thead>
                         <tr className="border-b">
@@ -104,7 +104,7 @@ const HistoryPage = () => {
                         ) : (
                             <tr>
                                 <td colSpan="7" className="text-gray-500 text-center py-10">
-                                    ไม่มีประวัติการสั่งซื้อ
+                                    No order history.
                                 </td>
                             </tr>
                         )}
