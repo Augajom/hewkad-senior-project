@@ -61,9 +61,13 @@ const HistoryPage = () => {
                         <tr className="border-b">
                             <th>Store Name</th>
                             <th>Product</th>
-                            <th>Total Price</th>
                             <th>Status Order</th>
                             <th>Status Payment</th>
+                            <th>Price</th>
+                            <th>
+                                Service fee
+                                <div className="text-xs text-gray-500 font-normal">(หักโดยระบบ 30%)</div>
+                            </th>
                             <th>Customer</th>
                             <th>Slip</th>
                         </tr>
@@ -74,17 +78,35 @@ const HistoryPage = () => {
                                 <tr key={order.order_id} className="border-b">
                                     <td>{order.store_name || '-'}</td>
                                     <td>{order.product || '-'}</td>
-                                    <td>{(order.order_price || 0) + (order.order_service_fee || 0)} Baht</td>
+
+                                    {/* ✅ Status Order */}
                                     <td className={getOrderStatusClass(order.order_status)}>
                                         {order.order_status || '-'}
                                     </td>
+
+                                    {/* ✅ Status Payment */}
                                     <td className={getPaymentStatusClass(order.status_payment)}>
                                         {order.status_payment || 'waiting'}
                                     </td>
+
+                                    {/* ✅ Price เฉพาะ order_price */}
+                                    <td>
+                                        {(order.order_price || 0).toFixed(2)} Baht
+                                    </td>
+
+                                    {/* ✅ Service fee หักโดยระบบ 30% */}
+                                    <td>
+                                        {((order.order_service_fee || 0) * 0.7).toFixed(2)} Baht
+                                        <div className="text-xs text-gray-400">(หักโดยระบบ 30%)</div>
+                                    </td>
+
+                                    {/* ✅ Customer */}
                                     <td>
                                         {order.customer_name || '-'}
                                         <div className="text-gray-400 text-xs">{order.customer_username || '-'}</div>
                                     </td>
+
+                                    {/* ✅ Slip */}
                                     <td>
                                         {order.slip_filename ? (
                                             <button
@@ -103,12 +125,13 @@ const HistoryPage = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="7" className="text-gray-500 text-center py-10">
+                                <td colSpan="8" className="text-gray-500 text-center py-10">
                                     ไม่มีประวัติการสั่งซื้อ
                                 </td>
                             </tr>
                         )}
                     </tbody>
+
                 </table>
             </div>
 
