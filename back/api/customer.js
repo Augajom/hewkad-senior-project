@@ -12,7 +12,8 @@ const Report = require('../models/customer/Report');
 const UserRole = require('../models/customer/UserRoles');
 const bank = require('../models/customer/bank')
 const QRCode = require("qrcode");
-const { sendOrderReceivedEmail } = require('../utils/notification');
+
+const { sendOrderReceivedEmail,sendPaymentReceivedEmail } = require('../utils/notification');
 const promptpay = require("promptpay-qr");
 const getName = require('../models/getName')
 const cron = require("node-cron");
@@ -189,9 +190,6 @@ router.get("/history/:status", verifyToken, async (req, res) => {
   }
 });
 
-
-
-
 router.get('/ordering', verifyToken, async (req, res) => {
   try {
     const { status } = req.query; // รับ status จาก query
@@ -209,19 +207,30 @@ router.put('/orders/:id', async (req, res) => {
   const orderId = req.params.id;
 
   try {
+    // 1️⃣ อัปเดตสถานะ
     await Ordering.updateStatus(orderId, "Ordering");
 
+    // 2️⃣ ดึงข้อมูลเจ้าของออเดอร์ (ลูกค้า)
     const orderInfo = await Ordering.getOwnerEmail(orderId);
-    const { email, nickname, product, store_name } = orderInfo;
+    const { email: customerEmail, nickname, product, store_name } = orderInfo;
 
-    await sendOrderReceivedEmail(email, nickname, product, store_name);
+    // 3️⃣ ส่ง email ให้ลูกค้า
+    await sendOrderReceivedEmail(customerEmail, nickname, product, store_name);
 
-    res.json({ success: true, message: "Order updated and email sent" });
+    // 4️⃣ ดึงข้อมูลไรเดอร์
+    const rider = await Ordering.getRiderEmail(orderId);
+    if (rider && rider.email) {
+      // ส่ง email แจ้งว่า ลูกค้าชำระเงินแล้ว
+      await sendPaymentReceivedEmail(rider.email, nickname, product, store_name);
+    }
+
+    res.json({ success: true, message: "Order updated and emails sent" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 router.put('/confirmorder/:id', async (req, res) => {
   const orderId = req.params.id;
@@ -280,7 +289,28 @@ router.post("/upload-slip", upload.single("files"), async (req, res) => {
     });
 
     const data = await response.json();
+
+    if (data.status === "success") {
+      const orderId = req.body.orderId;
+
+      // ดึงข้อมูลไรเดอร์
+      const rider = await Ordering.getRiderEmail(orderId);
+
+      // ดึงข้อมูลเจ้าของออเดอร์ (ลูกค้า) เพื่อเอาชื่อ
+      const owner = await Ordering.getOwnerEmail(orderId);
+
+      if (rider && rider.email && owner) {
+        await sendPaymentReceivedEmail(
+          rider.email,        // อีเมลไรเดอร์
+          owner.nickname,     // ชื่อลูกค้า
+          owner.product,
+          owner.store_name
+        );
+      }
+    }
+
     res.json(data);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to upload slip" });
