@@ -25,7 +25,7 @@ async function sendOrderReceivedEmail(email, nickname, product, store_name) {
       <h3>📦 สวัสดีคุณ ${nickname || "ลูกค้า"}</h3>
       <p>ออเดอร์ของคุณจากร้าน <b>${store_name}</b> สินค้า: <b>${product}</b></p>
       <p>ได้รับการยืนยันรับโดยไรเดอร์แล้ว ✅</p>
-      <p>สถานะปัจจุบัน: <b>Rider Received</b></p>
+      <p>สถานะปัจจุบัน: <b>Ordering</b></p>
       <hr />
       <p style="font-size: 12px; color: gray;">ขอบคุณที่ใช้บริการจากเรา ❤️</p>
     `
@@ -40,14 +40,14 @@ async function sendOrderReceivedEmail(email, nickname, product, store_name) {
     return { success: false, error };
   }
 }
-async function sendPaymentReceivedEmail(serviceEmail, customerName, product, storeName) {
+async function sendPaymentReceivedEmail(email, nickname, product, store_name) {
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: serviceEmail,
-    subject: `ลูกค้า ${customerName} ชำระเงินแล้ว!`,
+    to: email,
+    subject: `ลูกค้า ${nickname} ชำระเงินแล้ว!`,
     html: `
       <h3>📦 การชำระเงินได้รับแล้ว</h3>
-      <p>ลูกค้าคุณ <b>${customerName}</b> ชำระเงินสำหรับออเดอร์จากร้าน <b>${storeName}</b></p>
+      <p>ลูกค้าคุณ <b>${nickname}</b> ชำระเงินสำหรับออเดอร์จากร้าน <b>${store_name}</b></p>
       <p>สินค้า: <b>${product}</b></p>
       <p>สถานะออเดอร์: <b>Ordering</b></p>
       <hr />
@@ -55,7 +55,14 @@ async function sendPaymentReceivedEmail(serviceEmail, customerName, product, sto
     `
   };
 
-  return transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`📧 Payment email sent to: ${email}`);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Failed to send payment email:", error);
+    return { success: false, error };
+  }
 }
 
-module.exports = { sendOrderReceivedEmail };
+module.exports = { sendOrderReceivedEmail,sendPaymentReceivedEmail };

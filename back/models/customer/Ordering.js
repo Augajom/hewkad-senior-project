@@ -116,7 +116,24 @@ const Ordering = {
         resolve(results[0]);
       });
     });
-  }
+  },
+  getRiderEmail: (orderId) => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT 
+        u.email,
+        pr.name AS riderName
+      FROM orders o
+      JOIN users u ON o.rider_id = u.id
+      JOIN profile pr ON pr.user_id = u.id
+      WHERE o.post_id = ?
+    `;
+    db.query(sql, [orderId], (err, rows) => {
+      if (err) return reject(err);
+      resolve(rows[0]);
+    });
+  });
+},
 
 
 };
