@@ -1,4 +1,4 @@
-const API_BASE = "https://hewkad.com:8443";
+const API_BASE = "https://hewkad.com:2052";
 
 export function resolveImg(src) {
   if (!src) return ""; // คืนค่าว่างถ้า src เป็น null/undefined

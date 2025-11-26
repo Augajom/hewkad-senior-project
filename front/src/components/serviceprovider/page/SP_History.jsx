@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/navbar.jsx";
 import "../DaisyUI.css";
 
-const API = "https://hewkad.com:8443";
+const API = "https://hewkad.com:2052";
 
 const statusBadge = (status) => {
   const base = "px-2 py-1 rounded-full text-xs font-semibold";

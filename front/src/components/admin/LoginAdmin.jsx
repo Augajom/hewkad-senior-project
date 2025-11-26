@@ -23,7 +23,7 @@ function LoginAdmin() {
     try {
       // 🔐 ยิง API ไป backend (Logic เดิม)
       const res = await axios.post(
-        'https://hewkad.com:8443/login',
+        'https://hewkad.com:2052/login',
         form,
         {
           withCredentials: true,

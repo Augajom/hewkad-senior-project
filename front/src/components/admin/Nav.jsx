@@ -10,7 +10,7 @@ import { MdOutlineLogout } from "react-icons/md";
 // BsDiamondHalf ถูกแทนที่ด้วย FiChevronLeft/Right
 // import { BsDiamondHalf } from "react-icons/bs"; 
 
-const API_BASE = import.meta.env?.VITE_API_URL || "https://hewkad.com:8443";
+const API_BASE = import.meta.env?.VITE_API_URL || "https://hewkad.com:2052";
 
 // Helper component สำหรับ NavLink เพื่อลดโค้ดซ้ำซ้อน
 function NavLink({ to, icon, label, currentPath }) {

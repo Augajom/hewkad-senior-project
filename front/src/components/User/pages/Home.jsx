@@ -9,7 +9,7 @@ import { renderTimeViewClock } from "@mui/x-date-pickers/timeViewRenderers";
 import dayjs from "dayjs";
 import "../DaisyUI.css";
 
-const API = "https://hewkad.com:8443";
+const API = "https://hewkad.com:2052";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);

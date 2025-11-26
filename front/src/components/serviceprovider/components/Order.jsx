@@ -9,7 +9,7 @@ import { db } from "../../../firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "../../../hooks/useAuth";
 
-const API_BASE = "https://hewkad.com:8443";
+const API_BASE = "https://hewkad.com:2052";
 
 const resolveImg = (src) => {
   if (!src) return "";
@@ -30,7 +30,7 @@ const FoodCard = ({ order, onRequestConfirm }) => {
                 order.avatar
                   ? order.avatar.startsWith("http")
                     ? order.avatar
-                    : `https://hewkad.com:8443${order.avatar}`
+                    : `https://hewkad.com:2052${order.avatar}`
                   : "https://i.pravatar.cc/150"
               }
               alt="avatar"
@@ -222,7 +222,7 @@ const FoodCardList = ({
 
     try {
       // 1️⃣ สร้างคำสั่งซื้อ (Step 1)
-      const res1 = await fetch("https://hewkad.com:8443/service/hew", {
+      const res1 = await fetch("https://hewkad.com:2052/service/hew", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -247,7 +247,7 @@ const FoodCardList = ({
       // 2️⃣ ส่งอีเมล + เปลี่ยน status ของโพสต์ (Step 2)
       try {
         const res2 = await fetch(
-          `https://hewkad.com:8443/service/orders/${newOrderId}/notification`,
+          `https://hewkad.com:2052/service/orders/${newOrderId}/notification`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },

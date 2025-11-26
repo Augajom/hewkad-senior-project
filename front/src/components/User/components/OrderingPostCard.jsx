@@ -35,7 +35,7 @@ const OrderingPostCard = ({ post }) => {
     const fetchReasons = async () => {
       try {
         const res = await fetch(
-          "https://hewkad.com:8443/customer/report-reasons",
+          "https://hewkad.com:2052/customer/report-reasons",
           {
             credentials: "include",
           }
@@ -63,7 +63,7 @@ const OrderingPostCard = ({ post }) => {
     formData.append("files", slipFile);
 
     try {
-      const res = await fetch("https://hewkad.com:8443/customer/upload-slip", {
+      const res = await fetch("https://hewkad.com:2052/customer/upload-slip", {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -115,7 +115,7 @@ const OrderingPostCard = ({ post }) => {
   const handleOpenQR = async () => {
     try {
       const res = await fetch(
-        `https://hewkad.com:8443/customer/payment/qr/${post.id}`,
+        `https://hewkad.com:2052/customer/payment/qr/${post.id}`,
         {
           credentials: "include",
         }
@@ -140,7 +140,7 @@ const OrderingPostCard = ({ post }) => {
   const handleConfirmPayment = async () => {
     try {
       const res = await fetch(
-        `https://hewkad.com:8443/customer/orders/${post.id}`,
+        `https://hewkad.com:2052/customer/orders/${post.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -172,7 +172,7 @@ const OrderingPostCard = ({ post }) => {
         formData.append("image", reportForm.image);
       }
 
-      const res = await fetch("https://hewkad.com:8443/customer/reports", {
+      const res = await fetch("https://hewkad.com:2052/customer/reports", {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -199,7 +199,7 @@ const OrderingPostCard = ({ post }) => {
   const handleConfirmOrder = async () => {
     try {
       const res = await fetch(
-        `https://hewkad.com:8443/customer/confirmorder/${post.id}`,
+        `https://hewkad.com:2052/customer/confirmorder/${post.id}`,
         {
           method: "PUT",
           credentials: "include",
@@ -234,7 +234,7 @@ const OrderingPostCard = ({ post }) => {
               post.avatar
                 ? post.avatar.startsWith("http")
                   ? post.avatar
-                  : `https://hewkad.com:8443${post.avatar}`
+                  : `https://hewkad.com:2052${post.avatar}`
                 : "https://i.pravatar.cc/150"
             }
             alt="avatar"
@@ -347,7 +347,7 @@ const OrderingPostCard = ({ post }) => {
 
               <div className="flex justify-center mb-6">
                 <img
-                  src={`https://hewkad.com:8443${post.proof_url}`}
+                  src={`https://hewkad.com:2052${post.proof_url}`}
                   alt="Proof"
                   className="max-w-full max-h-[400px] object-contain rounded"
                 />
