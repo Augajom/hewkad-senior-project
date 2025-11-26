@@ -7,7 +7,7 @@ import {
   showUserPayment,
   showRejectPayment,
 } from "./features/SweetAlertPayment";
-import Nav from "../nav";
+import Nav from "../Nav";
 
 const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Nav from "../nav";
+import Nav from "../Nav";
 import { CiSearch } from "react-icons/ci";
 import { IoMdClose } from "react-icons/io";
 import axios from "axios";

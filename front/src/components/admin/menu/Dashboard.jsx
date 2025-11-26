@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Nav from "../nav";
+import Nav from "../Nav";
 import axios from "axios";
 // Graph
 import PostChart10Days from "./features/PostChart10Days";

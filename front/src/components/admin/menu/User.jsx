@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Nav from "../nav";
+import Nav from "../Nav";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import {
