@@ -38,7 +38,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
             <div className="flex items-center gap-3">
               <Link to="/service/home" className="flex items-center gap-2">
                 <img
-                  src="/src/assets/logo.png"
+                  src="../../../assets/logo.png"
                   alt="Logo"
                   className="w-24 h-12 object-contain"
                 />

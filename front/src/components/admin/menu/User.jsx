@@ -19,7 +19,7 @@ function UserCard({ user, permitted, onTogglePermit }) {
   return (
     <div className="flex flex-col items-center p-5 rounded-2xl bg-[#171a1f] border border-gray-800 shadow-lg w-[320px]">
       <div className="flex items-center gap-3 w-full">
-        <img src="/src/assets/avatar.svg" className="rounded-full w-16 h-16" />
+        <img src="../../../assets/avatar.svg" className="rounded-full w-16 h-16" />
         <div className="min-w-0">
           <p className="font-semibold truncate text-gray-100">{user.name}</p>
           <p className="text-gray-400 truncate">@{user.handle}</p>
@@ -87,7 +87,7 @@ export default function AdminUsers() {
   const resolveImg = (imgPath) => {
     if (!imgPath) return "/src/assets/avatar.svg";
     if (imgPath.startsWith("http")) return imgPath;
-    return `http://localhost:5000${imgPath}`;
+    return `https://hewkad.com:8443${imgPath}`;
   };
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/admin/users", {
+      const res = await axios.get("https://hewkad.com:8443/admin/users", {
         withCredentials: true,
       });
       console.log(res.data);
@@ -114,7 +114,7 @@ export default function AdminUsers() {
 
   const fetchRequest = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/admin/users/request", {
+      const res = await axios.get("https://hewkad.com:8443/admin/users/request", {
         withCredentials: true,
       });
       console.log("Request", res.data);
@@ -153,7 +153,7 @@ export default function AdminUsers() {
 
       if (result.isConfirmed) {
         await axios.put(
-          `http://localhost:5000/admin/users/work-permit/${userId}`,
+          `https://hewkad.com:8443/admin/users/work-permit/${userId}`,
           { isActive: currentStatus ? 0 : 1 },
           { withCredentials: true }
         );
@@ -196,7 +196,7 @@ export default function AdminUsers() {
 
       if (result.isConfirmed) {
         await axios.delete(
-          `http://localhost:5000/admin/users/delete/${user.user_id}`,
+          `https://hewkad.com:8443/admin/users/delete/${user.user_id}`,
           {
             withCredentials: true,
           }

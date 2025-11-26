@@ -23,7 +23,7 @@ function LoginAdmin() {
     try {
       // 🔐 ยิง API ไป backend (Logic เดิม)
       const res = await axios.post(
-        'http://localhost:5000/login',
+        'https://hewkad.com:8443/login',
         form,
         {
           withCredentials: true,
@@ -67,7 +67,7 @@ function LoginAdmin() {
       <div className="relative">
         
         <img
-          src="/src/assets/logo.svg"
+          src="../../assets/logo.svg"
           alt="logo"
           className="absolute left-1/2 -translate-x-1/2 -top-20 w-40 z-10"
         />

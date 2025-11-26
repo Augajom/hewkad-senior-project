@@ -7,7 +7,7 @@ function Login() {
   useEffect(() => {
     let mounted = true;
     axios
-      .get("http://localhost:5000/auth/check", { withCredentials: true })
+      .get("https://hewkad.com:8443/auth/check", { withCredentials: true })
       .then((res) => {
         if (!mounted) return;
         if (res.data?.valid) {
@@ -26,8 +26,12 @@ function Login() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center px-4">
       <div className="relative w-full max-w-md">
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-50">
-    <img src="/src/assets/logo.svg" alt="Logo" className="w-100 h-auto drop-shadow-xl" />
-  </div>
+          <img
+            src="../assets/logo.svg"
+            alt="Logo"
+            className="w-100 h-auto drop-shadow-xl"
+          />
+        </div>
 
         <div className="bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-3xl shadow-2xl p-8 pt-20">
           <div className="text-center mb-8">
@@ -43,10 +47,14 @@ function Login() {
             </div>
           ) : (
             <a
-              href="http://localhost:5000/auth/google"
+              href="https://hewkad.com:8443/auth/google"
               className="w-full h-12 rounded-full bg-white text-slate-900 border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3"
             >
-              <img src="/src/assets/google.png" alt="Google" className="w-6 h-6" />
+              <img
+                src="/src/assets/google.png"
+                alt="Google"
+                className="w-6 h-6"
+              />
               <span className="font-semibold">Login with Google</span>
             </a>
           )}
@@ -55,7 +63,10 @@ function Login() {
             <p className="text-xs text-slate-500">
               By continuing, you agree to our{" "}
               <span className="underline decoration-slate-300">Terms</span> and{" "}
-              <span className="underline decoration-slate-300">Privacy Policy</span>.
+              <span className="underline decoration-slate-300">
+                Privacy Policy
+              </span>
+              .
             </p>
           </div>
         </div>
