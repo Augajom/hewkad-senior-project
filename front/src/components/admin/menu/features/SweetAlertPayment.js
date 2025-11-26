@@ -14,7 +14,7 @@ export const showUserPayment = async (order, orderId) => {
   try {
     // ดึงข้อมูล order
     const { data } = await axios.get(
-      `https://hewkad.com:2052/admin/payment/${orderId}`,
+      `https://hewkad.com:2053/admin/payment/${orderId}`,
       { withCredentials: true }
     );
     const order = data.order;
@@ -28,7 +28,6 @@ export const showUserPayment = async (order, orderId) => {
       title: `<div style="font-size:32px; font-weight:bold; color:#333;">Approve Payment</div>`,
       html: `
         <div style="display: flex; text-align: center; justify-content: center; flex-direction: column;">
-          <img src="../../../../assets/qr-code.svg" alt="QR Code" style="margin: 20px; height: 18rem;" />
           <div>
             <p style="color:black; font-size: 20px; font-weight: bold;">${order.bank_name || "BANK"}</p>
             <p style="color:#807a7a; font-size: 24px; font-weight: 400; margin-top: 2px;">${order.acc_number || "-"}</p>
@@ -131,7 +130,7 @@ export const showUserPayment = async (order, orderId) => {
             // ✅ อัปโหลดไฟล์
             try {
               const res = await axios.post(
-                `https://hewkad.com:2052/admin/upload/${orderId}`,
+                `https://hewkad.com:2053/admin/upload/${orderId}`,
                 formData,
                 {
                   headers: { "Content-Type": "multipart/form-data" },
@@ -143,7 +142,7 @@ export const showUserPayment = async (order, orderId) => {
 
               // ✅ ถ้าอัปโหลดสำเร็จ อัปเดตสถานะเป็น 8
               await axios.put(
-                `https://hewkad.com:2052/admin/payment/approve/${orderId}`,
+                `https://hewkad.com:2053/admin/payment/approve/${orderId}`,
                 {},
                 { withCredentials: true }
               );
@@ -217,7 +216,7 @@ export const showRejectPayment = async (order) => {
   if (result.isConfirmed) {
     try {
       await axios.put(
-        `https://hewkad.com:2052/admin/payment/reject/${order.order_id}`,
+        `https://hewkad.com:2053/admin/payment/reject/${order.order_id}`,
         {},
         { withCredentials: true }
       );

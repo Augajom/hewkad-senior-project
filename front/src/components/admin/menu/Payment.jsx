@@ -9,7 +9,7 @@ import {
 } from "./features/SweetAlertPayment";
 import Nav from "../Nav";
 
-const API = import.meta.env?.VITE_API_URL || "https://hewkad.com:2052";
+const API = import.meta.env?.VITE_API_URL || "https://hewkad.com:2053";
 
 const StatusChip = ({ text }) => {
   const map = {
@@ -40,7 +40,7 @@ export default function AdminPayments() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axios.get("https://hewkad.com:2052/admin/payment", {
+        const res = await axios.get("https://hewkad.com:2053/admin/payment", {
           withCredentials: true,
         });
         console.log(res.data.orders);

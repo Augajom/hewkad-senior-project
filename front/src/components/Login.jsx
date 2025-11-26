@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import logo from "../assets/logo.svg"
+import google from "../assets/google.png"
 
 function Login() {
   const [checking, setChecking] = useState(true);
@@ -7,7 +9,7 @@ function Login() {
   useEffect(() => {
     let mounted = true;
     axios
-      .get("https://hewkad.com:2052/auth/check", { withCredentials: true })
+      .get("https://hewkad.com:2053/auth/check", { withCredentials: true })
       .then((res) => {
         if (!mounted) return;
         if (res.data?.valid) {
@@ -27,7 +29,7 @@ function Login() {
       <div className="relative w-full max-w-md">
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-50">
           <img
-            src="../assets/logo.svg"
+            src={logo}
             alt="Logo"
             className="w-100 h-auto drop-shadow-xl"
           />
@@ -47,11 +49,11 @@ function Login() {
             </div>
           ) : (
             <a
-              href="https://hewkad.com:2052/auth/google"
+              href="https://hewkad.com:2053/auth/google"
               className="w-full h-12 rounded-full bg-white text-slate-900 border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3"
             >
               <img
-                src="/src/assets/google.png"
+                src={google}
                 alt="Google"
                 className="w-6 h-6"
               />

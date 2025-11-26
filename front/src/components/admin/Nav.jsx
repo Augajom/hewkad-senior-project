@@ -7,10 +7,12 @@ import { FiUser, FiActivity, FiChevronLeft, FiChevronRight } from "react-icons/f
 import { LuBriefcase } from "react-icons/lu";
 import { FaRegFileAlt } from "react-icons/fa";
 import { MdOutlineLogout } from "react-icons/md";
+import logo from "../../assets/logo.svg"
+import avatar from "../../assets/avatar.svg"
 // BsDiamondHalf ถูกแทนที่ด้วย FiChevronLeft/Right
 // import { BsDiamondHalf } from "react-icons/bs"; 
 
-const API_BASE = import.meta.env?.VITE_API_URL || "https://hewkad.com:2052";
+const API_BASE = import.meta.env?.VITE_API_URL || "https://hewkad.com:2053";
 
 // Helper component สำหรับ NavLink เพื่อลดโค้ดซ้ำซ้อน
 function NavLink({ to, icon, label, currentPath }) {
@@ -78,7 +80,7 @@ function Nav() {
           <div className="p-4 flex items-center justify-between border-b border-slate-200/50">
             <div className="flex items-center gap-2">
               <img
-                src="../../assets/logo.svg"
+                src={logo}
                 className="size-10"
                 alt="Logo"
               />
@@ -91,7 +93,7 @@ function Nav() {
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 p-1 shadow-lg shadow-indigo-500/30 mb-4">
               <div className="w-full h-full rounded-full overflow-hidden bg-white">
                 <img
-                  src="../../assets/avatar.svg"
+                  src={avatar}
                   className="w-full h-full object-cover"
                   alt="Avatar"
                 />

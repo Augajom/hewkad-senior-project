@@ -3,6 +3,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useNavigate, Link } from 'react-router-dom';
 import { FiUser, FiLock } from 'react-icons/fi';
+import logo from '../../assets/logo.svg'
 
 function LoginAdmin() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ function LoginAdmin() {
     try {
       // 🔐 ยิง API ไป backend (Logic เดิม)
       const res = await axios.post(
-        'https://hewkad.com:2052/login',
+        'https://hewkad.com:2053/login',
         form,
         {
           withCredentials: true,
@@ -67,7 +68,7 @@ function LoginAdmin() {
       <div className="relative">
         
         <img
-          src="../../assets/logo.svg"
+          src={logo}
           alt="logo"
           className="absolute left-1/2 -translate-x-1/2 -top-20 w-40 z-10"
         />

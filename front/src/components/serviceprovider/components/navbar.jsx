@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import "../DaisyUI.css";
+import logo from "../../../assets/logo.png"
 
 function Navbar({ orderingCount = 0, onSearchSubmit }) {
   const [searchValue, setSearchValue] = useState("");
@@ -38,7 +39,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
             <div className="flex items-center gap-3">
               <Link to="/service/home" className="flex items-center gap-2">
                 <img
-                  src="../../../assets/logo.png"
+                  src={logo}
                   alt="Logo"
                   className="w-24 h-12 object-contain"
                 />

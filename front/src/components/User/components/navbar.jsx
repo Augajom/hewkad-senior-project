@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart, Search, MessageCircle, User, Menu, X } from "lucide-react";
 import "../DaisyUI.css";
+import logo from "../../../assets/logo.png"
 
 function Navbar({ orderingCount = 0, onSearchSubmit }) {
   const [searchValue, setSearchValue] = useState("");
@@ -27,7 +28,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
           <div className="h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link to="/user/home" className="flex items-center gap-2">
-                <img src="../../../assets/logo.png" alt="Logo" className="w-24 h-12 object-contain" />
+                <img src={logo} alt="Logo" className="w-24 h-12 object-contain" />
               </Link>
             </div>
 
