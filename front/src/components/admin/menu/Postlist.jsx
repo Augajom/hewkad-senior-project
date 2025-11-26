@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Nav from "../nav";
+import Nav from "../Nav";
 // Icon
 import { CiSearch } from "react-icons/ci";
 
