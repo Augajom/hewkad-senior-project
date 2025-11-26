@@ -13,7 +13,7 @@ const { sendOrderReceivedEmail } = require('../utils/notification');
 const multer = require('multer');
 const path = require('path'); // ✅ ต้องมีบรรทัดนี้
 const fs = require('fs');
-const ServiceRole = require('../models/service/serviceRole');
+const ServiceRole = require('../models/service/ServiceRole');
 // ===================
 // TEST route
 // ===================
