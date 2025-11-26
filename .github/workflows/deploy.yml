@@ -89,6 +89,19 @@ jobs:
                 depends_on:
                   - backend
 
+              phpmyadmin:
+                image: phpmyadmin/phpmyadmin
+                restart: always
+                ports:
+                  - "8080:80" 
+                environment:
+                  - PMA_HOST=database
+                  - PMA_USER=root
+                  - PMA_PASSWORD=${{ secrets.DB_PASSWORD }}
+                  - UPLOAD_LIMIT=64M
+                depends_on:
+                  - database
+
             volumes:
               mysql_data:
             EOF
