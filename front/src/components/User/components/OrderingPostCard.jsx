@@ -74,6 +74,7 @@ const OrderingPostCard = ({ post }) => {
       }
 
       const data = await res.json();
+      console.log("RES DATA:", data);
       setSlipOkData(data);
 
       // ตรวจสอบจำนวนเงิน

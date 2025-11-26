@@ -1,0 +1,102 @@
+name: Build and Deploy to VPS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Build & Push Backend ---
+      - name: Build and push Backend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./back
+          push: true
+          tags: ghcr.io/augajom/hewkad-back:latest
+
+      # --- Build & Push Frontend ---
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./front
+          push: true
+          tags: ghcr.io/augajom/hewkad-front:latest
+
+  deploy-to-vps:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            # Login เข้า Registry บน VPS (ใช้ token ชั่วคราวไม่ได้ ต้องใช้ Personal Access Token หรือเปิด public package)
+            # *เพื่อให้ง่าย: แนะนำให้ไปเปลี่ยน Package setting ใน GitHub ให้เป็น Public จะได้ดึงได้เลยโดยไม่ต้อง Login*
+            
+            # 1. ดึง Image ใหม่ล่าสุด
+            docker pull ghcr.io/augajom/hewkad-back:latest
+            docker pull ghcr.io/augajom/hewkad-front:latest
+            
+            # 2. สร้างไฟล์ docker-compose.yml ใหม่บน Server (หรือจะ scp ไฟล์ไปก็ได้ แต่วิธีนี้ง่ายกว่า)
+            cat <<EOF > docker-compose.yml
+            version: '3.8'
+            
+            services:
+              database:
+                image: mysql:8.0
+                restart: always
+                environment:
+                  MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD }}
+                  MYSQL_DATABASE: hewkad  # ตั้งชื่อ DB ที่คุณใช้จริง
+                volumes:
+                  - mysql_data:/var/lib/mysql
+                command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=256M
+
+              backend:
+                image: ghcr.io/augajom/hewkad-back:latest
+                restart: always
+                ports:
+                  - "5000:5000"
+                env_file:
+                  - .env
+                depends_on:
+                  - database
+
+              frontend:
+                image: ghcr.io/augajom/hewkad-front:latest
+                restart: always
+                ports:
+                  - "80:80"
+                depends_on:
+                  - backend
+
+            volumes:
+              mysql_data:
+            EOF
+
+            # 3. สั่งรัน (มันจะฉลาดพอที่จะ recreate เฉพาะตัวที่ image เปลี่ยน)
+            docker compose up -d
+
+            # 4. ลบ Image เก่าๆ ที่ไม่ใช้แล้ว (ประหยัดพื้นที่ VPS)
+            docker image prune -f
