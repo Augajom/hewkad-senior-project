@@ -6,7 +6,7 @@ import Navbar from "../components/navbar";
 
 import Swal from "sweetalert2";
 
-const API_BASE = "https://hewkad.com:2053";
+const API_BASE = "https://hewkad.com";
 
 function resolveImg(src) {
   if (!src) return "";

@@ -104,7 +104,7 @@ export default function AdminDashboard() {
 
   const fetchMarkets = async () => {
     try {
-      const res = await axios.get("https://hewkad.com:2053/kad", {
+      const res = await axios.get("https://hewkad.com/kad", {
         withCredentials: true,
       });
       console.log(res.data)
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
         };
 
         const { data } = await axios.get(
-          "https://hewkad.com:2053/admin/dashboard-stats",
+          "https://hewkad.com/admin/dashboard-stats",
           {
             params,
             withCredentials: true,

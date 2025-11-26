@@ -76,8 +76,6 @@ jobs:
               backend:
                 image: ghcr.io/augajom/hewkad-back:latest
                 restart: always
-                ports:
-                  - "2053:5000"
                 env_file:
                   - .env
                 depends_on:

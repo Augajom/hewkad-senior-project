@@ -18,7 +18,7 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
                 post.avatar
                   ? post.avatar.startsWith("http")
                     ? post.avatar
-                    : `https://hewkad.com:2053${post.avatar}`
+                    : `https://hewkad.com${post.avatar}`
                   : "https://i.pravatar.cc/150"
               }
               alt="avatar"

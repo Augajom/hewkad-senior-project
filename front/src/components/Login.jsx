@@ -9,7 +9,7 @@ function Login() {
   useEffect(() => {
     let mounted = true;
     axios
-      .get("https://hewkad.com:2053/auth/check", { withCredentials: true })
+      .get("https://hewkad.com/auth/check", { withCredentials: true })
       .then((res) => {
         if (!mounted) return;
         if (res.data?.valid) {
@@ -49,7 +49,7 @@ function Login() {
             </div>
           ) : (
             <a
-              href="https://hewkad.com:2053/auth/google"
+              href="https://hewkad.com/auth/google"
               className="w-full h-12 rounded-full bg-white text-slate-900 border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3"
             >
               <img

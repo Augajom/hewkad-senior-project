@@ -10,7 +10,7 @@ const statusColors = {
   Reported: "bg-red-500 text-white",
 };
 
-const API_URL = "https://hewkad.com:2053";
+const API_URL = "https://hewkad.com";
 
 const resolveImg = (src) => {
   if (!src) return ""; // หรือ fallback เป็น default avatar ใน JSX
@@ -71,7 +71,7 @@ const OrderingCard = ({ order, onStatusUpdate }) => {
               order.avatar
                 ? order.avatar.startsWith("http")
                   ? order.avatar
-                  : `https://hewkad.com:2053${order.avatar}`
+                  : `https://hewkad.com${order.avatar}`
                 : "https://i.pravatar.cc/150"
             }
             alt="avatar"

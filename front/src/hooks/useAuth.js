@@ -9,7 +9,7 @@ export const useAuth = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get('https://hewkad.com:2053/me', {
+        const response = await axios.get('https://hewkad.com/me', {
           withCredentials: true 
         });
         
