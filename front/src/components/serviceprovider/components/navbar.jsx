@@ -79,11 +79,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
                 >
                   <ShoppingCart className="w-5 h-5" />
                   <span className="ml-1">Ordering</span>
-                  {orderingCount > 0 && (
-                    <div className="badge badge-info badge-sm absolute -top-1 -right-1">
-                      {orderingCount}
-                    </div>
-                  )}
+                 
                 </button>
               </Link>
 
@@ -174,11 +170,7 @@ function Navbar({ orderingCount = 0, onSearchSubmit }) {
                     <ShoppingCart className="w-5 h-5" />
                     <span>Ordering</span>
                   </div>
-                  {orderingCount > 0 && (
-                    <span className="badge badge-info badge-sm">
-                      {orderingCount}
-                    </span>
-                  )}
+                  
                 </div>
               </Link>
 
