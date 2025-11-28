@@ -5,6 +5,7 @@ const verifyToken = require('../utils/verifyToken');
 const requireRole = require('../utils/requireRole');
 const Kad = require('../models/service/kad');
 const Order = require('../models/service/order');
+const OrderRider = require('../models/service/orderrider');
 const Ordering = require('../models/customer/Ordering');
 const OrderHistory = require('../models/service/History');
 const Proof = require('../models/service/proof');
@@ -47,6 +48,28 @@ router.get('/Order', verifyToken, requireRole('service'), async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+router.get("/orders", verifyToken, async (req, res) => {
+  if (!req.user || !req.user.id) 
+    return res.status(401).json({ message: "Unauthorized" });
+
+  const rider_id = req.user.id;
+
+  try {
+    // ดึง order ของ rider คนนี้
+    let orders = await OrderRider.getByRider(rider_id);
+
+    // กรองเฉพาะ status_id 2,3,4
+    orders = orders.filter(o => [2, 3, 4].includes(o.status_id));
+
+    res.json(orders);
+  } catch (err) {
+    console.error("Failed to fetch orders:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 
 router.post('/hew', verifyToken, requireRole('service'), (req, res) => {
   const { post_id, order_price, order_service_fee, delivery_address, delivery_time } = req.body;
