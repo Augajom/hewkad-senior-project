@@ -18,7 +18,7 @@ function Activity() {
       setLoading(true);
       try {
         const { data } = await axios.get(
-          "https://hewkad.com/admin/history",
+          "https://hewkad.com/api/admin/history",
           {
             withCredentials: true,
           }
@@ -210,7 +210,7 @@ function Activity() {
                                   className="btn btn-sm border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
                                   onClick={() =>
                                     openSlipModal(
-                                      `https://hewkad.com/Files/Payment/${order.slip_filename}`
+                                      `https://hewkad.com/api/Files/Payment/${order.slip_filename}`
                                     )
                                   }
                                 >
@@ -305,7 +305,7 @@ function Activity() {
                                   className="btn btn-block border-none text-white font-medium shadow-md hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20"
                                   onClick={() =>
                                     openSlipModal(
-                                      `https://hewkad.com/Files/Payment/${order.slip_filename}`
+                                      `https://hewkad.com/api/Files/Payment/${order.slip_filename}`
                                     )
                                   }
                                 >

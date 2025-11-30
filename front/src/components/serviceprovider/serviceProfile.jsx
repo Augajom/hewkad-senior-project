@@ -21,7 +21,7 @@ import "../../components/User/DaisyUI.css";
 import Swal from "sweetalert2";
 
 const API_BASE =
-  (import.meta.env && import.meta.env.VITE_API_URL) || "https://hewkad.com";
+  (import.meta.env && import.meta.env.VITE_API_URL) || "https://hewkad.com/api";
 
 function resolveImg(src) {
   if (!src) return "";

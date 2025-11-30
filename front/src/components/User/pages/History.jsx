@@ -18,8 +18,8 @@ export default function History() {
   try {
     const url =
       statusFilter === "All"
-        ? "https://hewkad.com/customer/history/All"
-        : `https://hewkad.com/customer/history/${statusFilter}`;
+        ? "https://hewkad.com/api/customer/history/All"
+        : `https://hewkad.com/api/customer/history/${statusFilter}`;
 
     const res = await fetch(url, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch posts");

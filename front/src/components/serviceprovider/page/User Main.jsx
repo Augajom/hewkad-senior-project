@@ -36,7 +36,7 @@ function UserMain() {
   React.useEffect(() => {
     const fetchKadOptions = async () => {
       try {
-        const res = await fetch("https://hewkad.com/customer/kad", {
+        const res = await fetch("https://hewkad.com/api/customer/kad", {
           credentials: "include",
         });
         const data = await res.json();

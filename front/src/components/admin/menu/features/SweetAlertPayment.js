@@ -14,7 +14,7 @@ export const showUserPayment = async (order, orderId) => {
   try {
     // ดึงข้อมูล order
     const { data } = await axios.get(
-      `https://hewkad.com/admin/payment/${orderId}`,
+      `https://hewkad.com/api/admin/payment/${orderId}`,
       { withCredentials: true }
     );
     const order = data.order;
@@ -130,7 +130,7 @@ export const showUserPayment = async (order, orderId) => {
             // ✅ อัปโหลดไฟล์
             try {
               const res = await axios.post(
-                `https://hewkad.com/admin/upload/${orderId}`,
+                `https://hewkad.com/api/admin/upload/${orderId}`,
                 formData,
                 {
                   headers: { "Content-Type": "multipart/form-data" },
@@ -142,7 +142,7 @@ export const showUserPayment = async (order, orderId) => {
 
               // ✅ ถ้าอัปโหลดสำเร็จ อัปเดตสถานะเป็น 8
               await axios.put(
-                `https://hewkad.com/admin/payment/approve/${orderId}`,
+                `https://hewkad.com/api/admin/payment/approve/${orderId}`,
                 {},
                 { withCredentials: true }
               );
@@ -216,7 +216,7 @@ export const showRejectPayment = async (order) => {
   if (result.isConfirmed) {
     try {
       await axios.put(
-        `https://hewkad.com/admin/payment/reject/${order.order_id}`,
+        `https://hewkad.com/api/admin/payment/reject/${order.order_id}`,
         {},
         { withCredentials: true }
       );

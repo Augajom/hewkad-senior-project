@@ -1,7 +1,7 @@
 // orderService.js
 import axios from 'axios';
 
-const API_BASE = import.meta.env?.VITE_API_URL || "https://hewkad.com";
+const API_BASE = import.meta.env?.VITE_API_URL || "https://hewkad.com/api";
 
 /**
  * ดึงรายการออเดอร์จาก API จริง

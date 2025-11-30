@@ -3,7 +3,7 @@ import withReactContent from 'sweetalert2-react-content';
 
 const MySwal = withReactContent(Swal);
 
-const API_BASE = import.meta.env?.VITE_API_URL || "https://hewkad.com";
+const API_BASE = import.meta.env?.VITE_API_URL || "https://hewkad.com/api";
 
 function resolveImg(src) {
   if (!src) return "";
