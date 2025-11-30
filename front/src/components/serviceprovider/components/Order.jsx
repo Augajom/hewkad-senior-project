@@ -1,4 +1,3 @@
-// src/components/Order.jsx
 import React, { useState, useMemo } from "react";
 import ConfirmModal from "./ConfirmModal";
 import { useOrders } from "../hooks/useOrder";
@@ -11,106 +10,106 @@ import { useAuth } from "../../../hooks/useAuth";
 
 const API_BASE = "https://hewkad.com/api";
 
-const resolveImg = (src) => {
-  if (!src) return "";
-  if (src.startsWith("data:") || src.startsWith("http")) return src;
-  const path = src.startsWith("/") ? src : `/${src}`;
-  return `${API_BASE}${path}`;
-};
-
 const FoodCard = ({ order, onRequestConfirm }) => {
   return (
-    <div className="relative bg-white shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="flex justify-between items-start gap-4">
+    <div className="bg-white/90 backdrop-blur-xl shadow-lg shadow-slate-200/70 hover:shadow-xl transition-all duration-200 rounded-2xl border border-slate-200 overflow-hidden flex flex-col">
+      <div className="p-4 border-b border-slate-100">
+        <div className="flex justify-between items-start gap-3">
           <div className="flex gap-3 min-w-0">
-            <img
-              src={
-                order.avatar
-                  ? order.avatar.startsWith("http")
-                    ? order.avatar
-                    : `https://hewkad.com/api${order.avatar}`
-                  : "https://i.pravatar.cc/150"
-              }
-              alt="avatar"
-              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"
-            />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 p-[2px] flex-shrink-0">
+              <div className="w-full h-full rounded-full overflow-hidden bg-slate-100">
+                <img
+                  src={
+                    order.avatar
+                      ? order.avatar.startsWith("http")
+                        ? order.avatar
+                        : `${API_BASE}${order.avatar}`
+                      : "https://i.pravatar.cc/150"
+                  }
+                  alt="avatar"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
             <div className="min-w-0">
-              <div className="font-semibold text-gray-900 truncate">
+              <div className="font-semibold text-slate-900 truncate">
                 {order.nickname || order.name || "ไม่ระบุชื่อ"}
               </div>
-              <div className="text-sm text-gray-500 truncate">
+              <div className="text-xs text-slate-500 truncate">
                 {order.username || "@username"}
               </div>
             </div>
           </div>
-
-          <div className="flex flex-col items-end flex-shrink-0">
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                 order.status_name === "Available"
-                  ? "bg-green-100 text-green-800"
+                  ? "bg-emerald-100 text-emerald-800"
                   : "bg-blue-100 text-blue-800"
               }`}
             >
               {order.status_name || order.status || ""}
             </span>
-            <div className="text-red-600 font-bold text-xl mt-1">
-              ฿{order.service_fee || order.fee || 0}
+            <div className="text-xs text-slate-500 text-right">
+              <div className="text-[11px]">Service fee</div>
+              <div className="text-lg font-bold text-rose-600">
+                ฿{order.service_fee || order.fee || 0}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Order details */}
-      <div className="p-4 space-y-3">
-        <div className="grid grid-cols-2 gap-4">
+      <div className="p-4 space-y-3 flex-1">
+        <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
-            <p className="text-xs text-gray-500">Store</p>
-            <p className="font-medium text-gray-900">
+            <p className="text-slate-500">Store</p>
+            <p className="font-medium text-slate-900">
               {order.store_name || order.shopName || "-"}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Market</p>
-            <p className="font-medium text-gray-900">{order.kad_name || "-"}</p>
+            <p className="text-slate-500">Market</p>
+            <p className="font-medium text-slate-900">
+              {order.kad_name || "-"}
+            </p>
           </div>
         </div>
 
-        <div>
-          <p className="text-xs text-gray-500">Product</p>
-          <p className="font-medium text-gray-900">
+        <div className="text-xs">
+          <p className="text-slate-500">Product</p>
+          <p className="font-medium text-slate-900">
             {order.product || order.item || "-"}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
-            <p className="text-xs text-gray-500">Price</p>
-            <p className="font-medium text-gray-900">฿{order.price ?? "-"}</p>
+            <p className="text-slate-500">Price</p>
+            <p className="font-medium text-slate-900">
+              ฿{order.price ?? "-"}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Delivery Time</p>
-            <p className="font-medium text-gray-900">
+            <p className="text-slate-500">Delivery Time</p>
+            <p className="font-medium text-slate-900">
               {order.delivery_at || "-"}
             </p>
           </div>
         </div>
 
-        <div>
-          <p className="text-xs text-gray-500">Delivery Location</p>
-          <p className="font-medium text-gray-900">
+        <div className="text-xs">
+          <p className="text-slate-500">Delivery Location</p>
+          <p className="font-medium text-slate-900">
             {order.delivery || order.kad_name || "-"}
           </p>
         </div>
       </div>
 
-      {/* ปุ่ม HEW */}
-      <div className="mt-2 mb-2 mr-2 flex justify-end">
+      <div className="px-4 pb-4 flex justify-end">
         <button
           onClick={onRequestConfirm}
-          className="btn btn-sm btn-error text-white"
+          className="btn btn-sm rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 text-white border-none px-4 shadow-md shadow-rose-500/30 hover:shadow-rose-500/50 hover:scale-105 transition-all"
         >
           HEW
         </button>
@@ -139,7 +138,7 @@ const FoodCardList = ({
   const emptyText = useMemo(() => {
     if (loadingOrders) return "กำลังโหลดออเดอร์...";
     if (error) return `เกิดข้อผิดพลาด: ${error}`;
-    return "ไม่มีออเดอร์เหลืออยู่";
+    return "There are no orders available in this market.";
   }, [loadingOrders, error]);
 
   const handleRequestConfirm = (order) => {
@@ -147,27 +146,23 @@ const FoodCardList = ({
     setModalVisible(true);
   };
 
-  // FILTER: กรอง Orders ตาม Kad ที่เลือก
   const filteredOrders = useMemo(() => {
     let tempOrders = [...orders];
 
-    // Filter by Kad
     if (selectedKad && selectedKad.length > 0) {
       tempOrders = tempOrders.filter((order) =>
         selectedKad.includes(order.kad_name)
       );
     }
 
-    // Dynamic search: เช็คทุก field ของ order
     if (searchQuery && searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase();
-      const matchesSearch = (obj) => {
-        return Object.values(obj).some((value) => {
+      const matchesSearch = (obj) =>
+        Object.values(obj).some((value) => {
           if (value == null) return false;
           if (typeof value === "object") return matchesSearch(value);
           return value.toString().toLowerCase().includes(query);
         });
-      };
       tempOrders = tempOrders.filter((order) => matchesSearch(order));
     }
 
@@ -175,19 +170,7 @@ const FoodCardList = ({
   }, [orders, selectedKad, searchQuery]);
 
   const handleConfirm = async () => {
-    if (!selectedOrder || !rider) {
-      console.error("User (Rider) not found or order not selected.");
-      return;
-    }
-
-    if (loadingRider) {
-      return;
-    }
-
-    if (!rider || !selectedOrder) {
-      console.error("User (Rider) not found or order not selected.");
-      return;
-    }
+    if (!selectedOrder || !rider || loadingRider) return;
 
     const customer_id = selectedOrder.user_id;
     const rider_id = rider.id;
@@ -197,14 +180,13 @@ const FoodCardList = ({
         : `${rider_id}_${customer_id}`;
 
     try {
-      // สร้าง/อัปเดต ห้องแชทใน Firestore
       const chatRef = doc(db, "chats", chatRoomId);
       await setDoc(
         chatRef,
         {
           participants: [customer_id, rider_id],
-          customer_id: customer_id,
-          rider_id: rider_id,
+          customer_id,
+          rider_id,
           customer_name:
             selectedOrder.nickname || selectedOrder.name || "ลูกค้า",
           rider_name: rider.name || "ไรเดอร์",
@@ -219,8 +201,7 @@ const FoodCardList = ({
     }
 
     try {
-      // 1️⃣ สร้างคำสั่งซื้อ (Step 1)
-      const res1 = await fetch("https://hewkad.com/api/service/hew", {
+      const res1 = await fetch(`${API_BASE}/service/hew`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -241,10 +222,9 @@ const FoodCardList = ({
 
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      // 2️⃣ ส่งอีเมล + เปลี่ยน status ของโพสต์ (Step 2)
       try {
         const res2 = await fetch(
-          `https://hewkad.com/api/service/orders/${newOrderId}/notification`,
+          `${API_BASE}/service/orders/${newOrderId}/notification`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -252,16 +232,16 @@ const FoodCardList = ({
           }
         );
         if (!res2.ok) {
-          console.warn(`Notification request returned HTTP ${res2.status}`);
           const text = await res2.text();
-          console.warn("Response:", text);
-        } else {
+          console.warn(
+            `Notification request returned HTTP ${res2.status}`,
+            text
+          );
         }
       } catch (notifErr) {
         console.warn("Notification fetch failed:", notifErr);
       }
 
-      // 3️⃣ อัปเดต UI
       const newOrder = { ...selectedOrder, status_name: "Rider Received" };
       onConfirmOrder(newOrder);
       setOrders((prev) => prev.filter((o) => o.id !== selectedOrder.id));
@@ -276,31 +256,45 @@ const FoodCardList = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full px-4">
-        {loadingOrders &&
-          [...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-48 bg-gray-200 animate-pulse rounded-xl"
-            />
-          ))}
+      <div className="w-full px-4 pt-4 pb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+              Available Orders
+            </h2>
+            <p className="text-xs text-slate-500">
+              Choose an order to start delivering
+            </p>
+          </div>
+          {filteredOrders.length > 0 && (
+            <span className="px-3 py-1 rounded-full bg-slate-100 text-xs text-slate-700 font-medium">
+              {filteredOrders.length} orders
+            </span>
+          )}
+        </div>
 
-        {!loadingOrders &&
-          filteredOrders.map((order) => (
-            <FoodCard
-              key={order.id}
-              order={order}
-              onRequestConfirm={() => handleRequestConfirm(order)}
-            />
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          {loadingOrders &&
+            [...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-52 bg-slate-100 animate-pulse rounded-2xl"
+              />
+            ))}
 
-        {!loadingOrders && filteredOrders.length === 0 && (
-          <p className="text-gray-500 w-full text-left mt-10">
-            {error
-              ? `เกิดข้อผิดพลาด: ${error}`
-              : "There are no orders in this market."}
-          </p>
-        )}
+          {!loadingOrders &&
+            filteredOrders.map((order) => (
+              <FoodCard
+                key={order.id}
+                order={order}
+                onRequestConfirm={() => handleRequestConfirm(order)}
+              />
+            ))}
+
+          {!loadingOrders && filteredOrders.length === 0 && (
+            <p className="text-slate-400 text-sm mt-6">{emptyText}</p>
+          )}
+        </div>
       </div>
 
       <ConfirmModal
