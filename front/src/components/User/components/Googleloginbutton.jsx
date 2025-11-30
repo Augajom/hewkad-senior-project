@@ -22,9 +22,6 @@ export default function GoogleLoginButton() {
         }
       }
     },
-    onError: () => {
-      console.log('Login Failed');
-    },
     flow: 'implicit', // หรือ 'auth-code' ตามที่ตั้งค่าไว้ใน Google Console
   });
 

@@ -35,7 +35,6 @@ function Postlist() {
       const res = await axios.get("https://hewkad.com/api/admin/posts", {
         withCredentials: true,
       });
-      console.log("post", res.data);
       setPost(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("❌ Error fetching posts:", error);

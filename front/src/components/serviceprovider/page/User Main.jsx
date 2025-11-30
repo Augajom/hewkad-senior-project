@@ -27,11 +27,6 @@ function UserMain() {
 };
   const orderingCount = riderOrders.length; // จำนวนออเดอร์ที่ยังดำเนินการอยู่
 
-  // :small_blue_diamond: เมื่อกด HEW แล้วรับออเดอร์สำเร็จ
-  const handleOrder = (order) => {
-    console.log("Rider accepted order:", order);
-  };
-
   // :white_check_mark: fetch kad options เมื่อโหลดหน้า
   React.useEffect(() => {
     const fetchKadOptions = async () => {

@@ -14,7 +14,6 @@ export const useAuth = () => {
         });
         
         const userData = response.data;
-        console.log("User data from /me:", userData); 
 
         setUser({
           id: userData.id, 

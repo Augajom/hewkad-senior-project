@@ -107,7 +107,6 @@ export default function AdminDashboard() {
       const res = await axios.get("https://hewkad.com/api/kad", {
         withCredentials: true,
       });
-      console.log(res.data)
       setMarkets(res.data);
     } catch (error) {
       console.error("❌ Error fetching markets:", error);

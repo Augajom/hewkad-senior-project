@@ -105,7 +105,6 @@ export default function AdminUsers() {
       const res = await axios.get("https://hewkad.com/api/admin/users", {
         withCredentials: true,
       });
-      console.log(res.data);
       setUsers(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("❌ Error fetching users:", error);
@@ -118,7 +117,6 @@ export default function AdminUsers() {
       const res = await axios.get("https://hewkad.com/api/admin/users/request", {
         withCredentials: true,
       });
-      console.log("Request", res.data);
       setRequest(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("❌ Error fetching users:", error);

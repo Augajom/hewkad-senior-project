@@ -6,7 +6,6 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
   const [confirmAction, setConfirmAction] = useState(null);
   const isOwner =
     currentUser && post && Number(currentUser.id) === Number(post.user_id);
-  console.log("Current user:", currentUser?.id, "Post user_id:", post.user_id);
   return (
     <div className="relative bg-white shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl border border-gray-200 overflow-hidden">
       {/* Header */}

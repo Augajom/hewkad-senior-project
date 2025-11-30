@@ -23,10 +23,6 @@ function Activity() {
             withCredentials: true,
           }
         );
-        console.log(
-          "Order status names:",
-          data.orders.map((o) => o.status_name)
-        );
         setOrders(data.orders);
       } catch (err) {
         console.error("Error fetching orders:", err);

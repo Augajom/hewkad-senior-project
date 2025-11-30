@@ -74,7 +74,6 @@ const OrderingPostCard = ({ post }) => {
       }
 
       const data = await res.json();
-      console.log("RES DATA:", data);
       setSlipOkData(data);
 
       // ตรวจสอบจำนวนเงิน
@@ -87,7 +86,6 @@ const OrderingPostCard = ({ post }) => {
         successAlert();
         setShowSlipModal(false);
       }
-      console.log("Response from backend:", data);
     } catch (error) {
       console.error("Error uploading slip:", error);
     }
@@ -184,7 +182,6 @@ const OrderingPostCard = ({ post }) => {
       }
 
       const data = await res.json();
-      console.log("Report success:", data);
 
       setStatus("Reported");
       setShowReportModal(false);
@@ -548,9 +545,6 @@ const OrderingPostCard = ({ post }) => {
           <RatingModal
             orderId={post.id}
             onClose={() => setShowRatingModal(false)}
-            onRated={(rating) => {
-              console.log("Rated:", rating);
-            }}
           />
         )}
       </div>

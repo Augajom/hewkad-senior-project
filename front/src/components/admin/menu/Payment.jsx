@@ -43,7 +43,6 @@ export default function AdminPayments() {
         const res = await axios.get("https://hewkad.com/api/admin/payment", {
           withCredentials: true,
         });
-        console.log(res.data.orders);
         setOrders(res.data.orders);
       } catch (err) {
         console.error("Error fetching orders:", err);

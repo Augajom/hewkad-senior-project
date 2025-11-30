@@ -181,7 +181,6 @@ const FoodCardList = ({
     }
 
     if (loadingRider) {
-      console.log("Waiting for user auth...");
       return;
     }
 
@@ -215,7 +214,6 @@ const FoodCardList = ({
         },
         { merge: true }
       );
-      console.log(`Firebase Chat Room [${chatRoomId}] is ready.`);
     } catch (firebaseErr) {
       console.error("Error creating Firebase chat room:", firebaseErr);
     }
@@ -240,7 +238,6 @@ const FoodCardList = ({
       const orderData = await res1.json();
       const newOrderId = orderData.order_id;
       if (!newOrderId) throw new Error("Invalid order ID");
-      console.log("Order created:", orderData);
 
       await new Promise((resolve) => setTimeout(resolve, 150));
 
@@ -259,7 +256,6 @@ const FoodCardList = ({
           const text = await res2.text();
           console.warn("Response:", text);
         } else {
-          console.log("Notification sent successfully");
         }
       } catch (notifErr) {
         console.warn("Notification fetch failed:", notifErr);

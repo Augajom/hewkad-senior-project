@@ -19,7 +19,6 @@ export default function RatingModal({ orderId, onClose, onRated }) {
         { withCredentials: true }
       );
       alert("ขอบคุณสำหรับการให้คะแนน!");
-      onRated(rating);
       onClose();
     } catch (err) {
       console.error(err);
