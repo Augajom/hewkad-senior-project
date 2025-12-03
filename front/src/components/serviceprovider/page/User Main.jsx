@@ -1,34 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/navbar.jsx";
 import OrderingList from "./orderingpage.jsx";
 import HistoryPage from "./SP_History.jsx";
 import Home from "./home.jsx";
 import ChatPage from "../components/ChatPage.jsx";
-import { useOrders } from "../hooks/useOrder"; // :white_check_mark: ดึง hook
-import KadDropdown from "../components/Kaddropdown.jsx"; // :white_check_mark: นำ dropdown มาใช้
+import { useOrders } from "../hooks/useOrder";
+import KadDropdown from "../components/Kaddropdown.jsx";
 import "../DaisyUI.css";
 
 function UserMain() {
   const [currentPage, setCurrentPage] = useState("home");
   const [kadOptions, setKadOptions] = useState([]);
   const [selectedKad, setSelectedKad] = useState([]);
-  const [searchQuery, setSearchQuery] = useState(""); // สถานที่ค้นหา
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // :white_check_mark: ดึงออเดอร์ Rider Received
-  const { orders: riderOrders } = useOrders("Rider Received");
-   const handleSearchSubmit = (value) => {
+  const { orders: riderOrders = [] } = useOrders("Rider Received");
+  const orderingCount = riderOrders.length;
+
+  const handleSearchSubmit = (value) => {
     setSearchQuery(value);
   };
 
-  const handleKeyDown = (e) => {
-  if (e.key === 'Enter' && onSearchSubmit) {
-    onSearchSubmit(searchValue); // ส่งค่ากลับ UserMain
-  }
-};
-  const orderingCount = riderOrders.length; // จำนวนออเดอร์ที่ยังดำเนินการอยู่
+  const handleOrder = (order) => {
+    setCurrentPage("ordering");
+  };
 
-  // :white_check_mark: fetch kad options เมื่อโหลดหน้า
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchKadOptions = async () => {
       try {
         const res = await fetch("https://hewkad.com/api/customer/kad", {
@@ -53,7 +50,6 @@ function UserMain() {
         onSearchSubmit={handleSearchSubmit}
       />
 
-      {/* :white_check_mark: Filter Kad สำหรับหน้า ordering */}
       {currentPage === "home" && (
         <div className="p-4">
           <div className="mb-4 w-60">
@@ -70,13 +66,15 @@ function UserMain() {
           />
         </div>
       )}
+
       {currentPage === "ordering" && (
         <OrderingList selectedKad={selectedKad} />
       )}
+
       {currentPage === "history" && <HistoryPage />}
+
       {currentPage === "chat" && <ChatPage />}
     </div>
-
   );
 }
 
