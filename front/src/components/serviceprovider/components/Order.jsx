@@ -8,7 +8,7 @@ import { db } from "../../../firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "../../../hooks/useAuth";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://hewkad.com/api";
 
 const FoodCard = ({ order, onRequestConfirm }) => {
   return (

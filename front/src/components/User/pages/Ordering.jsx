@@ -5,7 +5,7 @@ import OrderingPostCard from "../components/OrderingPostCard";
 import { SlArrowDown } from "react-icons/sl";
 import "../DaisyUI.css";
 
-const API = "http://localhost:5000";
+const API = "https://hewkad.com/api";
 
 export default function Ordering({ currentUser }) {
   const [posts, setPosts] = useState([]);
