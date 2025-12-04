@@ -1,5 +1,6 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
+const db = require('../config/db'); // <-- เพิ่มบรรทัดนี้
 const Ordering = require('../models/customer/Ordering');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -65,4 +66,5 @@ async function sendPaymentReceivedEmail(email, nickname, product, store_name) {
   }
 }
 
-module.exports = { sendOrderReceivedEmail,sendPaymentReceivedEmail };
+
+module.exports = { sendOrderReceivedEmail,sendPaymentReceivedEmail};

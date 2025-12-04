@@ -9,8 +9,10 @@ const OrderRider = require('../models/service/orderrider');
 const Ordering = require('../models/customer/Ordering');
 const OrderHistory = require('../models/service/History');
 const Proof = require('../models/service/proof');
+const Cancel = require('../models/service/Cancel');
 const Orderingnoti = require('../models/customer/Orderingnoti');
 const { sendOrderReceivedEmail } = require('../utils/notification');
+const { sendCancelEmailToCustomer } = require('../utils/Cancelnoti');
 const multer = require('multer');
 const path = require('path'); // ✅ ต้องมีบรรทัดนี้
 const fs = require('fs');
@@ -50,7 +52,7 @@ router.get('/Order', verifyToken, requireRole('service'), async (req, res) => {
 });
 
 router.get("/orders", verifyToken, async (req, res) => {
-  if (!req.user || !req.user.id) 
+  if (!req.user || !req.user.id)
     return res.status(401).json({ message: "Unauthorized" });
 
   const rider_id = req.user.id;
@@ -227,6 +229,46 @@ router.post(
     }
   }
 );
+
+
+
+
+router.post('/cancel', verifyToken, requireRole('service'), upload.single('image'), async (req, res) => {
+  try {
+    const { post_id, reason_id, detail } = req.body;
+
+    if (!post_id || !reason_id || !detail) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Upload path
+    const UPLOAD_DIR = path.join(__dirname, "..", "uploads", "cancel");
+    if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+    const reportFile = req.file ? `/uploads/proofs/${req.file.filename}` : '';
+
+    // 1️⃣ บันทึก cancel info
+    const result = await Cancel.create(post_id, req.user.id, reason_id, detail, reportFile);
+
+    // 2️⃣ อัปเดต status ของ post เป็น Cancel
+    await Cancel.updateStatusToCancel(post_id);
+
+    // 3️⃣ ส่งอีเมลแจ้งลูกค้า
+    await sendCancelEmailToCustomer(post_id);
+    console.log("Cancel order id:", post_id);
+
+    res.json({
+      message: "Post cancelled successfully",
+      cancelId: result.id,
+      status: "Cancel",
+      report_file: reportFile
+    });
+
+  } catch (err) {
+    console.error("Cancel Post Error:", err);
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
+});
 
 // GET /service/check-role
 router.get("/check-role", verifyToken, async (req, res) => {

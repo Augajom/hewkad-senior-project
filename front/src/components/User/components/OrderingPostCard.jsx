@@ -224,7 +224,7 @@ const OrderingPostCard = ({ post }) => {
   return (
     <div className="card w-full sm:w-[450px] md:w-[400px] lg:w-[450px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black">
       {/* Header */}
-      <div className="flex justify-between items-start gap-4"> 
+      <div className="flex justify-between items-start gap-4">
         <div className="flex gap-3 min-w-0">
           <img
             src={
@@ -237,8 +237,8 @@ const OrderingPostCard = ({ post }) => {
             alt="avatar"
             className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover flex-shrink-0"
           />
-          
-          <div className="min-w-0"> 
+
+          <div className="min-w-0">
             <div className="font-bold text-base truncate">
               {post.nickname || "ไม่ระบุชื่อ"}
             </div>
@@ -248,16 +248,15 @@ const OrderingPostCard = ({ post }) => {
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2 flex-shrink-0"> 
+        <div className="flex flex-col items-end gap-2 flex-shrink-0">
           {status && (
             <div
-              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${
-                status === "Ordering"
+              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${status === "Ordering"
                   ? "badge-info"
                   : status === "Complete"
-                  ? "badge-success"
-                  : "badge-warning"
-              }`}
+                    ? "badge-success"
+                    : "badge-warning"
+                }`}
             >
               {status}
             </div>
@@ -471,12 +470,15 @@ const OrderingPostCard = ({ post }) => {
                   <option disabled value="">
                     Select a reason
                   </option>
-                  {reportReasons.map((reason) => (
-                    <option key={reason.id} value={reason.id}>
-                      {reason.title}
-                    </option>
-                  ))}
+                  {reportReasons
+                    .filter((reason) => [1, 2, 3, 4].includes(reason.id)) // <-- filter id 1-4
+                    .map((reason) => (
+                      <option key={reason.id} value={reason.id}>
+                        {reason.title}
+                      </option>
+                    ))}
                 </select>
+
 
                 {/* รายละเอียด */}
                 <input
@@ -500,28 +502,28 @@ const OrderingPostCard = ({ post }) => {
                 {(reportForm.report === "2" ||
                   reportForm.report === "3" ||
                   reportForm.report === "4") && (
-                  <div className="flex flex-col items-start gap-2">
-                    <label
-                      htmlFor="reportImage"
-                      className="text-sm font-semibold text-gray-700"
-                    >
-                      Upload a picture (of the wrong item)
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      id="reportImage"
-                      className="file-input file-input-bordered w-full bg-white text-black"
-                      placeholder="ขอดูภาพของที่ผิดหน่อย"
-                      onChange={(e) =>
-                        setReportForm((prev) => ({
-                          ...prev,
-                          image: e.target.files[0],
-                        }))
-                      }
-                    />
-                  </div>
-                )}
+                    <div className="flex flex-col items-start gap-2">
+                      <label
+                        htmlFor="reportImage"
+                        className="text-sm font-semibold text-gray-700"
+                      >
+                        Upload a picture (of the wrong item)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="reportImage"
+                        className="file-input file-input-bordered w-full bg-white text-black"
+                        placeholder="ขอดูภาพของที่ผิดหน่อย"
+                        onChange={(e) =>
+                          setReportForm((prev) => ({
+                            ...prev,
+                            image: e.target.files[0],
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
 
                 {/* ปุ่ม */}
                 <div className="modal-action flex justify-center gap-3 mt-6">
