@@ -13,7 +13,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
   useEffect(() => {
     const fetchReasons = async () => {
       try {
-        const res = await fetch("https://hewkad.com/api/customer/report-reasons", {
+        const res = await fetch("http://localhost:5000/customer/report-reasons", {
           credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to load report reasons");
@@ -44,7 +44,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
         formData.append("image", reportForm.image);
       }
 
-      const res = await fetch("https://hewkad.com/api/customer/reports", {
+      const res = await fetch("http://localhost:5000/customer/reports", {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -77,7 +77,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
       <div className="flex justify-between items-start gap-4">
         <div className="flex gap-3 min-w-0">
           <img
-            src={post.avatar ? (post.avatar.startsWith("http") ? post.avatar : `https://hewkad.com/api${post.avatar}`) : 'https://i.pravatar.cc/150'}
+            src={post.avatar ? (post.avatar.startsWith("http") ? post.avatar : `http://localhost:5000${post.avatar}`) : 'https://i.pravatar.cc/150'}
             alt="avatar"
             className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover flex-shrink-0"
           />
@@ -137,7 +137,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
             <h3 className="font-bold text-lg text-center mb-4">{status === 'Reported' ? "Refund Proof" : "Proof of Delivery"}</h3>
             <div className="flex justify-center mb-6">
               <img
-                src={`https://hewkad.com/api${status === 'Reported' ? post.resolved_file : post.proof_url}`}
+                src={`http://localhost:5000${status === 'Reported' ? post.resolved_file : post.proof_url}`}
                 alt="Proof"
                 className="max-w-full max-h-[400px] object-contain rounded"
               />

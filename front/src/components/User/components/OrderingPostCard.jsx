@@ -35,7 +35,7 @@ const OrderingPostCard = ({ post }) => {
     const fetchReasons = async () => {
       try {
         const res = await fetch(
-          "https://hewkad.com/api/customer/report-reasons",
+          "http://localhost:5000/customer/report-reasons",
           {
             credentials: "include",
           }
@@ -63,7 +63,7 @@ const OrderingPostCard = ({ post }) => {
     formData.append("files", slipFile);
 
     try {
-      const res = await fetch("https://hewkad.com/api/customer/upload-slip", {
+      const res = await fetch("http://localhost:5000/customer/upload-slip", {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -113,7 +113,7 @@ const OrderingPostCard = ({ post }) => {
   const handleOpenQR = async () => {
     try {
       const res = await fetch(
-        `https://hewkad.com/api/customer/payment/qr/${post.id}`,
+        `http://localhost:5000/customer/payment/qr/${post.id}`,
         {
           credentials: "include",
         }
@@ -138,7 +138,7 @@ const OrderingPostCard = ({ post }) => {
   const handleConfirmPayment = async () => {
     try {
       const res = await fetch(
-        `https://hewkad.com/api/customer/orders/${post.id}`,
+        `http://localhost:5000/customer/orders/${post.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -170,7 +170,7 @@ const OrderingPostCard = ({ post }) => {
         formData.append("image", reportForm.image);
       }
 
-      const res = await fetch("https://hewkad.com/api/customer/reports", {
+      const res = await fetch("http://localhost:5000/customer/reports", {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -196,7 +196,7 @@ const OrderingPostCard = ({ post }) => {
   const handleConfirmOrder = async () => {
     try {
       const res = await fetch(
-        `https://hewkad.com/api/customer/confirmorder/${post.id}`,
+        `http://localhost:5000/customer/confirmorder/${post.id}`,
         {
           method: "PUT",
           credentials: "include",
@@ -224,21 +224,21 @@ const OrderingPostCard = ({ post }) => {
   return (
     <div className="card w-full sm:w-[450px] md:w-[400px] lg:w-[450px] bg-white shadow-lg rounded-xl border border-gray-200 p-6 text-black">
       {/* Header */}
-      <div className="flex justify-between items-start gap-4"> 
+      <div className="flex justify-between items-start gap-4">
         <div className="flex gap-3 min-w-0">
           <img
             src={
               post.avatar
                 ? post.avatar.startsWith("http")
                   ? post.avatar
-                  : `https://hewkad.com/api${post.avatar}`
+                  : `http://localhost:5000${post.avatar}`
                 : "https://i.pravatar.cc/150"
             }
             alt="avatar"
             className="w-10 h-10 max-w-[40px] max-h-[40px] rounded-full object-cover flex-shrink-0"
           />
-          
-          <div className="min-w-0"> 
+
+          <div className="min-w-0">
             <div className="font-bold text-base truncate">
               {post.nickname || "ไม่ระบุชื่อ"}
             </div>
@@ -248,16 +248,15 @@ const OrderingPostCard = ({ post }) => {
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2 flex-shrink-0"> 
+        <div className="flex flex-col items-end gap-2 flex-shrink-0">
           {status && (
             <div
-              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${
-                status === "Ordering"
+              className={`badge font-semibold text-white px-3 py-1 text-xs max-w-full truncate ${status === "Ordering"
                   ? "badge-info"
                   : status === "Complete"
-                  ? "badge-success"
-                  : "badge-warning"
-              }`}
+                    ? "badge-success"
+                    : "badge-warning"
+                }`}
             >
               {status}
             </div>
@@ -344,7 +343,7 @@ const OrderingPostCard = ({ post }) => {
 
               <div className="flex justify-center mb-6">
                 <img
-                  src={`https://hewkad.com/api${post.proof_url}`}
+                  src={`http://localhost:5000${post.proof_url}`}
                   alt="Proof"
                   className="max-w-full max-h-[400px] object-contain rounded"
                 />
@@ -471,12 +470,15 @@ const OrderingPostCard = ({ post }) => {
                   <option disabled value="">
                     Select a reason
                   </option>
-                  {reportReasons.map((reason) => (
-                    <option key={reason.id} value={reason.id}>
-                      {reason.title}
-                    </option>
-                  ))}
+                  {reportReasons
+                    .filter((reason) => [1, 2, 3, 4].includes(reason.id)) // <-- filter id 1-4
+                    .map((reason) => (
+                      <option key={reason.id} value={reason.id}>
+                        {reason.title}
+                      </option>
+                    ))}
                 </select>
+
 
                 {/* รายละเอียด */}
                 <input
@@ -500,28 +502,28 @@ const OrderingPostCard = ({ post }) => {
                 {(reportForm.report === "2" ||
                   reportForm.report === "3" ||
                   reportForm.report === "4") && (
-                  <div className="flex flex-col items-start gap-2">
-                    <label
-                      htmlFor="reportImage"
-                      className="text-sm font-semibold text-gray-700"
-                    >
-                      Upload a picture (of the wrong item)
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      id="reportImage"
-                      className="file-input file-input-bordered w-full bg-white text-black"
-                      placeholder="ขอดูภาพของที่ผิดหน่อย"
-                      onChange={(e) =>
-                        setReportForm((prev) => ({
-                          ...prev,
-                          image: e.target.files[0],
-                        }))
-                      }
-                    />
-                  </div>
-                )}
+                    <div className="flex flex-col items-start gap-2">
+                      <label
+                        htmlFor="reportImage"
+                        className="text-sm font-semibold text-gray-700"
+                      >
+                        Upload a picture (of the wrong item)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="reportImage"
+                        className="file-input file-input-bordered w-full bg-white text-black"
+                        placeholder="ขอดูภาพของที่ผิดหน่อย"
+                        onChange={(e) =>
+                          setReportForm((prev) => ({
+                            ...prev,
+                            image: e.target.files[0],
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
 
                 {/* ปุ่ม */}
                 <div className="modal-action flex justify-center gap-3 mt-6">

@@ -88,7 +88,7 @@ export default function AdminUsers() {
   const resolveImg = (imgPath) => {
     if (!imgPath) return "/src/assets/avatar.svg";
     if (imgPath.startsWith("http")) return imgPath;
-    return `https://hewkad.com/api${imgPath}`;
+    return `http://localhost:5000${imgPath}`;
   };
 
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("https://hewkad.com/api/admin/users", {
+      const res = await axios.get("http://localhost:5000/admin/users", {
         withCredentials: true,
       });
       setUsers(Array.isArray(res.data) ? res.data : []);
@@ -114,7 +114,7 @@ export default function AdminUsers() {
 
   const fetchRequest = async () => {
     try {
-      const res = await axios.get("https://hewkad.com/api/admin/users/request", {
+      const res = await axios.get("http://localhost:5000/admin/users/request", {
         withCredentials: true,
       });
       setRequest(Array.isArray(res.data) ? res.data : []);
@@ -152,7 +152,7 @@ export default function AdminUsers() {
 
       if (result.isConfirmed) {
         await axios.put(
-          `https://hewkad.com/api/admin/users/work-permit/${userId}`,
+          `http://localhost:5000/admin/users/work-permit/${userId}`,
           { isActive: currentStatus ? 0 : 1 },
           { withCredentials: true }
         );
@@ -195,7 +195,7 @@ export default function AdminUsers() {
 
       if (result.isConfirmed) {
         await axios.delete(
-          `https://hewkad.com/api/admin/users/delete/${user.user_id}`,
+          `http://localhost:5000/admin/users/delete/${user.user_id}`,
           {
             withCredentials: true,
           }

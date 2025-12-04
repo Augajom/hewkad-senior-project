@@ -9,7 +9,7 @@ import { renderTimeViewClock } from "@mui/x-date-pickers/timeViewRenderers";
 import dayjs from "dayjs";
 import "../DaisyUI.css";
 
-const API = "https://hewkad.com/api";
+const API = "http://localhost:5000";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -364,7 +364,7 @@ export default function Home() {
                     type="number"
                     name="price"
                     className="input input-bordered w-full bg-white text-slate-900 no-spinner"
-                    placeholder="ขั้นต่ำ 1"
+                    placeholder="ขั้นต่ำ 10 บาท"
                     value={formData.price}
                     onChange={handleInputChange}
                     autoComplete="off"
@@ -379,7 +379,7 @@ export default function Home() {
                     type="number"
                     name="serviceFee"
                     className="input input-bordered w-full bg-white text-slate-900 no-spinner"
-                    placeholder="ขั้นต่ำ 1"
+                    placeholder="ขั้นต่ำ 10 บาท"
                     value={formData.serviceFee}
                     onChange={handleInputChange}
                     autoComplete="off"
@@ -396,7 +396,7 @@ export default function Home() {
                   type="text"
                   name="delivery"
                   className="input input-bordered w-full bg-white text-slate-900"
-                  placeholder="กรอกวิธีจัดส่ง"
+                  placeholder="สถานที่จัดส่ง"
                   value={formData.delivery}
                   onChange={handleInputChange}
                   autoComplete="off"
