@@ -146,7 +146,7 @@ const OrderingCard = ({ order, onStatusUpdate }) => {
               {order.status_name || ""}
             </div>
             <div className="text-red-600 font-bold text-xl mt-1">
-              {order.service_fee || 0} ฿
+              {order.post_service_fee || 0} ฿
             </div>
           </div>
         </div>
@@ -155,7 +155,7 @@ const OrderingCard = ({ order, onStatusUpdate }) => {
           <p><span className="font-semibold">สถานที่:</span> {order.kad_name || "-"}</p>
           <p><span className="font-semibold">ร้าน:</span> {order.store_name || "-"}</p>
           <p><span className="font-semibold">สินค้า:</span> {order.product || "-"}</p>
-          <p><span className="font-semibold">ราคา:</span> {order.price ?? "-"} ฿</p>
+          <p><span className="font-semibold">ราคา:</span> {order.post_price ?? "-"} ฿</p>
           <p><span className="font-semibold">เวลาจัดส่ง:</span> {order.delivery_at || "-"}</p>
         </div>
 
