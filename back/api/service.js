@@ -110,6 +110,64 @@ router.post('/hew', verifyToken, requireRole('service'), (req, res) => {
   );
 });
 
+const UPLOAD_DIR = path.join(__dirname, "..", "uploads", "proofs");
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+// =====================
+// 2️⃣ Multer Storage
+// =====================
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || ".jpg").toLowerCase();
+    const uid = req.user?.id || "u";
+    cb(null, `proof_${uid}_${Date.now()}${ext}`);
+  },
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
+
+// =====================
+// 3️⃣ Route: Upload Proof + Update Status
+// =====================
+router.post(
+  "/orders/:id/upload-proof",
+  verifyToken,
+  requireRole("service"),
+  upload.single("proof"),
+  async (req, res) => {
+    const orderId = req.params.id;
+
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const filePath = `/uploads/proofs/${req.file.filename}`;
+
+    console.log("Uploading proof for order:", orderId, "file:", filePath);
+
+    try {
+      // 1️⃣ บันทึก proof_url และเอา postId ออกมา
+      const result = await Proof.saveProofUrl(orderId, filePath);
+
+      if (result.affectedRows === 0)
+        return res.status(404).json({ message: "Order not found" });
+
+      const postId = result.postId;
+
+      // 2️⃣ เปลี่ยนสถานะโพสต์เป็น Order Received
+      await Ordering.updateStatus(postId, "Order Received");
+
+      res.json({
+        message: "Upload success",
+        proof_url: filePath,
+        status: "Order Received",
+      });
+    } catch (err) {
+      console.error("DB Error:", err);
+      res.status(500).json({ message: "Database error", error: err.message });
+    }
+  }
+);
+
+
 router.put('/orders/:id/notification', verifyToken, requireRole('service'), async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -179,56 +237,7 @@ router.get('/orderingstatus', verifyToken, requireRole('service'), async (req, r
   }
 });
 
-const UPLOAD_DIR = path.join(__dirname, "..", "uploads", "proofs");
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-// =====================
-// 2️⃣ Multer Storage
-// =====================
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || ".jpg").toLowerCase();
-    const uid = req.user?.id || "u";
-    cb(null, `proof_${uid}_${Date.now()}${ext}`);
-  },
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
-
-// =====================
-// 3️⃣ Route: Upload Proof + Update Status
-// =====================
-router.post(
-  "/orders/:id/upload-proof",
-  verifyToken,
-  requireRole("service"),
-  upload.single("proof"),
-  async (req, res) => {
-    const orderId = req.params.id;
-
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-
-    const filePath = `/uploads/proofs/${req.file.filename}`; // URL สำหรับ frontend
-
-    console.log("Uploading proof for order:", orderId, "file:", filePath);
-
-    try {
-      // 1️⃣ อัปเดต proof_url ลง DB
-      const result = await Proof.saveProofUrl(orderId, filePath);
-
-      if (result.affectedRows === 0)
-        return res.status(404).json({ message: "Order not found" });
-
-      // 2️⃣ เปลี่ยนสถานะเป็น "Order Received"
-      await Ordering.updateStatus(orderId, "Order Received");
-
-      res.json({ message: "Upload success", proof_url: filePath, status: "Order Received" });
-    } catch (err) {
-      console.error("DB Error:", err);
-      res.status(500).json({ message: "Database error", error: err.message });
-    }
-  }
-);
 
 
 

@@ -114,12 +114,7 @@ const HistoryPostCard = ({ post, className = "" }) => {
         </div>
 
         <div className="flex flex-col gap-2 w-full sm:w-auto">
-          <button 
-            className="btn btn-error text-white w-full sm:w-auto" 
-            onClick={() => setShowReportModal(true)}
-          >
-            Report
-          </button>
+          
 
           <button 
             className="btn btn-link text-blue-600 underline" 
