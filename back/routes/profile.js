@@ -167,7 +167,7 @@ router.put('/', maybeUpload, async (req, res) => {
     // --- update / insert bank account ---
     const wantUpdateBank = bank !== undefined || accountNumber !== undefined || accountOwner !== undefined;
     if (wantUpdateBank) {
-      const bankIdVal = nonEmpty(bank); // bank dropdown ส่งเป็น id
+      const bankIdVal = bank ? Number(bank) : null; // bank dropdown ส่งเป็น id
       const [existingAcc] = await conn.query(
         'SELECT id FROM profile_bank_accounts WHERE profile_id = ? LIMIT 1',
         [profileId]

@@ -175,6 +175,7 @@ const OrderingCard = ({ order, onStatusUpdate }) => {
             <button
               onClick={handleSendClick}
               className="btn btn-primary text-white text-sm px-4 py-1"
+              disabled={order.status_name === "Rider Received"} // ปิดปุ่มเมื่อ Rider Received
             >
               Send
             </button>
@@ -182,6 +183,7 @@ const OrderingCard = ({ order, onStatusUpdate }) => {
             <button
               onClick={() => setShowReportModal(true)}
               className="btn btn-error text-white text-sm px-4 py-1"
+              disabled={order.status_name === "Rider Received"} // ปิดปุ่มเมื่อ Rider Received
             >
               Cancel
             </button>
