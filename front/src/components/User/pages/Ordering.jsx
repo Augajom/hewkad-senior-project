@@ -63,7 +63,7 @@ export default function Ordering({ currentUser }) {
               </div>
               <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-white rounded-2xl w-56 text-slate-900">
                 <li>
-                  <button onClick={() => setStatusFilter("All" )}>All</button>
+                  <button onClick={() => setStatusFilter("All")}>All</button>
                 </li>
                 <li>
                   <button onClick={() => setStatusFilter("Rider Received")}>Rider Received</button>
@@ -110,9 +110,15 @@ export default function Ordering({ currentUser }) {
             There are no items yet.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((post) => (
-              <OrderingPostCard key={post.id} post={post} currentUser={currentUser} />
+              <div className="w-full flex justify-center" key={post.id}>
+                <OrderingPostCard
+                  post={post}
+                  currentUser={currentUser}
+                  className="w-full max-w-md"
+                />
+              </div>
             ))}
           </div>
         )}
