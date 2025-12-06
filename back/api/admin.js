@@ -11,6 +11,7 @@ const manageUser = require('../models/admin/manageUser');
 const getPost = require('../models/admin/getPost');
 const Orderingnoti = require("../models/customer/Orderingnoti");
 const { sendReportResolvedEmail } = require('../utils/NotiReportEmail');
+const SystemSettings = require('../models/SystemSettings');
 
 
 router.get('/', (req, res) => {
@@ -382,6 +383,29 @@ router.get("/daily-summary", async (req, res) => {
   } catch (error) {
     console.error("Error fetching daily summary:", error);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ดึงสถานะตลาดปัจจุบัน
+router.get('/market-status', async (req, res) => {
+  try {
+    const isOpen = await SystemSettings.getMarketStatus();
+    res.json({ success: true, isOpen });
+  } catch (err) {
+    console.error("Error fetching market status:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// อัปเดตสถานะตลาด (Toggle)
+router.put('/market-status', async (req, res) => {
+  try {
+    const { isOpen } = req.body; // รับค่า true/false จากหน้าบ้าน
+    await SystemSettings.updateMarketStatus(isOpen);
+    res.json({ success: true, message: `Market is now ${isOpen ? 'Open' : 'Closed'}` });
+  } catch (err) {
+    console.error("Error updating market status:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
