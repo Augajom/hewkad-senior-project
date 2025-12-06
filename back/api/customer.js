@@ -18,6 +18,7 @@ const promptpay = require("promptpay-qr");
 const getName = require('../models/getName')
 const cron = require("node-cron");
 const Rating = require('../models/customer/rating');
+const SystemSettings = require('../models/SystemSettings');
 
 const upload = multer();
 
@@ -478,6 +479,15 @@ router.get('/banks', async (req, res) => {
   }
 });
 
+router.get('/market-status', async (req, res) => {
+  try {
+    const isOpen = await SystemSettings.getMarketStatus();
+    res.json({ success: true, isOpen });
+  } catch (err) {
+    console.error("Error fetching market status:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 module.exports = router;
 

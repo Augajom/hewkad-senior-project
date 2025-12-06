@@ -7,6 +7,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { renderTimeViewClock } from "@mui/x-date-pickers/timeViewRenderers";
 import dayjs from "dayjs";
+import Swal from 'sweetalert2';
 import "../DaisyUI.css";
 
 const API = "https://hewkad.com/api";
@@ -36,6 +37,19 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [isMarketOpen, setIsMarketOpen] = useState(true);
+
+  const checkMarketStatus = async () => {
+    try {
+      const res = await fetch(`${API}/customer/market-status`, { credentials: "include" });
+      const data = await res.json();
+      if (data.success) {
+        setIsMarketOpen(data.isOpen);
+      }
+    } catch (error) {
+      console.error("Failed to check market status", error);
+    }
+  };
 
   const fetchPosts = async (status = "Available") => {
     setLoading(true);
@@ -70,6 +84,7 @@ export default function Home() {
       .catch(() => {});
     fetchPosts(statusTab);
     fetchKadOptions();
+    checkMarketStatus();
   }, []);
 
   useEffect(() => {
@@ -87,6 +102,23 @@ export default function Home() {
   }, [posts, selectedKad, searchQuery]);
 
   const handleOpenForm = () => {
+
+    if (!isMarketOpen) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Market Closed',
+        text: 'Sorry, the market is currently closed. You cannot create a post at this time.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#3085d6',
+        background: '#fff',
+        customClass: {
+          popup: 'rounded-2xl shadow-xl',
+          container: 'backdrop-blur-sm'
+        }
+      });
+      return; 
+    }
+
     resetForm();
     const now = dayjs();
     setMinTime(now);
@@ -248,9 +280,9 @@ export default function Home() {
             </div>
             <button
               onClick={handleOpenForm}
-              className="btn btn-primary rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+              className={`btn btn-primary rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white ${!isMarketOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              + Post
+               + Post
             </button>
           </div>
         </div>

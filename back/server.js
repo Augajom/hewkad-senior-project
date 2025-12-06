@@ -19,6 +19,7 @@ const logoutRoute = require('./routes/logout.js')
 const verifyToken = require('./utils/verifyToken.js');
 const requireRole = require('./utils/requireRole.js');
 const orderAutoComplete = require('./api/customer.js');
+const startMarketScheduler = require('./utils/marketScheduler.js');
 
 
 const app = express();
@@ -26,7 +27,7 @@ const app = express();
 app.set('etag', false);
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || ['http://localhost:3000', 'https://hewkad.com'],
+  origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'https://hewkad.com'],
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -64,4 +65,6 @@ app.get('/me', verifyToken, (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+
+  startMarketScheduler();
 });
