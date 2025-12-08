@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Nov 26, 2025 at 05:19 PM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- Host: database
+-- Generation Time: Dec 08, 2025 at 08:58 AM
+-- Server version: 8.0.44
+-- PHP Version: 8.3.26
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -28,8 +28,8 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `bank` (
-  `id` int(11) NOT NULL,
-  `bank_name` varchar(255) DEFAULT NULL
+  `id` int NOT NULL,
+  `bank_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -60,11 +60,11 @@ INSERT INTO `bank` (`id`, `bank_name`) VALUES
 --
 
 CREATE TABLE `daily_orders_summary` (
-  `id` int(11) NOT NULL,
+  `id` int NOT NULL,
   `date` date NOT NULL,
-  `total_orders` int(11) DEFAULT 0,
-  `total_revenue` decimal(10,2) DEFAULT 0.00,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `total_orders` int DEFAULT '0',
+  `total_revenue` decimal(10,2) DEFAULT '0.00',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -74,8 +74,8 @@ CREATE TABLE `daily_orders_summary` (
 --
 
 CREATE TABLE `kad` (
-  `id` int(11) NOT NULL,
-  `kad_name` varchar(255) DEFAULT NULL
+  `id` int NOT NULL,
+  `kad_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -83,8 +83,8 @@ CREATE TABLE `kad` (
 --
 
 INSERT INTO `kad` (`id`, `kad_name`) VALUES
-(1, 'inside'),
-(2, 'outside');
+(1, 'กาดหน้ามอ'),
+(2, 'กาดในมอ');
 
 -- --------------------------------------------------------
 
@@ -93,20 +93,20 @@ INSERT INTO `kad` (`id`, `kad_name`) VALUES
 --
 
 CREATE TABLE `orders` (
-  `id` int(11) NOT NULL,
-  `post_id` int(11) NOT NULL COMMENT 'โพสต์ที่ถูกสั่งซื้อ',
-  `customer_id` int(11) NOT NULL COMMENT 'ID ผู้ใช้งานที่ทำการสั่งซื้อ (ลูกค้า)',
-  `rider_id` int(11) DEFAULT NULL COMMENT 'ID ผู้ใช้งานที่รับงาน (Service Provider/Rider)',
-  `status_id` int(11) NOT NULL COMMENT 'สถานะปัจจุบันของรายการสั่งซื้อ',
-  `status_payment` varchar(11) NOT NULL,
-  `slip_file` varchar(255) DEFAULT NULL,
-  `order_price` int(11) DEFAULT NULL COMMENT 'ราคาสินค้า ณ เวลาสั่งซื้อ',
-  `order_service_fee` int(11) DEFAULT NULL COMMENT 'ค่าบริการ ณ เวลาสั่งซื้อ',
-  `delivery_address` text DEFAULT NULL COMMENT 'ที่อยู่จัดส่งจริง',
-  `delivery_time` text DEFAULT NULL COMMENT 'เวลานัดหมายจัดส่งจริง',
-  `ordered_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันที่และเวลาที่สั่งซื้อ',
+  `id` int NOT NULL,
+  `post_id` int NOT NULL COMMENT 'โพสต์ที่ถูกสั่งซื้อ',
+  `customer_id` int NOT NULL COMMENT 'ID ผู้ใช้งานที่ทำการสั่งซื้อ (ลูกค้า)',
+  `rider_id` int DEFAULT NULL COMMENT 'ID ผู้ใช้งานที่รับงาน (Service Provider/Rider)',
+  `status_id` int NOT NULL COMMENT 'สถานะปัจจุบันของรายการสั่งซื้อ',
+  `status_payment` varchar(11) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `slip_file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `order_price` int DEFAULT NULL COMMENT 'ราคาสินค้า ณ เวลาสั่งซื้อ',
+  `order_service_fee` int DEFAULT NULL COMMENT 'ค่าบริการ ณ เวลาสั่งซื้อ',
+  `delivery_address` text COLLATE utf8mb4_unicode_ci COMMENT 'ที่อยู่จัดส่งจริง',
+  `delivery_time` text COLLATE utf8mb4_unicode_ci COMMENT 'เวลานัดหมายจัดส่งจริง',
+  `ordered_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'วันที่และเวลาที่สั่งซื้อ',
   `completed_at` timestamp NULL DEFAULT NULL COMMENT 'วันที่และเวลาที่ออเดอร์เสร็จสมบูรณ์/ถูกรายงาน',
-  `Proof_url` varchar(255) DEFAULT NULL
+  `Proof_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -116,18 +116,18 @@ CREATE TABLE `orders` (
 --
 
 CREATE TABLE `posts` (
-  `id` int(11) NOT NULL,
-  `kad_id` int(11) NOT NULL,
-  `store_name` varchar(255) DEFAULT NULL,
-  `product` varchar(255) DEFAULT NULL,
-  `service_fee` int(11) DEFAULT NULL,
-  `price` int(11) DEFAULT NULL,
-  `profile_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `status_id` int(11) NOT NULL,
-  `delivery` text DEFAULT NULL,
-  `delivery_at` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` int NOT NULL,
+  `kad_id` int NOT NULL,
+  `store_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `product` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `service_fee` int DEFAULT NULL,
+  `price` int DEFAULT NULL,
+  `profile_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `status_id` int NOT NULL,
+  `delivery` text COLLATE utf8mb4_unicode_ci,
+  `delivery_at` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -137,15 +137,15 @@ CREATE TABLE `posts` (
 --
 
 CREATE TABLE `profile` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `nickname` varchar(255) NOT NULL,
-  `name` varchar(255) DEFAULT NULL,
-  `phone_num` varchar(255) DEFAULT NULL,
-  `address` varchar(255) DEFAULT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `picture` varchar(255) DEFAULT NULL,
-  `identity_file` varchar(255) DEFAULT NULL
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `nickname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `phone_num` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `picture` text COLLATE utf8mb4_unicode_ci,
+  `identity_file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -155,11 +155,11 @@ CREATE TABLE `profile` (
 --
 
 CREATE TABLE `profile_bank_accounts` (
-  `id` int(11) NOT NULL,
-  `profile_id` int(11) NOT NULL,
-  `bank_id` int(11) NOT NULL,
-  `acc_number` varchar(255) DEFAULT NULL,
-  `acc_owner` varchar(255) DEFAULT NULL
+  `id` int NOT NULL,
+  `profile_id` int NOT NULL,
+  `bank_id` int NOT NULL,
+  `acc_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `acc_owner` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -169,13 +169,13 @@ CREATE TABLE `profile_bank_accounts` (
 --
 
 CREATE TABLE `ratings` (
-  `id` int(11) NOT NULL,
-  `rider_id` int(11) NOT NULL,
-  `order_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `rating` int(11) NOT NULL CHECK (`rating` between 1 and 5),
-  `comment` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `id` int NOT NULL,
+  `rider_id` int NOT NULL,
+  `order_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `rating` int NOT NULL,
+  `comment` text COLLATE utf8mb4_general_ci,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -185,15 +185,15 @@ CREATE TABLE `ratings` (
 --
 
 CREATE TABLE `reports` (
-  `id` int(11) NOT NULL,
-  `post_id` int(11) NOT NULL,
-  `reporter_id` int(11) NOT NULL,
-  `reason_id` int(11) NOT NULL,
-  `detail` text DEFAULT NULL,
-  `Resloved detail` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `resolved_file` varchar(255) DEFAULT NULL,
-  `report_file` varchar(255) DEFAULT NULL
+  `id` int NOT NULL,
+  `post_id` int NOT NULL,
+  `reporter_id` int NOT NULL,
+  `reason_id` int NOT NULL,
+  `detail` text COLLATE utf8mb4_unicode_ci,
+  `Resloved detail` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `resolved_file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `report_file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -203,8 +203,8 @@ CREATE TABLE `reports` (
 --
 
 CREATE TABLE `report_reasons` (
-  `id` int(11) NOT NULL,
-  `title` varchar(255) NOT NULL
+  `id` int NOT NULL,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -213,9 +213,7 @@ CREATE TABLE `report_reasons` (
 
 INSERT INTO `report_reasons` (`id`, `title`) VALUES
 (1, 'ต้องการเงินคืน'),
-(2, 'สินค้าไม่ถูกต้อง'),
-(3, 'ส่งของไม่ครบตามที่สั่ง'),
-(4, 'ส่งของผิดที่');
+(5, 'ร้านปิดหรือไม่มีร้าน');
 
 -- --------------------------------------------------------
 
@@ -224,8 +222,8 @@ INSERT INTO `report_reasons` (`id`, `title`) VALUES
 --
 
 CREATE TABLE `roles` (
-  `id` int(11) NOT NULL,
-  `role_name` varchar(255) NOT NULL
+  `id` int NOT NULL,
+  `role_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -244,8 +242,8 @@ INSERT INTO `roles` (`id`, `role_name`) VALUES
 --
 
 CREATE TABLE `status` (
-  `id` int(11) NOT NULL,
-  `status_name` varchar(255) DEFAULT NULL
+  `id` int NOT NULL,
+  `status_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -261,7 +259,27 @@ INSERT INTO `status` (`id`, `status_name`) VALUES
 (6, 'Reporting'),
 (7, 'Reject'),
 (8, 'Successfully'),
-(9, 'Reported');
+(9, 'Reported'),
+(10, 'Cancel');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `system_settings`
+--
+
+CREATE TABLE `system_settings` (
+  `setting_key` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `setting_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `system_settings`
+--
+
+INSERT INTO `system_settings` (`setting_key`, `setting_value`, `updated_at`) VALUES
+('market_open', '1', '2025-12-08 02:03:23');
 
 -- --------------------------------------------------------
 
@@ -270,11 +288,11 @@ INSERT INTO `status` (`id`, `status_name`) VALUES
 --
 
 CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
-  `username` varchar(255) DEFAULT NULL,
-  `password` varchar(255) DEFAULT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` int NOT NULL,
+  `username` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -284,11 +302,11 @@ CREATE TABLE `users` (
 --
 
 CREATE TABLE `user_roles` (
-  `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `role_id` int(11) NOT NULL,
-  `is_Active` tinyint(2) NOT NULL DEFAULT 1,
-  `update_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6)
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `role_id` int NOT NULL,
+  `is_Active` tinyint NOT NULL DEFAULT '1',
+  `update_at` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -387,6 +405,12 @@ ALTER TABLE `status`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `system_settings`
+--
+ALTER TABLE `system_settings`
+  ADD PRIMARY KEY (`setting_key`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -408,85 +432,85 @@ ALTER TABLE `user_roles`
 -- AUTO_INCREMENT for table `bank`
 --
 ALTER TABLE `bank`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `daily_orders_summary`
 --
 ALTER TABLE `daily_orders_summary`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `kad`
 --
 ALTER TABLE `kad`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `posts`
 --
 ALTER TABLE `posts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `profile`
 --
 ALTER TABLE `profile`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `profile_bank_accounts`
 --
 ALTER TABLE `profile_bank_accounts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ratings`
 --
 ALTER TABLE `ratings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `reports`
 --
 ALTER TABLE `reports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `report_reasons`
 --
 ALTER TABLE `report_reasons`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `status`
 --
 ALTER TABLE `status`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `user_roles`
 --
 ALTER TABLE `user_roles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
@@ -536,7 +560,7 @@ ALTER TABLE `ratings`
 --
 ALTER TABLE `reports`
   ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`),
-  ADD CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE NO ACTION,
+  ADD CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `reports_ibfk_3` FOREIGN KEY (`reason_id`) REFERENCES `report_reasons` (`id`);
 
 --

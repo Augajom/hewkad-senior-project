@@ -28,3 +28,4 @@ dist-ssr
 
 Files/Payment/*
 /back/public/uploads
+/back/uploads
