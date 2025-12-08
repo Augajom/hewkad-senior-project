@@ -120,9 +120,6 @@ async function sendReportReopenEmailToCustomer(orderId) {
   }
 }
 
-
-
-
 module.exports = {
   sendRefundEmailToCustomer,
   sendReportReopenEmailToRider,

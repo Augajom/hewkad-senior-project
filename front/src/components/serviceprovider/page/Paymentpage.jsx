@@ -8,7 +8,7 @@ const HistoryPage = () => {
     const [selectedSlip, setSelectedSlip] = useState(null);
 
     useEffect(() => {
-        fetch('https://hewkad.com/api/service/history', {
+        fetch('http://localhost:5000/service/history', {
             credentials: 'include'
         })
             .then(res => res.json())
@@ -34,7 +34,7 @@ const HistoryPage = () => {
                 return 'font-extrabold text-green-500';
             case 'Waiting User Payment':
                 return 'font-extrabold text-yellow-500';
-            case 'Denied':
+            case 'Canceled':
                 return 'font-extrabold text-red-500';
             default:
                 return 'font-extrabold text-red-500';
@@ -85,8 +85,14 @@ const HistoryPage = () => {
                                     </td>
 
                                     {/* ✅ Status Payment */}
-                                    <td className={getPaymentStatusClass(order.status_payment)}>
-                                        {order.status_payment || 'waiting'}
+                                    <td className={getPaymentStatusClass(
+                                        (order.order_status === 'Reported' || order.order_status === 'Cancel')
+                                            ? 'Canceled'
+                                            : order.status_payment
+                                    )}>
+                                        {(order.order_status === 'Reported' || order.order_status === 'Cancel')
+                                            ? 'Canceled'
+                                            : (order.status_payment || 'waiting')}
                                     </td>
 
                                     {/* ✅ Price เฉพาะ order_price */}
@@ -112,7 +118,7 @@ const HistoryPage = () => {
                                             <button
                                                 className="text-blue-600 underline decoration-2 px-2 py-1 cursor-pointer"
                                                 onClick={() =>
-                                                    openSlipModal(`https://hewkad.com/api/Files/Payment/${order.slip_filename}`)
+                                                    openSlipModal(`http://localhost:5000/Files/Payment/${order.slip_filename}`)
                                                 }
                                             >
                                                 View Slip

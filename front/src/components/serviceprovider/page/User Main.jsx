@@ -28,7 +28,7 @@ function UserMain() {
   useEffect(() => {
     const fetchKadOptions = async () => {
       try {
-        const res = await fetch("https://hewkad.com/api/customer/kad", {
+        const res = await fetch("http://localhost:5000/customer/kad", {
           credentials: "include",
         });
         const data = await res.json();
