@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
     }
 
     // สร้าง path เต็ม
-    const uploadPath = path.join(_dirname, '..', 'public', 'uploads', folder);
+    const uploadPath = path.join(__dirname, '..', 'public', 'uploads', folder);
 
     // ถ้าโฟลเดอร์ยังไม่มี ให้สร้างใหม่
     if (!fs.existsSync(uploadPath)) {
