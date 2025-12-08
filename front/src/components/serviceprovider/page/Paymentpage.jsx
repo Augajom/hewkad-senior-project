@@ -34,7 +34,7 @@ const HistoryPage = () => {
                 return 'font-extrabold text-green-500';
             case 'Waiting User Payment':
                 return 'font-extrabold text-yellow-500';
-            case 'Denied':
+            case 'Canceled':
                 return 'font-extrabold text-red-500';
             default:
                 return 'font-extrabold text-red-500';
@@ -85,8 +85,14 @@ const HistoryPage = () => {
                                     </td>
 
                                     {/* ✅ Status Payment */}
-                                    <td className={getPaymentStatusClass(order.status_payment)}>
-                                        {order.status_payment || 'waiting'}
+                                    <td className={getPaymentStatusClass(
+                                        (order.order_status === 'Reported' || order.order_status === 'Cancel')
+                                            ? 'Canceled'
+                                            : order.status_payment
+                                    )}>
+                                        {(order.order_status === 'Reported' || order.order_status === 'Cancel')
+                                            ? 'Canceled'
+                                            : (order.status_payment || 'waiting')}
                                     </td>
 
                                     {/* ✅ Price เฉพาะ order_price */}

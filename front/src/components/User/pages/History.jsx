@@ -74,6 +74,11 @@ export default function History() {
                 Reported
               </button>
             </li>
+            <li className="text-black">
+              <button onClick={() => { setSelectedStatus("Cancel"); fetchPosts("Cancel"); }}>
+                Cancel
+              </button>
+            </li>
           </ul>
         </div>
       </div>
