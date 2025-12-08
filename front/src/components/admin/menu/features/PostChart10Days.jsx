@@ -8,7 +8,7 @@ const PostChart10Days = () => {
     const fetchChartData = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/admin/daily-summary",
+          "https://hewkad.com/api/admin/daily-summary",
           {
             withCredentials: true,
           }
