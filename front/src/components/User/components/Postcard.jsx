@@ -40,7 +40,7 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
                 post.avatar
                   ? post.avatar.startsWith("http")
                     ? post.avatar
-                    : `http://localhost:5000${post.avatar}`
+                    : `https://hewkad.com/api${post.avatar}`
                   : "https://i.pravatar.cc/150"
               }
               alt="avatar"

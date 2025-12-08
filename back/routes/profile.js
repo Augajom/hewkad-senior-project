@@ -11,12 +11,29 @@ const UPLOAD_DIR = path.join(__dirname, '..', 'public', 'uploads', 'identity');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+  destination: (req, file, cb) => {
+    // เช็คว่า field ชื่ออะไร (avatar หรือ identity)
+    let folder = 'identity';
+    if (file.fieldname === 'avatar') {
+      folder = 'avatars';
+    }
+
+    // สร้าง path เต็ม
+    const uploadPath = path.join(_dirname, '..', 'public', 'uploads', folder);
+
+    // ถ้าโฟลเดอร์ยังไม่มี ให้สร้างใหม่
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+
+    cb(null, uploadPath);
+  },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase() || '.png';
+    const ext = path.extname(file.originalname  ||'').toLowerCase() ||'.png';
     const uid = req.user && req.user.id ? String(req.user.id) : 'u';
-    const prefix = (file.fieldname || 'file').toLowerCase(); // avatar/identity
-    cb(null, `${prefix}_${uid}_${Date.now()}${ext}`);
+    // ใช้ fieldname เป็น prefix (avatar... หรือ identity...)
+    const prefix = (file.fieldname || 'file').toLowerCase(); 
+    cb(null, `${prefix}${uid}_${Date.now()}${ext}`);
   }
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });

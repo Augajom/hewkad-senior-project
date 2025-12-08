@@ -8,7 +8,7 @@ const HistoryPage = () => {
     const [selectedSlip, setSelectedSlip] = useState(null);
 
     useEffect(() => {
-        fetch('http://localhost:5000/service/history', {
+        fetch('https://hewkad.com/api/service/history', {
             credentials: 'include'
         })
             .then(res => res.json())
@@ -118,7 +118,7 @@ const HistoryPage = () => {
                                             <button
                                                 className="text-blue-600 underline decoration-2 px-2 py-1 cursor-pointer"
                                                 onClick={() =>
-                                                    openSlipModal(`http://localhost:5000/Files/Payment/${order.slip_filename}`)
+                                                    openSlipModal(`https://hewkad.com/api/Files/Payment/${order.slip_filename}`)
                                                 }
                                             >
                                                 View Slip
