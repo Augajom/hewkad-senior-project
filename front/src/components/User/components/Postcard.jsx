@@ -4,6 +4,29 @@ import "../DaisyUI.css";
 
 const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
   const [confirmAction, setConfirmAction] = useState(null);
+  const maskEmailStyle = (username) => {
+    if (!username) return "xxxxx@xxxx";
+
+    // ถ้ามี @ (เหมือนอีเมล)
+    if (username.includes("@")) {
+      const [name, domain] = username.split("@");
+
+      const maskedName =
+        name.length <= 2
+          ? name[0] + "x".repeat(name.length - 1)
+          : name.slice(0, 2) + "x".repeat(name.length - 2);
+
+      return `${maskedName}@${"x".repeat(4)}`;
+    }
+
+    // ถ้าไม่มี @ — ทำให้เป็นฟอร์แมต joxxx@xxxx
+    const maskedName =
+      username.length <= 2
+        ? username[0] + "x".repeat(username.length - 1)
+        : username.slice(0, 2) + "x".repeat(username.length - 2);
+
+    return `${maskedName}@xxxx`;
+  };
   const isOwner =
     currentUser && post && Number(currentUser.id) === Number(post.user_id);
   return (
@@ -23,23 +46,23 @@ const PostCard = ({ post, currentUser, onDelete, onEdit }) => {
               alt="avatar"
               className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100 flex-shrink-0"
             />
+
             <div className="min-w-0">
               <div className="font-semibold text-gray-900 truncate">
                 {post.nickname || "Anonymous"}
               </div>
               <div className="text-sm text-gray-500 truncate">
-                {post.username || "@username"}
+                {maskEmailStyle(post.username)}
               </div>
             </div>
           </div>
 
           <div className="flex flex-col items-end flex-shrink-0">
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                post.status_name === "Available"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-gray-100 text-gray-800"
-              }`}
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${post.status_name === "Available"
+                ? "bg-green-100 text-green-800"
+                : "bg-gray-100 text-gray-800"
+                }`}
             >
               {post.status_name || ""}
             </span>
