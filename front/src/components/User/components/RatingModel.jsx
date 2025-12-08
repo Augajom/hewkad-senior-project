@@ -14,7 +14,7 @@ export default function RatingModal({ orderId, onClose, onRated }) {
     try {
       setLoading(true);
       await axios.post(
-        "https://hewkad.com/api/customer/rate",
+        "http://localhost:5000/customer/rate",
         { orderId, rating, comment },
         { withCredentials: true }
       );

@@ -4,7 +4,7 @@ import { CiSearch } from "react-icons/ci";
 import { IoMdClose } from "react-icons/io";
 import axios from "axios";
 
-const API = import.meta.env?.VITE_API_URL || "https://hewkad.com/api";
+const API = import.meta.env?.VITE_API_URL || "http://localhost:5000";
 
 const StatusChip = ({ status_id }) => {
   const isResolved = [5, 8, 9].includes(status_id); // ✅ 9 เป็น Resolved
@@ -243,7 +243,7 @@ export default function ReportPage() {
                                 onClick={() =>
                                   setViewModal({
                                     open: true,
-                                    fileUrl: `https://hewkad.com/api${report.report_file}`,
+                                    fileUrl: `http://localhost:5000${report.report_file}`,
                                     title: "Report File",
                                   })
                                 }
@@ -279,7 +279,7 @@ export default function ReportPage() {
                                 onClick={() =>
                                   setViewModal({
                                     open: true,
-                                    fileUrl: `https://hewkad.com/api${report.resolved_file}`,
+                                    fileUrl: `http://localhost:5000${report.resolved_file}`,
                                     title: "Resolved File",
                                   })
                                 }
@@ -384,7 +384,7 @@ export default function ReportPage() {
                               onClick={() =>
                                 setViewModal({
                                   open: true,
-                                  fileUrl: `https://hewkad.com/api${report.report_file}`,
+                                  fileUrl: `http://localhost:5000${report.report_file}`,
                                   title: "Report File",
                                 })
                               }
@@ -398,7 +398,7 @@ export default function ReportPage() {
                               onClick={() =>
                                 setViewModal({
                                   open: true,
-                                  fileUrl: `https://hewkad.com/api${report.resolved_file}`,
+                                  fileUrl: `http://localhost:5000${report.resolved_file}`,
                                   title: "Resolved File",
                                 })
                               }

@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 import Swal from 'sweetalert2';
 import "../DaisyUI.css";
 
-const API = "https://hewkad.com/api";
+const API = "http://localhost:5000";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);

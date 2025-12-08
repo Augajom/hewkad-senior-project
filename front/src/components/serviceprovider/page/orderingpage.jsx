@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import Navbar from "../components/navbar.jsx";
 import "../DaisyUI.css";
 
-const API = "https://hewkad.com/api";
+const API = "http://localhost:5000";
 
 const statusColors = {
   "Rider Received": "bg-blue-500 text-white",

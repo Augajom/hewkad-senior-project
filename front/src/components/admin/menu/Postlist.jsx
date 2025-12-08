@@ -21,7 +21,7 @@ function Postlist() {
 
   const fetchMarkets = async () => {
     try {
-      const res = await axios.get("https://hewkad.com/api/kad", {
+      const res = await axios.get("http://localhost:5000/kad", {
         withCredentials: true,
       });
       setMarkets(res.data);
@@ -32,7 +32,7 @@ function Postlist() {
 
   const fetchPost = async () => {
     try {
-      const res = await axios.get("https://hewkad.com/api/admin/posts", {
+      const res = await axios.get("http://localhost:5000/admin/posts", {
         withCredentials: true,
       });
       setPost(Array.isArray(res.data) ? res.data : []);
@@ -44,7 +44,7 @@ function Postlist() {
   const resolveImg = (imgPath) => {
     if (!imgPath) return "/src/assets/avatar.svg"; // default avatar
     if (imgPath.startsWith("http")) return imgPath; // external URL
-    return `https://hewkad.com/api${imgPath}`; // local path
+    return `http://localhost:5000${imgPath}`; // local path
   };
 
   const filteredPosts = posts.filter((post) => {
